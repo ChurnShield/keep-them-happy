@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, TrendingUp, Shield, Zap } from "lucide-react";
+import { ArrowRight, Play, TrendingUp, Shield, Zap, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function Hero() {
@@ -22,8 +22,8 @@ export function Hero() {
             transition={{ duration: 0.5 }}
             className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-8"
           >
-            <Zap className="h-4 w-4" />
-            <span>Reduce churn by up to 54%</span>
+            <DollarSign className="h-4 w-4" />
+            <span>Revolutionary pricing: Pay only for saved revenue</span>
           </motion.div>
 
           {/* Headline */}
@@ -33,8 +33,8 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground text-balance"
           >
-            Stop losing customers.{" "}
-            <span className="gradient-text">Start saving revenue.</span>
+            Only pay for{" "}
+            <span className="gradient-text">revenue we actually save.</span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -44,9 +44,31 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-balance"
           >
-            ChurnShield is the intelligent churn prevention platform that intercepts cancellations, 
-            recovers failed payments, and predicts at-risk customers before they leave.
+            Unlike competitors who charge % of total churn, ChurnShield only bills you for customers we actually retain. 
+            Zero saved? Zero cost. It's that simple.
           </motion.p>
+
+          {/* Value Prop Highlight - The Hero Differentiator */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            className="mt-8 relative"
+          >
+            <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
+            <div className="relative inline-flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-primary/30 bg-card/80 backdrop-blur-sm px-6 py-4">
+              <div className="flex items-center gap-3 text-sm sm:text-base">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive">
+                  <span className="line-through font-medium">Others: % of total churn</span>
+                </div>
+                <ArrowRight className="h-5 w-5 text-primary hidden sm:block" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary font-semibold">
+                  <Shield className="h-4 w-4" />
+                  <span>ChurnShield: % of saved revenue only</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
 
           {/* CTA Buttons */}
           <motion.div
@@ -56,12 +78,12 @@ export function Hero() {
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Button variant="hero" size="xl" className="group">
-              Start 30-Day Free Trial
+              Start Risk-Free Trial
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
             <Button variant="hero-outline" size="xl" className="group">
               <Play className="h-5 w-5" />
-              Watch Demo
+              See How It Works
             </Button>
           </motion.div>
 
@@ -76,19 +98,19 @@ export function Hero() {
               <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              No credit card required
+              No upfront costs
             </div>
             <div className="flex items-center gap-2">
               <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              Setup in under 2 hours
+              Pay only for results
             </div>
             <div className="flex items-center gap-2">
               <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              Full API access
+              Zero risk guarantee
             </div>
           </motion.div>
 
@@ -100,9 +122,9 @@ export function Hero() {
             className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8"
           >
             {[
+              { value: "$0", label: "Cost if we save nothing", icon: DollarSign },
               { value: "54%", label: "Average churn reduction", icon: TrendingUp },
-              { value: "89%", label: "Failed payments recovered", icon: Shield },
-              { value: "2hrs", label: "Average time to value", icon: Zap },
+              { value: "100%", label: "Aligned with your success", icon: Shield },
             ].map((stat, index) => (
               <div
                 key={stat.label}
