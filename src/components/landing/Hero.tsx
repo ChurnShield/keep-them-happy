@@ -59,7 +59,7 @@ export function Hero() {
             <div className="relative inline-flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-primary/30 bg-card/80 backdrop-blur-sm px-6 py-4">
               <div className="flex items-center gap-3 text-sm sm:text-base">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive">
-                  <span className="line-through font-medium">Others: % of total churn</span>
+                  <span className="font-medium">Others: % of total churn</span>
                 </div>
                 <ArrowRight className="h-5 w-5 text-primary hidden sm:block" />
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary font-semibold">
