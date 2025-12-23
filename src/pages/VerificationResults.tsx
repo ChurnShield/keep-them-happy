@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/onboarding/PageTransition";
+import { LegalLinks } from "@/components/LegalLinks";
 import { 
   CheckCircle2,
   AlertCircle,
@@ -222,10 +223,13 @@ const VerificationResults = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.3 }}
-            className="flex items-center justify-center gap-2 text-muted-foreground text-xs mt-6"
+            className="text-center mt-6 space-y-3"
           >
-            <Shield className="w-3.5 h-3.5" />
-            <span>Read-only access. No changes to customers until you confirm.</span>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground text-xs">
+              <Shield className="w-3.5 h-3.5" />
+              <span>Read-only access. No changes to customers until you confirm.</span>
+            </div>
+            <LegalLinks />
           </motion.div>
         </div>
       </div>

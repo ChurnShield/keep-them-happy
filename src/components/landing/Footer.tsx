@@ -29,7 +29,7 @@ const footerLinks: Record<string, FooterLink[]> = {
   Legal: [
     { name: "Privacy", href: "/privacy" },
     { name: "Terms", href: "/terms" },
-    { name: "Security", comingSoon: true },
+    { name: "Security", href: "/security" },
     { name: "GDPR", comingSoon: true },
   ],
 };

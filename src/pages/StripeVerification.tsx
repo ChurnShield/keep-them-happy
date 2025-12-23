@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/onboarding/PageTransition";
+import { LegalLinks } from "@/components/LegalLinks";
 import { 
   Shield, 
   Eye, 
@@ -164,14 +165,17 @@ const StripeVerification = () => {
           </motion.div>
 
           {/* Trust footer */}
-          <motion.p
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
-            className="text-center text-muted-foreground text-xs mt-6"
+            className="text-center mt-6 space-y-3"
           >
-            Secure OAuth connection. We never see your Stripe password.
-          </motion.p>
+            <p className="text-muted-foreground text-xs">
+              Secure OAuth connection. We never see your Stripe password.
+            </p>
+            <LegalLinks />
+          </motion.div>
         </div>
       </div>
     </PageTransition>
