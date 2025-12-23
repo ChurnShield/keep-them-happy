@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, ArrowRight, Shield } from "lucide-react";
-
+import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 const Welcome = () => {
   const navigate = useNavigate();
 
@@ -29,6 +29,16 @@ const Welcome = () => {
       />
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
+        {/* Progress indicator */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="absolute top-6 left-1/2 -translate-x-1/2"
+        >
+          <ProgressIndicator currentStep={1} />
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
