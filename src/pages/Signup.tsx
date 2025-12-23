@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Shield, Check } from "lucide-react";
+import { ArrowLeft, Shield, Check, Mail, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +24,41 @@ export default function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isAlreadySignedUp, setIsAlreadySignedUp] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; company?: string }>({});
+
+  const sendWelcomeEmail = async (userEmail: string, userCompany: string, forceResend = false) => {
+    try {
+      const { data, error: emailError } = await supabase.functions.invoke<WelcomeEmailResponse>(
+        "send-welcome-email",
+        { body: { email: userEmail, company: userCompany, forceResend } }
+      );
+      
+      if (emailError) {
+        console.error("Welcome email error:", emailError);
+        return { ok: false };
+      }
+      
+      return data || { ok: false };
+    } catch (error) {
+      console.error("Failed to send welcome email:", error);
+      return { ok: false };
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (isResending) return;
+    
+    setIsResending(true);
+    const result = await sendWelcomeEmail(email.trim().toLowerCase(), company.trim(), true);
+    setIsResending(false);
+    
+    if (result.ok) {
+      toast.success("Email sent! Check your inbox.");
+    } else {
+      toast.error("Couldn't send email. Please try again.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,24 +100,8 @@ export default function Signup() {
         throw insertError;
       }
       
-      // Send welcome email (handles idempotency server-side)
-      try {
-        const { data, error: emailError } = await supabase.functions.invoke<WelcomeEmailResponse>(
-          "send-welcome-email",
-          { body: { email: result.data.email, company: result.data.company } }
-        );
-        
-        if (emailError) {
-          console.error("Welcome email error:", emailError);
-        } else if (data?.alreadySent) {
-          console.log("Welcome email was already sent previously");
-        } else if (data?.ok) {
-          console.log("Welcome email sent:", data.messageId);
-        }
-      } catch (emailError) {
-        console.error("Failed to send welcome email:", emailError);
-        // Don't block signup if email fails
-      }
+      // Send welcome email
+      await sendWelcomeEmail(result.data.email, result.data.company);
       
       // Set state for UI
       if (isDuplicate) {
@@ -101,33 +119,60 @@ export default function Signup() {
     }
   };
 
-  if (isSubmitted) {
+  if (isSubmitted && isAlreadySignedUp) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="absolute inset-0 hero-glow opacity-50" />
+        <div className="absolute inset-0 bg-grid-pattern opacity-20" />
+        
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
+          className="relative z-10"
         >
-          <Card className="max-w-md w-full text-center">
+          <Card className="max-w-md w-full text-center border-border/50 bg-card/80 backdrop-blur-sm">
             <CardHeader>
               <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Check className="h-8 w-8 text-primary" />
+                <Mail className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl">
-                {isAlreadySignedUp ? "You're already signed up" : "You're on the list!"}
-              </CardTitle>
+              <CardTitle className="text-2xl">Welcome back!</CardTitle>
               <CardDescription className="text-base">
-                {isAlreadySignedUp 
-                  ? "We'll keep you posted ✅" 
-                  : "We'll be in touch shortly to get you started with your risk-free trial."}
+                Good news — you're already on the list. We've resent your welcome email with everything you need to get started.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate("/")} variant="outline" className="mt-4">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Home
+            <CardContent className="space-y-4">
+              <Button 
+                onClick={() => navigate("/welcome")} 
+                variant="hero" 
+                size="lg"
+                className="w-full"
+              >
+                Continue to Dashboard
               </Button>
+              
+              <Button 
+                onClick={handleResendEmail} 
+                variant="outline" 
+                className="w-full"
+                disabled={isResending}
+              >
+                {isResending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4 mr-2" />
+                    Resend Welcome Email
+                  </>
+                )}
+              </Button>
+              
+              <p className="text-sm text-muted-foreground pt-2">
+                Didn't get the email? Check your spam folder or click resend above.
+              </p>
             </CardContent>
           </Card>
         </motion.div>
