@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 
 interface ProgressIndicatorProps {
-  currentStep: 1 | 2;
+  currentStep: 1 | 2 | 3;
 }
 
 const steps = [
   { number: 1, label: "Welcome" },
-  { number: 2, label: "How it works" },
+  { number: 2, label: "Churn Risk" },
+  { number: 3, label: "How it works" },
 ];
 
 export const ProgressIndicator = ({ currentStep }: ProgressIndicatorProps) => {
