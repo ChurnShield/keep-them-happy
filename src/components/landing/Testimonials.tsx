@@ -27,7 +27,7 @@ const testimonials = [
 
 export function Testimonials() {
   return (
-    <section className="py-24 relative overflow-hidden">
+    <section id="testimonials" className="py-24 relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-card/30 via-background to-card/30" />
       
