@@ -66,14 +66,17 @@ export default function Signup() {
         // Don't block signup if email fails
       }
       
+      // Redirect to welcome page after successful signup
+      navigate("/welcome");
+      
       setIsSubmitted(true);
     } catch (error: unknown) {
       const supabaseError = error as { code?: string };
       
       // Handle duplicate email (unique constraint violation) as success
       if (supabaseError?.code === "23505") {
-        setIsAlreadySignedUp(true);
-        setIsSubmitted(true);
+        // User already signed up - still redirect to welcome
+        navigate("/welcome");
       } else {
         // Only show error for truly unexpected failures
         toast.error("Something went wrong. Please try again.");
