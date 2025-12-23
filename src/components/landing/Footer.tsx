@@ -68,8 +68,15 @@ export function Footer() {
           ))}
         </div>
 
+        {/* Privacy Statement */}
+        <div className="mt-12 pt-6 border-t border-border/30">
+          <p className="text-xs text-muted-foreground text-center">
+            We do not collect analytics, use cookies, or track usage. Everything runs locally in your browser.
+          </p>
+        </div>
+
         {/* Bottom */}
-        <div className="mt-16 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-8 pt-8 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} ChurnShield. All rights reserved.
           </p>
