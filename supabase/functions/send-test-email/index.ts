@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
+// v1.1 - Force redeploy for secret binding
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -40,11 +41,14 @@ serve(async (req) => {
 
   try {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    const keyPresent = !!resendApiKey;
+    
+    console.log(`Diagnostics: keyPresent=${keyPresent}`);
     
     if (!resendApiKey) {
       console.error("RESEND_API_KEY is not configured");
       return new Response(
-        JSON.stringify({ ok: false, error: "Email service not configured", code: "MISSING_API_KEY" }),
+        JSON.stringify({ ok: false, error: "Email service not configured", code: "MISSING_API_KEY", keyPresent }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -114,7 +118,7 @@ serve(async (req) => {
     console.log(`Test email sent successfully. Message ID: ${data.id}`);
 
     return new Response(
-      JSON.stringify({ ok: true, messageId: data.id, message: "Email sent successfully" }),
+      JSON.stringify({ ok: true, messageId: data.id, message: "Email sent successfully", keyPresent }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
