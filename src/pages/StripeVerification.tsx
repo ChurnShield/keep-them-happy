@@ -38,22 +38,22 @@ const StripeVerification = () => {
 
   return (
     <PageTransition>
-      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center">
-        {/* Background effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
-        <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+        <div className="min-h-screen bg-background relative flex items-center justify-center">
+          {/* Background effects */}
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
+          <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
 
-        <div className="relative z-10 container max-w-lg mx-auto px-6 py-12">
+          <div className="relative z-10 container max-w-lg mx-auto px-6 py-6 md:py-12">
           {/* Shield Icon */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex justify-center mb-6"
+            className="flex justify-center mb-4 md:mb-6"
           >
-            <div className="w-16 h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
-              <Shield className="w-8 h-8 text-primary" />
+            <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-primary/20 flex items-center justify-center">
+              <Shield className="w-6 h-6 md:w-8 md:h-8 text-primary" />
             </div>
           </motion.div>
 
@@ -62,7 +62,7 @@ const StripeVerification = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-center mb-8"
+            className="text-center mb-5 md:mb-8"
           >
             <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
               Verify your actual revenue loss
@@ -79,9 +79,9 @@ const StripeVerification = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-card border border-border rounded-2xl p-5 mb-4"
+            className="bg-card border border-border rounded-2xl p-4 md:p-5 mb-3 md:mb-4"
           >
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+            <h2 className="text-xs md:text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 md:mb-4">
               What we'll do
             </h2>
             <ul className="space-y-3">
@@ -107,7 +107,7 @@ const StripeVerification = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-muted/50 border border-border rounded-2xl p-5 mb-8"
+            className="bg-muted/50 border border-border rounded-2xl p-4 md:p-5 mb-5 md:mb-8"
           >
             <div className="flex items-center gap-2 mb-4">
               <XCircle className="w-4 h-4 text-muted-foreground" />
