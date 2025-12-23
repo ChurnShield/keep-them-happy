@@ -105,7 +105,7 @@ const HowItWorks = () => {
           transition={{ duration: 0.4 }}
           className="flex justify-center mb-8"
         >
-          <ProgressIndicator currentStep={2} />
+          <ProgressIndicator currentStep={3} />
         </motion.div>
 
         {/* Back button */}
@@ -116,11 +116,11 @@ const HowItWorks = () => {
         >
           <Button
             variant="ghost"
-            onClick={() => navigate("/welcome")}
+            onClick={() => navigate("/churn-risk")}
             className="mb-8 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Welcome
+            Back
           </Button>
         </motion.div>
 
@@ -271,11 +271,10 @@ const HowItWorks = () => {
           <Button
             variant="hero"
             size="lg"
-            onClick={() => navigate("/welcome")}
+            onClick={() => navigate("/")}
             className="group"
           >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to Welcome
+            Go to Dashboard
           </Button>
         </motion.div>
       </div>

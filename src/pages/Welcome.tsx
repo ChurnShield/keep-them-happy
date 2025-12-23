@@ -166,10 +166,10 @@ const Welcome = () => {
             <Button
               variant="hero"
               size="xl"
-              onClick={() => navigate("/how-it-works")}
+              onClick={() => navigate("/churn-risk")}
               className="group"
             >
-              How Churnshield works
+              Continue
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
           </motion.div>
