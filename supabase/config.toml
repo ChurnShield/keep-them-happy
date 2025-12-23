@@ -2,3 +2,9 @@ project_id = "rdstyfaveeokocztayri"
 
 [functions.send-welcome-email]
 verify_jwt = false
+
+[functions.send-test-email]
+verify_jwt = false
+
+[functions.payment-recovery]
+verify_jwt = false
