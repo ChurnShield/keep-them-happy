@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// v2.0 - Production-ready welcome email with idempotency
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -13,13 +14,20 @@ const corsHeaders = {
 
 interface WelcomeEmailRequest {
   email: string;
-  company: string;
+  company?: string;
 }
 
-// Simple in-memory rate limiting (per IP, 3 requests per minute)
+interface WelcomeEmailResponse {
+  ok: boolean;
+  messageId?: string;
+  alreadySent?: boolean;
+  errorCode?: string;
+}
+
+// Simple in-memory rate limiting (per IP, 5 requests per minute)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 3;
+const RATE_LIMIT_WINDOW_MS = 60000;
+const MAX_REQUESTS_PER_WINDOW = 5;
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -38,90 +46,154 @@ function isRateLimited(ip: string): boolean {
   return false;
 }
 
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 255;
+}
+
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const respond = (data: WelcomeEmailResponse, status = 200) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
+
   try {
-    // Rate limiting check
+    // Rate limiting
     const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
                      req.headers.get("cf-connecting-ip") || 
                      "unknown";
     
     if (isRateLimited(clientIP)) {
-      console.warn(`Rate limited request from IP: ${clientIP}`);
-      return new Response(
-        JSON.stringify({ error: "Too many requests. Please try again later." }),
-        {
-          status: 429,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+      console.warn(`Rate limited: ${clientIP}`);
+      return respond({ ok: false, errorCode: "RATE_LIMITED" }, 429);
     }
 
-    const { email, company }: WelcomeEmailRequest = await req.json();
-
-    // Input validation
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return new Response(
-        JSON.stringify({ error: "Invalid email address" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    // Validate API key
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY not configured");
+      return respond({ ok: false, errorCode: "SERVICE_UNAVAILABLE" }, 500);
     }
 
-    if (!company || typeof company !== "string" || company.trim().length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Invalid company name" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    // Parse and validate input
+    const body = await req.json();
+    const email = (body.email || "").toString().trim().toLowerCase();
+    const company = (body.company || "").toString().trim();
+
+    if (!email || !isValidEmail(email)) {
+      return respond({ ok: false, errorCode: "INVALID_EMAIL" }, 400);
     }
 
-    // Verify the email exists in the leads table (was just inserted)
-    // This prevents abuse - only send emails to verified leads
+    // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-    
-    const { data: lead, error: leadError } = await supabase
+
+    // IDEMPOTENCY CHECK: Has welcome email already been sent?
+    const { data: existingEmail, error: checkError } = await supabase
+      .from("welcome_emails")
+      .select("id, sent_at")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("Database check error:", checkError);
+      return respond({ ok: false, errorCode: "DB_ERROR" }, 500);
+    }
+
+    if (existingEmail) {
+      console.log(`Welcome email already sent to ${email} at ${existingEmail.sent_at}`);
+      return respond({ ok: true, alreadySent: true });
+    }
+
+    // Verify email exists in leads table (optional security check)
+    const { data: lead } = await supabase
       .from("leads")
-      .select("id, created_at")
-      .eq("email", email.trim().toLowerCase())
-      .single();
+      .select("id")
+      .eq("email", email)
+      .maybeSingle();
 
-    if (leadError || !lead) {
-      console.warn(`Email not found in leads table: ${email}`);
-      return new Response(
-        JSON.stringify({ error: "Email not registered" }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
+    if (!lead) {
+      console.warn(`Email not in leads table: ${email}`);
+      // Still send - they might have signed up differently
     }
 
-    // Check if the lead was created recently (within the last 5 minutes)
-    const createdAt = new Date(lead.created_at);
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
-    if (createdAt < fiveMinutesAgo) {
-      console.warn(`Lead was created too long ago: ${email}`);
-      return new Response(
-        JSON.stringify({ error: "Registration window expired" }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-    
-    console.log(`Sending welcome email to ${email} from ${company}`);
+    console.log(`Sending welcome email to: ${email}`);
 
+    // Build email HTML
+    const appUrl = "https://keep-them-happy.lovable.app";
+    const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #0a0f1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0f1a; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: linear-gradient(135deg, #111827 0%, #1a2744 100%); border-radius: 16px; border: 1px solid #1e3a5f; overflow: hidden;">
+          <tr>
+            <td style="padding: 40px 40px 30px 40px; text-align: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; margin: 0 auto 24px; line-height: 60px;">
+                <span style="font-size: 28px;">🛡️</span>
+              </div>
+              <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">Welcome to ChurnShield</h1>
+              <p style="color: #94a3b8; font-size: 16px; margin: 0;">Reduce churn. Recover revenue. Automatically.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <p style="color: #e2e8f0; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                Hey${company ? ` from <strong style="color: #22c55e;">${company}</strong>` : ""}! 👋
+              </p>
+              <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                Thanks for signing up for ChurnShield. We help SaaS companies <strong>reduce involuntary churn by up to 40%</strong> through intelligent payment recovery.
+              </p>
+              
+              <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+                <p style="color: #22c55e; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">📋 What happens next:</p>
+                <ol style="color: #cbd5e1; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                  <li>We'll review your signup within 24 hours</li>
+                  <li>You'll get a personalized onboarding call</li>
+                  <li>Start recovering revenue risk-free</li>
+                </ol>
+              </div>
+              
+              <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                Want to learn more about how ChurnShield works?
+              </p>
+              
+              <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+                <tr>
+                  <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 8px;">
+                    <a href="${appUrl}/how-it-works" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px;">
+                      See How It Works →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 40px 40px 40px; border-top: 1px solid #1e3a5f;">
+              <p style="color: #64748b; font-size: 13px; margin: 0; text-align: center;">
+                Questions? Just reply to this email.<br>
+                <span style="color: #475569;">— The ChurnShield Team</span>
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    // Send via Resend
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -131,89 +203,41 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: "ChurnShield <onboarding@resend.dev>",
         to: [email],
-        subject: "You're on the ChurnShield waitlist! 🛡️",
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          </head>
-          <body style="margin: 0; padding: 0; background-color: #0a0f1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0f1a; padding: 40px 20px;">
-              <tr>
-                <td align="center">
-                  <table width="100%" max-width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background: linear-gradient(135deg, #111827 0%, #1a2744 100%); border-radius: 16px; border: 1px solid #1e3a5f; overflow: hidden;">
-                    <tr>
-                      <td style="padding: 40px 40px 30px 40px; text-align: center;">
-                        <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; margin: 0 auto 24px;">
-                          <span style="font-size: 28px; line-height: 60px;">🛡️</span>
-                        </div>
-                        <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">Welcome to ChurnShield!</h1>
-                        <p style="color: #94a3b8; font-size: 16px; margin: 0;">You're on the list for early access</p>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 0 40px 30px 40px;">
-                        <p style="color: #e2e8f0; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                          Hey there! 👋
-                        </p>
-                        <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
-                          Thanks for signing up <strong style="color: #22c55e;">${company}</strong> for ChurnShield's risk-free trial. We're excited to help you reduce churn and keep more customers.
-                        </p>
-                        <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 20px 0;">
-                          We'll be in touch shortly with next steps to get you started. In the meantime, here's what you can expect:
-                        </p>
-                        <ul style="color: #cbd5e1; font-size: 15px; line-height: 1.8; margin: 0 0 20px 0; padding-left: 20px;">
-                          <li>✅ No upfront costs – only pay when we save you revenue</li>
-                          <li>✅ Early detection of at-risk customers</li>
-                          <li>✅ Actionable insights to reduce churn</li>
-                        </ul>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 20px 40px 40px 40px; border-top: 1px solid #1e3a5f;">
-                        <p style="color: #64748b; font-size: 13px; margin: 0; text-align: center;">
-                          Questions? Just reply to this email.<br>
-                          <span style="color: #475569;">— The ChurnShield Team</span>
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </body>
-          </html>
-        `,
+        subject: "Welcome to ChurnShield",
+        html: emailHtml,
       }),
     });
 
     if (!res.ok) {
-      const errorData = await res.text();
-      console.error("Resend API error:", errorData);
-      throw new Error(`Resend API error: ${errorData}`);
+      const errorText = await res.text();
+      console.error("Resend API error:", res.status, errorText);
+      return respond({ ok: false, errorCode: "EMAIL_SEND_FAILED" }, 500);
     }
 
-    const data = await res.json();
-    console.log("Email sent successfully:", data);
+    const resendData = await res.json();
+    const messageId = resendData.id;
 
-    return new Response(JSON.stringify(data), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
-    });
-  } catch (error: any) {
-    console.error("Error in send-welcome-email function:", error);
-    return new Response(
-      JSON.stringify({ error: "An error occurred" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    console.log(`Email sent successfully. MessageId: ${messageId}`);
+
+    // Log to welcome_emails table for idempotency
+    const { error: insertError } = await supabase
+      .from("welcome_emails")
+      .insert({
+        email,
+        resend_message_id: messageId,
+        status: "sent",
+      });
+
+    if (insertError) {
+      // Log but don't fail - email was already sent
+      console.error("Failed to log welcome email:", insertError);
+    }
+
+    return respond({ ok: true, messageId });
+
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    return respond({ ok: false, errorCode: "INTERNAL_ERROR" }, 500);
   }
 };
 
