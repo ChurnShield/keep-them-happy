@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Shield, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
+import { LeadInputSchema } from "@/lib/leadSchema";
+import { toast } from "sonner";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -13,16 +16,53 @@ export default function Signup() {
   const [company, setCompany] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; company?: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (isSubmitting) return;
+    
+    // Clear previous errors
+    setErrors({});
+    
+    // Validate with Zod
+    const result = LeadInputSchema.safeParse({
+      email: email.trim().toLowerCase(),
+      company: company.trim(),
+    });
+    
+    if (!result.success) {
+      const fieldErrors: { email?: string; company?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0] === "email") fieldErrors.email = err.message;
+        if (err.path[0] === "company") fieldErrors.company = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
+    try {
+      const { error } = await supabase.from("leads").insert({
+        email: result.data.email,
+        company: result.data.company,
+        plan_interest: "Unknown",
+        source: "signup-page",
+      });
+      
+      if (error) throw error;
+      
+      toast.success("Thanks — we'll reach out shortly.");
+      setIsSubmitted(true);
+    } catch (error) {
+      console.error("Failed to submit lead:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {
@@ -96,8 +136,11 @@ export default function Signup() {
                   placeholder="you@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
+                  className={errors.email ? "border-destructive" : ""}
                 />
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="company">Company Name</Label>
@@ -107,8 +150,11 @@ export default function Signup() {
                   placeholder="Your Company"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
-                  required
+                  className={errors.company ? "border-destructive" : ""}
                 />
+                {errors.company && (
+                  <p className="text-sm text-destructive">{errors.company}</p>
+                )}
               </div>
               <Button
                 type="submit"
