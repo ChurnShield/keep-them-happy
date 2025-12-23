@@ -17,6 +17,7 @@ import {
   Lock,
   Heart,
 } from "lucide-react";
+import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 
 const HowItWorks = () => {
   const navigate = useNavigate();
@@ -87,6 +88,16 @@ const HowItWorks = () => {
       />
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 py-12">
+        {/* Progress indicator */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="flex justify-center mb-8"
+        >
+          <ProgressIndicator currentStep={2} />
+        </motion.div>
+
         {/* Back button */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
