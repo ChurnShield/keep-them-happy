@@ -13,56 +13,72 @@ const Security = () => {
           Back to Home
         </Link>
         
-        <h1 className="text-4xl font-bold mb-8">Security</h1>
-        <p className="text-muted-foreground mb-8">Last updated: December 23, 2024</p>
+        <h1 className="text-4xl font-bold mb-8">Security & Data Use</h1>
         
         <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8">
           <section>
-            <h2 className="text-2xl font-semibold mb-4">1. Our Commitment to Security</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We take the security of your data seriously. Our platform is built with security-first principles to ensure your business information remains protected at all times.
+              We know connecting your billing data is a big decision.
+              Here's exactly how ChurnShield handles security and access.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">2. Data Encryption</h2>
+            <h2 className="text-2xl font-semibold mb-4">Stripe Access: Read-Only</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              ChurnShield connects to Stripe using read-only permissions only.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              This means we can:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-4">
+              <li>View subscription events</li>
+              <li>Analyze payment failures</li>
+              <li>Estimate churn and recovery opportunities</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We cannot:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2">
+              <li>Create, modify, or cancel subscriptions</li>
+              <li>Charge customers</li>
+              <li>Issue refunds</li>
+              <li>Access full card or bank details</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Data Minimization</h2>
             <p className="text-muted-foreground leading-relaxed">
-              All data transmitted between your browser and our servers is encrypted using TLS 1.3. Data at rest is encrypted using AES-256 encryption, ensuring your information remains secure even in storage.
+              We only access the minimum data required to deliver insights.
+              No unnecessary data. No hidden access.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">3. Access Controls</h2>
+            <h2 className="text-2xl font-semibold mb-4">Infrastructure & Safeguards</h2>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2">
+              <li>Secure API connections</li>
+              <li>Encrypted data in transit</li>
+              <li>Limited internal access</li>
+              <li>No storage of raw payment credentials</li>
+            </ul>
+          </section>
+          
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">You're Always in Control</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We implement strict access controls and follow the principle of least privilege. Only authorized personnel with a legitimate business need can access customer data, and all access is logged and audited.
+              You can revoke Stripe access at any time directly from your Stripe dashboard.
+              If access is revoked, ChurnShield immediately stops data processing.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">4. Infrastructure Security</h2>
+            <h2 className="text-2xl font-semibold mb-4">Contact</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Our infrastructure is hosted on industry-leading cloud providers with SOC 2 Type II certification. We employ firewalls, intrusion detection systems, and regular security assessments to protect against threats.
-            </p>
-          </section>
-          
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">5. Read-Only Stripe Integration</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Our Stripe integration uses read-only access tokens. We cannot modify your Stripe data, process payments on your behalf, or access sensitive payment card information. We only read the data necessary to identify failed payments.
-            </p>
-          </section>
-          
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">6. Vulnerability Management</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We regularly scan our systems for vulnerabilities and apply security patches promptly. We also maintain a responsible disclosure program for security researchers.
-            </p>
-          </section>
-          
-          <section>
-            <h2 className="text-2xl font-semibold mb-4">7. Contact Us</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              If you have any security concerns or wish to report a vulnerability, please contact us at security@example.com.
+              <a href="mailto:support@churnshield.com" className="text-primary hover:underline">
+                support@churnshield.com
+              </a>
             </p>
           </section>
         </div>
