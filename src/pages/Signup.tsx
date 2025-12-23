@@ -57,9 +57,16 @@ export default function Signup() {
       
       toast.success("Thanks — we'll reach out shortly.");
       setIsSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to submit lead:", error);
-      toast.error("Something went wrong. Please try again.");
+      
+      // Handle duplicate email (unique constraint violation)
+      if (error?.code === "23505") {
+        toast.success("You're already on the list — we'll be in touch.");
+        setIsSubmitted(true);
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
