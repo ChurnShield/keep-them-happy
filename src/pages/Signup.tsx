@@ -44,7 +44,6 @@ export default function Signup() {
     }
     
     setIsSubmitting(true);
-    window.plausible?.('signup_submit');
     
     try {
       const { error } = await supabase.from("leads").insert({
@@ -56,7 +55,6 @@ export default function Signup() {
       
       if (error) throw error;
       
-      window.plausible?.('signup_success');
       toast.success("Thanks — we'll reach out shortly.");
       setIsSubmitted(true);
     } catch (error: any) {
@@ -64,7 +62,6 @@ export default function Signup() {
       
       // Handle duplicate email (unique constraint violation)
       if (error?.code === "23505") {
-        window.plausible?.('signup_duplicate');
         toast.success("You're already on the list — we'll be in touch.");
         setIsSubmitted(true);
       } else {
