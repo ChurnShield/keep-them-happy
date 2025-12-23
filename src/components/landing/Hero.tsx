@@ -84,7 +84,10 @@ export function Hero() {
               variant="hero" 
               size="xl" 
               className="group"
-              onClick={() => navigate('/signup')}
+              onClick={() => {
+                window.plausible?.('cta_click', { props: { location: 'hero' } });
+                navigate('/signup');
+              }}
             >
               Start Risk-Free Trial
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
