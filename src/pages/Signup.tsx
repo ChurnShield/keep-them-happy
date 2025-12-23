@@ -56,6 +56,16 @@ export default function Signup() {
       
       if (error) throw error;
       
+      // Send welcome email
+      try {
+        await supabase.functions.invoke("send-welcome-email", {
+          body: { email: result.data.email, company: result.data.company },
+        });
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+        // Don't block signup if email fails
+      }
+      
       setIsSubmitted(true);
     } catch (error: unknown) {
       const supabaseError = error as { code?: string };
