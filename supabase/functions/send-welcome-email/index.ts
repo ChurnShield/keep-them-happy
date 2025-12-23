@@ -145,52 +145,43 @@ const handler = async (req: Request): Promise<Response> => {
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background: linear-gradient(135deg, #111827 0%, #1a2744 100%); border-radius: 16px; border: 1px solid #1e3a5f; overflow: hidden;">
           <tr>
-            <td style="padding: 40px 40px 30px 40px; text-align: center;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 12px; margin: 0 auto 24px; line-height: 60px;">
-                <span style="font-size: 28px;">🛡️</span>
-              </div>
-              <h1 style="color: #ffffff; font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">Welcome to ChurnShield</h1>
-              <p style="color: #94a3b8; font-size: 16px; margin: 0;">Reduce churn. Recover revenue. Automatically.</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 0 40px 30px 40px;">
+            <td style="padding: 40px 40px 30px 40px;">
               <p style="color: #e2e8f0; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
-                Hey${company ? ` from <strong style="color: #22c55e;">${company}</strong>` : ""}! 👋
+                Hey — Andy from ChurnShield here 👋
               </p>
               <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
-                Thanks for signing up for ChurnShield. We help SaaS companies <strong>reduce involuntary churn by up to 40%</strong> through intelligent payment recovery.
+                Thanks for signing up.
+              </p>
+              <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
+                ChurnShield helps SaaS teams reduce involuntary churn and recover lost revenue automatically — without dark patterns or heavy setup.
               </p>
               
               <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 20px; margin-bottom: 24px;">
-                <p style="color: #22c55e; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">📋 What happens next:</p>
+                <p style="color: #22c55e; font-size: 14px; font-weight: 600; margin: 0 0 12px 0;">What happens next:</p>
                 <ol style="color: #cbd5e1; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
                   <li>We'll review your signup within 24 hours</li>
-                  <li>You'll get a personalized onboarding call</li>
-                  <li>Start recovering revenue risk-free</li>
+                  <li>You'll receive a personalized onboarding call</li>
+                  <li>We'll help you start recovering revenue risk-free</li>
                 </ol>
               </div>
               
-              <p style="color: #cbd5e1; font-size: 15px; line-height: 1.6; margin: 0 0 24px 0;">
-                Want to learn more about how ChurnShield works?
-              </p>
-              
-              <table cellpadding="0" cellspacing="0" style="margin: 0 auto;">
+              <table cellpadding="0" cellspacing="0" style="margin: 0 0 24px 0;">
                 <tr>
                   <td style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); border-radius: 8px;">
-                    <a href="${appUrl}/how-it-works" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px;">
-                      See How It Works →
+                    <a href="${appUrl}/welcome" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 15px;">
+                      View your onboarding steps →
                     </a>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 20px 40px 40px 40px; border-top: 1px solid #1e3a5f;">
-              <p style="color: #64748b; font-size: 13px; margin: 0; text-align: center;">
-                Questions? Just reply to this email.<br>
-                <span style="color: #475569;">— The ChurnShield Team</span>
+              
+              <p style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin: 0 0 24px 0;">
+                Questions? Just reply to this email — I read every one.
+              </p>
+              
+              <p style="color: #e2e8f0; font-size: 15px; margin: 0;">
+                — Andy<br>
+                <span style="color: #64748b;">ChurnShield</span>
               </p>
             </td>
           </tr>
@@ -209,9 +200,9 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "ChurnShield <onboarding@resend.dev>",
+        from: "Andy from ChurnShield <onboarding@resend.dev>",
         to: [email],
-        subject: "Welcome to ChurnShield",
+        subject: "Welcome to ChurnShield 👋",
         html: emailHtml,
       }),
     });
