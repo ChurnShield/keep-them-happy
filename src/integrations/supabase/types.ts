@@ -41,6 +41,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_recovery: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          email: string
+          id: string
+          last_emailed_at: string | null
+          status: Database["public"]["Enums"]["payment_recovery_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          email: string
+          id?: string
+          last_emailed_at?: string | null
+          status?: Database["public"]["Enums"]["payment_recovery_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          email?: string
+          id?: string
+          last_emailed_at?: string | null
+          status?: Database["public"]["Enums"]["payment_recovery_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -49,7 +79,11 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      payment_recovery_status:
+        | "needs_payment"
+        | "emailed_1"
+        | "emailed_2"
+        | "resolved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -176,6 +210,13 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      payment_recovery_status: [
+        "needs_payment",
+        "emailed_1",
+        "emailed_2",
+        "resolved",
+      ],
+    },
   },
 } as const
