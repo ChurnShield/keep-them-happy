@@ -13,6 +13,7 @@ import VerificationResults from "./pages/VerificationResults";
 import HowItWorks from "./pages/HowItWorks";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import Security from "./pages/Security";
 import AdminPaymentRecovery from "./pages/AdminPaymentRecovery";
 import AdminEmailTest from "./pages/AdminEmailTest";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/security" element={<Security />} />
           <Route path="/admin/payment-recovery" element={<AdminPaymentRecovery />} />
           <Route path="/admin/email-test" element={<AdminEmailTest />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
