@@ -1,8 +1,19 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, TrendingUp, Shield, Zap, DollarSign } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowRight, Play, TrendingUp, Shield, Zap, DollarSign, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export function Hero() {
+  const navigate = useNavigate();
+  const [showDemo, setShowDemo] = useState(false);
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
       {/* Background Effects */}
@@ -77,11 +88,21 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <Button variant="hero" size="xl" className="group">
+            <Button 
+              variant="hero" 
+              size="xl" 
+              className="group"
+              onClick={() => navigate('/signup')}
+            >
               Start Risk-Free Trial
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
-            <Button variant="hero-outline" size="xl" className="group">
+            <Button 
+              variant="hero-outline" 
+              size="xl" 
+              className="group"
+              onClick={() => setShowDemo(true)}
+            >
               <Play className="h-5 w-5" />
               See How It Works
             </Button>
@@ -141,6 +162,56 @@ export function Hero() {
           </motion.div>
         </div>
       </div>
+
+      {/* Demo Modal */}
+      <Dialog open={showDemo} onOpenChange={setShowDemo}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl">How ChurnShield Works</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <div className="aspect-video bg-muted rounded-lg flex items-center justify-center border border-border">
+              <div className="text-center space-y-3">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                  <Play className="h-8 w-8 text-primary" />
+                </div>
+                <p className="text-muted-foreground text-sm">Demo video coming soon</p>
+              </div>
+            </div>
+            
+            <div className="grid gap-4">
+              {[
+                { step: "1", title: "Connect Your Data", desc: "Integrate with your billing system in minutes" },
+                { step: "2", title: "AI Detects Churn Risk", desc: "Our algorithms identify customers about to cancel" },
+                { step: "3", title: "Automated Retention", desc: "Personalized interventions save at-risk customers" },
+                { step: "4", title: "Pay for Results", desc: "You only pay when we successfully retain revenue" },
+              ].map((item) => (
+                <div key={item.step} className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-primary">{item.step}</span>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-foreground">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button 
+              variant="hero" 
+              className="w-full" 
+              onClick={() => {
+                setShowDemo(false);
+                navigate('/signup');
+              }}
+            >
+              Start Your Free Trial
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
