@@ -8,6 +8,7 @@ import Signup from "./pages/Signup";
 import Welcome from "./pages/Welcome";
 import ChurnRisk from "./pages/ChurnRisk";
 import Calculator from "./pages/Calculator";
+import StripeVerification from "./pages/StripeVerification";
 import HowItWorks from "./pages/HowItWorks";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/churn-risk" element={<ChurnRisk />} />
           <Route path="/calculator" element={<Calculator />} />
+          <Route path="/verify-stripe" element={<StripeVerification />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />

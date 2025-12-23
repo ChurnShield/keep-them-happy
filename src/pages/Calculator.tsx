@@ -168,7 +168,7 @@ const Calculator = () => {
           >
             <Button
               size="lg"
-              onClick={() => navigate("/how-it-works")}
+              onClick={() => navigate("/verify-stripe")}
               className="gap-2 text-base w-full"
             >
               Confirm this with your real data
