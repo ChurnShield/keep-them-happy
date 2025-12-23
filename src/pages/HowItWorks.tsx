@@ -105,7 +105,7 @@ const HowItWorks = () => {
           transition={{ duration: 0.4 }}
           className="flex justify-center mb-8"
         >
-          <ProgressIndicator currentStep={3} />
+          <ProgressIndicator currentStep={4} />
         </motion.div>
 
         {/* Back button */}
@@ -116,7 +116,7 @@ const HowItWorks = () => {
         >
           <Button
             variant="ghost"
-            onClick={() => navigate("/churn-risk")}
+            onClick={() => navigate("/calculator")}
             className="mb-8 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
