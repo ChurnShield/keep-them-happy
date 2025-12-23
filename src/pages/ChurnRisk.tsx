@@ -127,7 +127,7 @@ const ChurnRisk = () => {
           >
             <Button
               size="lg"
-              onClick={() => navigate("/how-it-works")}
+              onClick={() => navigate("/calculator")}
               className="gap-2 text-base px-8"
             >
               <Zap className="w-4 h-4" />
