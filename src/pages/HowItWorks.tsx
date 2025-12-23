@@ -18,6 +18,7 @@ import {
   Heart,
 } from "lucide-react";
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
+import { PageTransition } from "@/components/onboarding/PageTransition";
 
 const HowItWorks = () => {
   const navigate = useNavigate();
@@ -77,8 +78,9 @@ const HowItWorks = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background effects */}
+    <PageTransition>
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        {/* Background effects */}
       <div className="absolute inset-0 hero-glow pointer-events-none" />
       <div
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
@@ -269,7 +271,8 @@ const HowItWorks = () => {
           </Button>
         </motion.div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   );
 };
 

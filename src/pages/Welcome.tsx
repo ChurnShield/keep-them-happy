@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, ArrowRight, Shield } from "lucide-react";
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
+import { PageTransition } from "@/components/onboarding/PageTransition";
+
 const Welcome = () => {
   const navigate = useNavigate();
 
@@ -18,7 +20,8 @@ const Welcome = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <PageTransition>
+      <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 hero-glow pointer-events-none" />
       <div
@@ -161,7 +164,8 @@ const Welcome = () => {
           </motion.div>
         </motion.div>
       </div>
-    </div>
+      </div>
+    </PageTransition>
   );
 };
 
