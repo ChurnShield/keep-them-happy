@@ -13,49 +13,89 @@ const PrivacyPolicy = () => {
           Back to Home
         </Link>
         
-        <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
-        <p className="text-muted-foreground mb-8">Last updated: December 23, 2024</p>
+        <h1 className="text-4xl font-bold mb-4">Privacy Policy</h1>
+        <p className="text-muted-foreground mb-8">Last updated: December 2025</p>
         
         <div className="prose prose-neutral dark:prose-invert max-w-none space-y-8">
           <section>
-            <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Welcome to our Privacy Policy. This policy describes how we collect, use, and handle your personal information when you use our services.
+              ChurnShield ("we", "our", or "us") respects your privacy and is committed to protecting your information.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              This Privacy Policy explains what data we collect, how we use it, and your rights.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">2. Information We Collect</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We collect information you provide directly to us, such as when you create an account, make a purchase, or contact us for support. This may include your name, email address, and company information.
+            <h2 className="text-2xl font-semibold mb-4">Information We Collect</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We collect only the information necessary to operate and improve ChurnShield, including:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2">
+              <li>Email address and company name provided during signup</li>
+              <li>Basic usage data (such as page visits and feature interactions)</li>
+              <li>Aggregated billing and subscription metadata when connected via Stripe (read-only)</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mt-4">
+              We do not collect credit card numbers, bank details, or customer passwords.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">3. How We Use Your Information</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              We use the information we collect to provide, maintain, and improve our services, process transactions, send you technical notices and support messages, and respond to your comments and questions.
+            <h2 className="text-2xl font-semibold mb-4">How We Use Your Information</h2>
+            <p className="text-muted-foreground leading-relaxed mb-4">
+              We use your information to:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2">
+              <li>Provide and operate the ChurnShield service</li>
+              <li>Estimate churn risk and revenue recovery opportunities</li>
+              <li>Communicate with you about onboarding, updates, or support</li>
+              <li>Improve product performance and user experience</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mt-4 font-medium">
+              We do not sell your data.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">4. Information Sharing</h2>
+            <h2 className="text-2xl font-semibold mb-4">Stripe Data Access</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We do not share your personal information with third parties except as described in this policy or with your consent. We may share information with service providers who assist us in operating our services.
+              If you choose to connect Stripe, ChurnShield only requests read-only access.
+              This access is used solely to analyze subscription behavior and payment events.
+            </p>
+            <p className="text-muted-foreground leading-relaxed mt-4 mb-4">
+              We cannot:
+            </p>
+            <ul className="list-disc list-inside text-muted-foreground space-y-2">
+              <li>Modify subscriptions</li>
+              <li>Create charges or refunds</li>
+              <li>Access full payment details</li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mt-4 font-medium">
+              You remain in full control at all times.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">5. Data Security</h2>
+            <h2 className="text-2xl font-semibold mb-4">Data Storage & Security</h2>
             <p className="text-muted-foreground leading-relaxed">
-              We take reasonable measures to help protect your personal information from loss, theft, misuse, unauthorized access, disclosure, alteration, and destruction.
+              We take reasonable technical and organizational measures to protect your data, including secure storage and limited access controls.
             </p>
           </section>
           
           <section>
-            <h2 className="text-2xl font-semibold mb-4">6. Contact Us</h2>
+            <h2 className="text-2xl font-semibold mb-4">Your Rights</h2>
             <p className="text-muted-foreground leading-relaxed">
-              If you have any questions about this Privacy Policy, please contact us at privacy@example.com.
+              You may request access to, correction of, or deletion of your data at any time by contacting us.
+            </p>
+          </section>
+          
+          <section>
+            <h2 className="text-2xl font-semibold mb-4">Contact</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              <a href="mailto:support@churnshield.com" className="text-primary hover:underline">
+                support@churnshield.com
+              </a>
             </p>
           </section>
         </div>
