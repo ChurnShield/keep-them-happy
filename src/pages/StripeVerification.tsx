@@ -140,7 +140,7 @@ const StripeVerification = () => {
           >
             <Button
               size="lg"
-              onClick={() => navigate("/how-it-works")}
+              onClick={() => navigate("/verification-results")}
               className="gap-2 text-base w-full"
             >
               <Lock className="w-4 h-4" />
@@ -148,9 +148,16 @@ const StripeVerification = () => {
               <ArrowRight className="w-4 h-4" />
             </Button>
             <Button
+              variant="outline"
+              onClick={() => navigate("/verification-results")}
+              className="text-muted-foreground"
+            >
+              I already connected Stripe
+            </Button>
+            <Button
               variant="ghost"
               onClick={() => navigate("/how-it-works")}
-              className="text-muted-foreground"
+              className="text-muted-foreground text-sm"
             >
               I'll do this later
             </Button>
