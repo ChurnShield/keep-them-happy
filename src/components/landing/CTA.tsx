@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export function CTA() {
+  const navigate = useNavigate();
+
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background */}
@@ -37,16 +40,16 @@ export function CTA() {
                 and build lasting customer relationships.
               </p>
 
-              {/* CTA Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Button variant="hero" size="xl" className="group">
-                  Start Your Free Trial
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Button>
-                <Button variant="hero-outline" size="xl">
-                  Schedule a Demo
-                </Button>
-              </div>
+              {/* CTA Button */}
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className="group"
+                onClick={() => navigate('/signup')}
+              >
+                Start Your Free Trial
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+              </Button>
 
               {/* Trust note */}
               <p className="mt-8 text-sm text-muted-foreground">

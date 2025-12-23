@@ -2,15 +2,23 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const navLinks = [
   { name: "Features", href: "#features" },
   { name: "Pricing", href: "#pricing" },
-  { name: "How it Works", href: "#how-it-works" },
+  { name: "Testimonials", href: "#testimonials" },
 ];
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleNavClick = (href: string) => {
+    setIsMenuOpen(false);
+    const element = document.querySelector(href);
+    element?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -18,7 +26,7 @@ export function Header() {
         <div className="mt-4 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-lg">
           <div className="flex h-16 items-center justify-between px-6">
             {/* Logo */}
-            <a href="#" className="flex items-center gap-2 group">
+            <a href="/" className="flex items-center gap-2 group">
               <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
                 <Shield className="h-5 w-5 text-primary-foreground" />
               </div>
@@ -30,22 +38,22 @@ export function Header() {
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-8">
               {navLinks.map((link) => (
-                <a
+                <button
                   key={link.name}
-                  href={link.href}
+                  onClick={() => handleNavClick(link.href)}
                   className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {link.name}
-                </a>
+                </button>
               ))}
             </nav>
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => navigate("/signup")}>
                 Sign In
               </Button>
-              <Button variant="default" size="sm">
+              <Button variant="default" size="sm" onClick={() => navigate("/signup")}>
                 Start Free Trial
               </Button>
             </div>
@@ -71,20 +79,19 @@ export function Header() {
             >
               <nav className="flex flex-col gap-4">
                 {navLinks.map((link) => (
-                  <a
+                  <button
                     key={link.name}
-                    href={link.href}
-                    className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={() => handleNavClick(link.href)}
+                    className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground text-left"
                   >
                     {link.name}
-                  </a>
+                  </button>
                 ))}
                 <div className="pt-4 border-t border-border flex flex-col gap-3">
-                  <Button variant="ghost" className="w-full">
+                  <Button variant="ghost" className="w-full" onClick={() => { setIsMenuOpen(false); navigate("/signup"); }}>
                     Sign In
                   </Button>
-                  <Button variant="default" className="w-full">
+                  <Button variant="default" className="w-full" onClick={() => { setIsMenuOpen(false); navigate("/signup"); }}>
                     Start Free Trial
                   </Button>
                 </div>

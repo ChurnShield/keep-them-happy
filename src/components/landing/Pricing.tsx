@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const plans = [
   {
@@ -61,6 +62,8 @@ const plans = [
 ];
 
 export function Pricing() {
+  const navigate = useNavigate();
+
   return (
     <section id="pricing" className="py-24 relative overflow-hidden">
       {/* Background */}
@@ -138,6 +141,7 @@ export function Pricing() {
                     variant={plan.popular ? "hero" : "outline"}
                     className="w-full mt-8 group"
                     size="lg"
+                    onClick={() => navigate('/signup')}
                   >
                     {plan.cta}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
