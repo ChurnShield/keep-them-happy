@@ -7,10 +7,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Mail, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
+interface ApiResponse {
+  ok: boolean;
+  messageId?: string;
+  message?: string;
+  error?: string;
+  code?: string;
+}
+
+interface RequestResult {
+  success: boolean;
+  httpStatus: number;
+  messageId?: string;
+  message: string;
+  errorCode?: string;
+}
+
 export default function AdminEmailTest() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
-  const [lastResult, setLastResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [result, setResult] = useState<RequestResult | null>(null);
 
   const handleSendTest = async () => {
     if (!email.trim()) {
@@ -19,52 +35,55 @@ export default function AdminEmailTest() {
     }
 
     setLoading(true);
-    setLastResult(null);
+    setResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke("send-test-email", {
+      const { data, error } = await supabase.functions.invoke<ApiResponse>("send-test-email", {
         body: { to: email.trim() },
       });
 
+      // Supabase client error (network, function not found, etc.)
       if (error) {
-        throw error;
+        console.error("Supabase invoke error:", error);
+        setResult({
+          success: false,
+          httpStatus: 500,
+          message: error.message || "Failed to call edge function",
+          errorCode: "INVOKE_ERROR",
+        });
+        toast.error("Failed to call edge function");
+        return;
       }
 
-      if (data?.error) {
-        if (data.code === "MISSING_API_KEY") {
-          setLastResult({
-            success: false,
-            message: "Missing RESEND_API_KEY in environment settings.",
-          });
-        } else if (data.code === "RATE_LIMITED") {
-          setLastResult({
-            success: false,
-            message: "Rate limited. Max 3 emails per hour. Please wait and try again.",
-          });
-        } else if (data.code === "INVALID_EMAIL") {
-          setLastResult({
-            success: false,
-            message: "Invalid email address format.",
-          });
-        } else {
-          setLastResult({
-            success: false,
-            message: data.error || "Failed to send email.",
-          });
-        }
-        toast.error(data.error);
-      } else if (data?.success) {
-        setLastResult({
+      // Edge function returned an error response
+      if (data && !data.ok) {
+        setResult({
+          success: false,
+          httpStatus: 200,
+          message: data.error || "Unknown error",
+          errorCode: data.code,
+        });
+        toast.error(data.error || "Failed to send email");
+        return;
+      }
+
+      // Success
+      if (data?.ok) {
+        setResult({
           success: true,
-          message: `Test email sent successfully! Check ${email} inbox.`,
+          httpStatus: 200,
+          messageId: data.messageId,
+          message: data.message || "Email sent successfully",
         });
         toast.success("Test email sent!");
       }
     } catch (err: any) {
-      console.log("Email send error:", err?.message);
-      setLastResult({
+      console.error("Unexpected error:", err);
+      setResult({
         success: false,
-        message: "Failed to send email. Check if the edge function is deployed.",
+        httpStatus: 0,
+        message: "Network error or function not deployed",
+        errorCode: "NETWORK_ERROR",
       });
       toast.error("Failed to send email");
     } finally {
@@ -130,20 +149,30 @@ export default function AdminEmailTest() {
               )}
             </Button>
 
-            {lastResult && (
+            {/* Request/Response Display */}
+            {result && (
               <div
-                className={`p-4 rounded-lg flex items-start gap-3 ${
-                  lastResult.success
-                    ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                    : "bg-destructive/10 text-destructive"
+                className={`p-4 rounded-lg border ${
+                  result.success
+                    ? "bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400"
+                    : "bg-destructive/10 border-destructive/20 text-destructive"
                 }`}
               >
-                {lastResult.success ? (
-                  <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-                ) : (
-                  <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-                )}
-                <p className="text-sm">{lastResult.message}</p>
+                <div className="flex items-start gap-3">
+                  {result.success ? (
+                    <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+                  )}
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">{result.message}</p>
+                    <div className="text-xs opacity-75 space-y-0.5">
+                      <p>HTTP Status: {result.httpStatus}</p>
+                      {result.messageId && <p>Message ID: {result.messageId}</p>}
+                      {result.errorCode && <p>Error Code: {result.errorCode}</p>}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
