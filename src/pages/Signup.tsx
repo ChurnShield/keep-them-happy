@@ -10,6 +10,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { LeadInputSchema } from "@/lib/leadSchema";
 import { toast } from "sonner";
 
+interface WelcomeEmailResponse {
+  ok: boolean;
+  messageId?: string;
+  alreadySent?: boolean;
+  errorCode?: string;
+}
+
 export default function Signup() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -22,13 +29,10 @@ export default function Signup() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent double submission
     if (isSubmitting) return;
     
-    // Clear previous errors
     setErrors({});
     
-    // Validate with Zod
     const result = LeadInputSchema.safeParse({
       email: email.trim().toLowerCase(),
       company: company.trim(),
@@ -47,40 +51,51 @@ export default function Signup() {
     setIsSubmitting(true);
     
     try {
-      const { error } = await supabase.from("leads").insert({
+      // Try to insert the lead
+      const { error: insertError } = await supabase.from("leads").insert({
         email: result.data.email,
         company: result.data.company,
         plan_interest: "Unknown",
         source: "signup-page",
       });
       
-      if (error) throw error;
+      // Check if this is a duplicate signup
+      const isDuplicate = insertError?.code === "23505";
       
-      // Send welcome email
+      if (insertError && !isDuplicate) {
+        throw insertError;
+      }
+      
+      // Send welcome email (handles idempotency server-side)
       try {
-        await supabase.functions.invoke("send-welcome-email", {
-          body: { email: result.data.email, company: result.data.company },
-        });
+        const { data, error: emailError } = await supabase.functions.invoke<WelcomeEmailResponse>(
+          "send-welcome-email",
+          { body: { email: result.data.email, company: result.data.company } }
+        );
+        
+        if (emailError) {
+          console.error("Welcome email error:", emailError);
+        } else if (data?.alreadySent) {
+          console.log("Welcome email was already sent previously");
+        } else if (data?.ok) {
+          console.log("Welcome email sent:", data.messageId);
+        }
       } catch (emailError) {
         console.error("Failed to send welcome email:", emailError);
         // Don't block signup if email fails
       }
       
-      // Redirect to welcome page after successful signup
-      navigate("/welcome");
-      
-      setIsSubmitted(true);
-    } catch (error: unknown) {
-      const supabaseError = error as { code?: string };
-      
-      // Handle duplicate email (unique constraint violation) as success
-      if (supabaseError?.code === "23505") {
-        // User already signed up - still redirect to welcome
-        navigate("/welcome");
+      // Set state for UI
+      if (isDuplicate) {
+        setIsAlreadySignedUp(true);
+        setIsSubmitted(true);
       } else {
-        // Only show error for truly unexpected failures
-        toast.error("Something went wrong. Please try again.");
+        navigate("/welcome");
       }
+      
+    } catch (error) {
+      console.error("Signup error:", error);
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
