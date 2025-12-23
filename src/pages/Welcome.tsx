@@ -1,12 +1,23 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Clock, ArrowRight, Shield } from "lucide-react";
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 import { PageTransition } from "@/components/onboarding/PageTransition";
+import { useOnboarding } from "@/hooks/use-onboarding";
 
 const Welcome = () => {
   const navigate = useNavigate();
+  const { isCompleted } = useOnboarding();
+
+  // Redirect to dashboard when it's ready (currently redirects to home)
+  useEffect(() => {
+    if (isCompleted()) {
+      // TODO: Replace "/" with "/dashboard" when dashboard is ready
+      navigate("/", { replace: true });
+    }
+  }, [isCompleted, navigate]);
 
   const statusItems = [
     { label: "Account created", status: "done", icon: CheckCircle2 },

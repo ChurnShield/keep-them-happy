@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
@@ -19,9 +20,16 @@ import {
 } from "lucide-react";
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 import { PageTransition } from "@/components/onboarding/PageTransition";
+import { useOnboarding } from "@/hooks/use-onboarding";
 
 const HowItWorks = () => {
   const navigate = useNavigate();
+  const { markCompleted } = useOnboarding();
+
+  // Mark onboarding as complete when user views this page
+  useEffect(() => {
+    markCompleted();
+  }, [markCompleted]);
 
   const steps = [
     {
