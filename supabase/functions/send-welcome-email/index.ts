@@ -15,6 +15,7 @@ const corsHeaders = {
 interface WelcomeEmailRequest {
   email: string;
   company?: string;
+  forceResend?: boolean;
 }
 
 interface WelcomeEmailResponse {
@@ -83,6 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
     const body = await req.json();
     const email = (body.email || "").toString().trim().toLowerCase();
     const company = (body.company || "").toString().trim();
+    const forceResend = body.forceResend === true;
 
     if (!email || !isValidEmail(email)) {
       return respond({ ok: false, errorCode: "INVALID_EMAIL" }, 400);
@@ -103,9 +105,15 @@ const handler = async (req: Request): Promise<Response> => {
       return respond({ ok: false, errorCode: "DB_ERROR" }, 500);
     }
 
-    if (existingEmail) {
+    // If already sent and not forcing resend, return early
+    if (existingEmail && !forceResend) {
       console.log(`Welcome email already sent to ${email} at ${existingEmail.sent_at}`);
       return respond({ ok: true, alreadySent: true });
+    }
+    
+    // If forcing resend, log it
+    if (existingEmail && forceResend) {
+      console.log(`Resending welcome email to ${email} (forceResend=true)`);
     }
 
     // Verify email exists in leads table (optional security check)
