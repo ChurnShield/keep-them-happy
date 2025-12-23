@@ -24,6 +24,9 @@ const Calculator = () => {
   }, [monthlyRevenue, failedPaymentRate]);
 
   const annualRecovery = recoveryEstimate * 12;
+  const equivalentCustomers = avgSubscriptionValue > 0 
+    ? Math.round(recoveryEstimate / avgSubscriptionValue) 
+    : 0;
 
   return (
     <PageTransition>
@@ -47,10 +50,10 @@ const Calculator = () => {
               Recovery Calculator
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              See what you could recover
+              You're likely losing this every month
             </h1>
             <p className="text-muted-foreground text-lg">
-              Based on your numbers, here's what ChurnShield would save.
+              Based on typical SaaS failed payment patterns and your numbers.
             </p>
           </motion.div>
 
@@ -125,19 +128,22 @@ const Calculator = () => {
             className="bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 rounded-2xl p-6 mb-6 text-center"
           >
             <p className="text-muted-foreground text-sm mb-2">
-              Estimated monthly recovery
+              You're losing approximately
             </p>
             <motion.div
               key={recoveryEstimate}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="text-5xl md:text-6xl font-bold text-primary mb-2"
+              className="text-5xl md:text-6xl font-bold text-primary mb-3"
             >
-              ${recoveryEstimate.toLocaleString()}
+              ${recoveryEstimate.toLocaleString()}<span className="text-2xl md:text-3xl text-primary/70">/mo</span>
             </motion.div>
+            <p className="text-foreground font-medium mb-1">
+              That's equivalent to {equivalentCustomers} customers you already acquired
+            </p>
             <p className="text-muted-foreground text-sm">
-              That's <span className="text-foreground font-medium">${annualRecovery.toLocaleString()}/year</span> back in your pocket
+              Or <span className="text-foreground font-medium">${annualRecovery.toLocaleString()}/year</span> walking out the door
             </p>
           </motion.div>
 
@@ -165,8 +171,7 @@ const Calculator = () => {
               onClick={() => navigate("/how-it-works")}
               className="gap-2 text-base w-full"
             >
-              <Zap className="w-4 h-4" />
-              Get a precise number by connecting Stripe
+              Confirm this with your real data
               <ArrowRight className="w-4 h-4" />
             </Button>
             <Button
@@ -174,7 +179,7 @@ const Calculator = () => {
               onClick={() => navigate("/how-it-works")}
               className="text-muted-foreground"
             >
-              Continue without connecting
+              I'll do this later
             </Button>
           </motion.div>
         </div>
