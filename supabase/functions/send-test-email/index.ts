@@ -44,8 +44,8 @@ serve(async (req) => {
     if (!resendApiKey) {
       console.error("RESEND_API_KEY is not configured");
       return new Response(
-        JSON.stringify({ error: "Email service not configured", code: "MISSING_API_KEY" }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Email service not configured", code: "MISSING_API_KEY" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -56,10 +56,10 @@ serve(async (req) => {
 
     // Check rate limit
     if (isRateLimited(clientIP)) {
-      console.log(`Rate limited: ${clientIP}`);
+      console.warn(`Rate limited IP: ${clientIP}`);
       return new Response(
-        JSON.stringify({ error: "Too many requests. Please try again later.", code: "RATE_LIMITED" }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Rate limited. Max 3 emails per hour.", code: "RATE_LIMITED" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -67,9 +67,10 @@ serve(async (req) => {
 
     // Validate email
     if (!to || !isValidEmail(to)) {
+      console.warn(`Invalid email address provided: ${to}`);
       return new Response(
-        JSON.stringify({ error: "Please provide a valid email address.", code: "INVALID_EMAIL" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: "Invalid email address", code: "INVALID_EMAIL" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -104,22 +105,22 @@ serve(async (req) => {
       const errorData = await response.json();
       console.error("Resend API error:", JSON.stringify(errorData));
       return new Response(
-        JSON.stringify({ error: "Email failed to send. Please try again.", code: "SEND_FAILED" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ ok: false, error: errorData.message || "Email failed to send", code: "SEND_FAILED" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    console.log(`Test email sent successfully: ${data.id}`);
+    console.log(`Test email sent successfully. Message ID: ${data.id}`);
 
     return new Response(
-      JSON.stringify({ success: true, messageId: data.id }),
+      JSON.stringify({ ok: true, messageId: data.id, message: "Email sent successfully" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("Unexpected error in send-test-email:", error instanceof Error ? error.message : error);
     return new Response(
-      JSON.stringify({ error: "An unexpected error occurred.", code: "INTERNAL_ERROR" }),
+      JSON.stringify({ ok: false, error: "An unexpected error occurred", code: "INTERNAL_ERROR" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
