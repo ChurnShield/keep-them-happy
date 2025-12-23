@@ -16,6 +16,7 @@ export default function Signup() {
   const [company, setCompany] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isAlreadySignedUp, setIsAlreadySignedUp] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; company?: string }>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,16 +56,16 @@ export default function Signup() {
       
       if (error) throw error;
       
-      toast.success("Thanks — we'll reach out shortly.");
       setIsSubmitted(true);
-    } catch (error: any) {
-      console.error("Failed to submit lead:", error);
+    } catch (error: unknown) {
+      const supabaseError = error as { code?: string };
       
-      // Handle duplicate email (unique constraint violation)
-      if (error?.code === "23505") {
-        toast.success("You're already on the list — we'll be in touch.");
+      // Handle duplicate email (unique constraint violation) as success
+      if (supabaseError?.code === "23505") {
+        setIsAlreadySignedUp(true);
         setIsSubmitted(true);
       } else {
+        // Only show error for truly unexpected failures
         toast.error("Something went wrong. Please try again.");
       }
     } finally {
@@ -85,9 +86,13 @@ export default function Signup() {
               <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <Check className="h-8 w-8 text-primary" />
               </div>
-              <CardTitle className="text-2xl">You're on the list!</CardTitle>
+              <CardTitle className="text-2xl">
+                {isAlreadySignedUp ? "You're already signed up" : "You're on the list!"}
+              </CardTitle>
               <CardDescription className="text-base">
-                We'll be in touch shortly to get you started with your risk-free trial.
+                {isAlreadySignedUp 
+                  ? "We'll keep you posted ✅" 
+                  : "We'll be in touch shortly to get you started with your risk-free trial."}
               </CardDescription>
             </CardHeader>
             <CardContent>
