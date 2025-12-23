@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { LeadInputSchema } from "@/lib/leadSchema";
 import { toast } from "sonner";
+import { LegalLinks } from "@/components/LegalLinks";
 
 interface WelcomeEmailResponse {
   ok: boolean;
@@ -260,6 +261,8 @@ export default function Signup() {
                 </div>
               ))}
             </div>
+
+            <LegalLinks className="mt-6 pt-4 border-t border-border/50" />
           </CardContent>
         </Card>
       </motion.div>

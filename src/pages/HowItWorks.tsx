@@ -21,6 +21,7 @@ import {
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { LegalLinks } from "@/components/LegalLinks";
 
 const HowItWorks = () => {
   const navigate = useNavigate();
@@ -266,7 +267,7 @@ const HowItWorks = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.5 }}
-          className="text-center"
+          className="text-center space-y-4"
         >
           <Button
             variant="hero"
@@ -276,6 +277,7 @@ const HowItWorks = () => {
           >
             Go to Dashboard
           </Button>
+          <LegalLinks className="mt-4" />
         </motion.div>
       </div>
       </div>

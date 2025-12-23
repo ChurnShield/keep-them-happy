@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 import { DollarSign, Percent, Calculator as CalcIcon, Zap, ArrowRight } from "lucide-react";
+import { LegalLinks } from "@/components/LegalLinks";
 
 const Calculator = () => {
   const navigate = useNavigate();
@@ -181,6 +182,7 @@ const Calculator = () => {
             >
               I'll do this later
             </Button>
+            <LegalLinks className="mt-2" />
           </motion.div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { CheckCircle2, Clock, ArrowRight, Shield } from "lucide-react";
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { LegalLinks } from "@/components/LegalLinks";
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -162,6 +163,7 @@ const Welcome = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9, duration: 0.5 }}
+            className="space-y-4"
           >
             <Button
               variant="hero"
@@ -172,6 +174,7 @@ const Welcome = () => {
               Continue
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
+            <LegalLinks className="mt-4" />
           </motion.div>
         </motion.div>
       </div>

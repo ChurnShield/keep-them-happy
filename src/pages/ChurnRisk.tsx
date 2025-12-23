@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
 import { AlertTriangle, Check, Zap } from "lucide-react";
+import { LegalLinks } from "@/components/LegalLinks";
 
 const ChurnRisk = () => {
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ const ChurnRisk = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="text-center"
+            className="text-center space-y-4"
           >
             <Button
               size="lg"
@@ -133,9 +134,10 @@ const ChurnRisk = () => {
               <Zap className="w-4 h-4" />
               See what ChurnShield would recover for you
             </Button>
-            <p className="text-muted-foreground text-sm mt-4">
+            <p className="text-muted-foreground text-sm">
               No integrations required yet.
             </p>
+            <LegalLinks className="mt-4" />
           </motion.div>
         </div>
       </div>
