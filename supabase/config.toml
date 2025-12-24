@@ -8,3 +8,12 @@ verify_jwt = false
 
 [functions.payment-recovery]
 verify_jwt = false
+
+[functions.stripe-connect]
+verify_jwt = false
+
+[functions.stripe-callback]
+verify_jwt = false
+
+[functions.stripe-status]
+verify_jwt = false

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { LegalLinks } from "@/components/LegalLinks";
@@ -10,11 +11,59 @@ import {
   CreditCard,
   BadgeCheck,
   ArrowRight,
-  Shield
+  Shield,
+  Loader2,
+  XCircle
 } from "lucide-react";
+
+interface StripeStatus {
+  connected: boolean;
+  stripe_user_id?: string;
+  livemode?: boolean;
+  scope?: string;
+  connected_at?: string;
+  error?: string;
+  message?: string;
+}
 
 const VerificationResults = () => {
   const navigate = useNavigate();
+  const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
+
+  useEffect(() => {
+    checkStripeStatus();
+  }, []);
+
+  const checkStripeStatus = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        'https://rdstyfaveeokocztayri.supabase.co/functions/v1/stripe-status',
+        {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      const data = await response.json();
+      setStripeStatus(data);
+      
+      // If connected, simulate scanning
+      if (data.connected) {
+        setIsScanning(true);
+        setTimeout(() => setIsScanning(false), 2000);
+      }
+    } catch (error) {
+      console.error('Error checking Stripe status:', error);
+      setStripeStatus({ connected: false, error: 'Failed to check status' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const kpiData = [
     {
@@ -65,6 +114,109 @@ const VerificationResults = () => {
     },
   ];
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Checking connection status...</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // Not connected state
+  if (!stripeStatus?.connected) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-background relative flex items-center justify-center">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5" />
+          <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
+
+          <div className="relative z-10 container max-w-lg mx-auto px-6 py-12 text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex justify-center mb-6"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+                <XCircle className="w-8 h-8 text-muted-foreground" />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Connect Stripe to continue
+              </h1>
+              <p className="text-muted-foreground mb-8">
+                We need read-only access to your Stripe account to analyze your payment data.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="flex flex-col gap-3"
+            >
+              <Button
+                size="lg"
+                onClick={() => navigate("/verify-stripe")}
+                className="gap-2 text-base w-full"
+              >
+                Connect Stripe
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-8"
+            >
+              <LegalLinks />
+            </motion.div>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // Scanning state
+  if (isScanning) {
+    return (
+      <PageTransition>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex justify-center mb-4"
+            >
+              <div className="inline-flex items-center gap-2 bg-primary/20 text-primary px-4 py-2 rounded-full text-sm font-medium">
+                <CheckCircle2 className="w-4 h-4" />
+                Stripe connected (read-only)
+              </div>
+            </motion.div>
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-foreground font-medium mb-2">Scanning last 30 days...</p>
+            <p className="text-muted-foreground text-sm">Analyzing payment failures and recovery opportunities</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  // Connected state with results
   return (
     <PageTransition>
       <div className="min-h-screen bg-background relative">
@@ -83,7 +235,7 @@ const VerificationResults = () => {
           >
             <div className="inline-flex items-center gap-2 bg-primary/20 text-primary px-4 py-2 rounded-full text-sm font-medium">
               <CheckCircle2 className="w-4 h-4" />
-              Stripe connected (read-only)
+              Stripe connected (read-only) ✅
             </div>
           </motion.div>
 

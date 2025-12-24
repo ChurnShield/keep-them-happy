@@ -71,6 +71,42 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          id: string
+          livemode: boolean
+          refresh_token: string | null
+          scope: string | null
+          session_id: string
+          stripe_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          id?: string
+          livemode?: boolean
+          refresh_token?: string | null
+          scope?: string | null
+          session_id: string
+          stripe_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          id?: string
+          livemode?: boolean
+          refresh_token?: string | null
+          scope?: string | null
+          session_id?: string
+          stripe_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       welcome_emails: {
         Row: {
           created_at: string
