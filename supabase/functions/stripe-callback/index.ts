@@ -19,13 +19,15 @@ serve(async (req) => {
     const error = url.searchParams.get('error');
     const errorDescription = url.searchParams.get('error_description');
 
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    const rawStripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
+    const STRIPE_SECRET_KEY = (rawStripeSecret || '').trim();
+    const STRIPE_CLIENT_ID = (Deno.env.get('STRIPE_CLIENT_ID') || '').trim();
     const APP_URL = Deno.env.get('APP_URL');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!STRIPE_SECRET_KEY || !APP_URL) {
-      console.error('Missing STRIPE_SECRET_KEY or APP_URL');
+    if (!STRIPE_SECRET_KEY || !STRIPE_CLIENT_ID || !APP_URL) {
+      console.error('Missing STRIPE_SECRET_KEY, STRIPE_CLIENT_ID, or APP_URL');
       return new Response(null, {
         status: 302,
         headers: {
@@ -33,6 +35,17 @@ serve(async (req) => {
         },
       });
     }
+
+    // Basic sanity checks for common Stripe key issues (do not log the full key)
+    if (!STRIPE_SECRET_KEY.startsWith('sk_')) {
+      console.error('STRIPE_SECRET_KEY does not look like a standard secret key (expected sk_ prefix).');
+    }
+
+    console.log('Stripe OAuth callback config:', {
+      clientIdPrefix: STRIPE_CLIENT_ID.slice(0, 6),
+      keyPrefix: STRIPE_SECRET_KEY.slice(0, 6),
+      keyLength: STRIPE_SECRET_KEY.length,
+    });
 
     // Handle OAuth errors from Stripe
     if (error) {
@@ -99,10 +112,23 @@ serve(async (req) => {
         grant_type: 'authorization_code',
         code: code,
         client_secret: STRIPE_SECRET_KEY,
+        client_id: STRIPE_CLIENT_ID,
       }),
     });
 
-    const tokenData = await tokenResponse.json();
+    const tokenText = await tokenResponse.text();
+    let tokenData: any = {};
+    try {
+      tokenData = JSON.parse(tokenText);
+    } catch {
+      console.error('Token exchange returned non-JSON response:', tokenText.slice(0, 500));
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': `${APP_URL}/verify-stripe?error=server_error`,
+        },
+      });
+    }
 
     if (tokenData.error) {
       console.error('Token exchange error:', tokenData.error, tokenData.error_description);
