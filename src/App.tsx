@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Signup from "./pages/Signup";
 import Welcome from "./pages/Welcome";
+import ExampleAlert from "./pages/ExampleAlert";
 import ChurnRisk from "./pages/ChurnRisk";
 import Calculator from "./pages/Calculator";
 import StripeVerification from "./pages/StripeVerification";
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/signup" element={<Signup />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/churn-risk" element={<ChurnRisk />} />
+          <Route path="/example-alert" element={<ExampleAlert />} />
           <Route path="/calculator" element={<Calculator />} />
           <Route path="/verify-stripe" element={<StripeVerification />} />
           <Route path="/verification-results" element={<VerificationResults />} />
