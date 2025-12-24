@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.stripe-status]
 verify_jwt = false
+
+[functions.stripe-insights]
+verify_jwt = false
