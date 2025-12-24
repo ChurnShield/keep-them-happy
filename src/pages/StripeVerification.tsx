@@ -141,7 +141,10 @@ const StripeVerification = () => {
           >
             <Button
               size="lg"
-              onClick={() => navigate("/verification-results")}
+              onClick={() => {
+                // Full page redirect to Stripe OAuth
+                window.location.href = `https://rdstyfaveeokocztayri.supabase.co/functions/v1/stripe-connect`;
+              }}
               className="gap-2 text-base w-full"
             >
               <Lock className="w-4 h-4" />
