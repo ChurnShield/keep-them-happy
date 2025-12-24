@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.stripe-insights]
 verify_jwt = false
+
+[functions.stripe-monitor]
+verify_jwt = false
