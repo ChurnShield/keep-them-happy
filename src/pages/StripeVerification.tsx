@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { LegalLinks } from "@/components/LegalLinks";
@@ -12,7 +13,8 @@ import {
   CheckCircle2,
   XCircle,
   ArrowRight,
-  AlertTriangle
+  AlertTriangle,
+  Bug
 } from "lucide-react";
 
 const getErrorMessage = (errorCode: string | null): string | null => {
@@ -32,11 +34,50 @@ const getErrorMessage = (errorCode: string | null): string | null => {
   return errorMessages[errorCode] || `Connection failed: ${errorCode}. Please try again.`;
 };
 
+interface DebugEntry {
+  errorCode: string;
+  timestamp: string;
+}
+
+const DEBUG_STORAGE_KEY = 'stripe_oauth_debug';
+
 const StripeVerification = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const errorCode = searchParams.get("error");
   const errorMessage = getErrorMessage(errorCode);
+  const [debugHistory, setDebugHistory] = useState<DebugEntry[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
+
+  // Persist error to localStorage for debugging
+  useEffect(() => {
+    if (errorCode) {
+      const entry: DebugEntry = {
+        errorCode,
+        timestamp: new Date().toISOString(),
+      };
+      const stored = localStorage.getItem(DEBUG_STORAGE_KEY);
+      const history: DebugEntry[] = stored ? JSON.parse(stored) : [];
+      history.unshift(entry);
+      // Keep last 10 entries
+      const trimmed = history.slice(0, 10);
+      localStorage.setItem(DEBUG_STORAGE_KEY, JSON.stringify(trimmed));
+      setDebugHistory(trimmed);
+    }
+  }, [errorCode]);
+
+  // Load debug history on mount
+  useEffect(() => {
+    const stored = localStorage.getItem(DEBUG_STORAGE_KEY);
+    if (stored) {
+      setDebugHistory(JSON.parse(stored));
+    }
+  }, []);
+
+  const clearDebugHistory = () => {
+    localStorage.removeItem(DEBUG_STORAGE_KEY);
+    setDebugHistory([]);
+  };
 
   const stripeConnectUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-connect`;
 
@@ -232,6 +273,47 @@ const StripeVerification = () => {
               Secure OAuth connection. We never see your Stripe password.
             </p>
             <LegalLinks />
+
+            {/* Debug Panel Toggle */}
+            <button
+              onClick={() => setShowDebug(!showDebug)}
+              className="text-xs text-muted-foreground/50 hover:text-muted-foreground flex items-center gap-1 mx-auto mt-4"
+            >
+              <Bug className="w-3 h-3" />
+              {showDebug ? "Hide" : "Show"} Debug
+            </button>
+
+            {showDebug && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="mt-3 p-3 bg-muted/80 border border-border rounded-lg text-left text-xs font-mono"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-foreground">OAuth Debug Log</span>
+                  {debugHistory.length > 0 && (
+                    <button
+                      onClick={clearDebugHistory}
+                      className="text-destructive hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                {debugHistory.length === 0 ? (
+                  <p className="text-muted-foreground">No errors recorded yet.</p>
+                ) : (
+                  <ul className="space-y-1.5 max-h-32 overflow-y-auto">
+                    {debugHistory.map((entry, idx) => (
+                      <li key={idx} className="flex justify-between gap-2 text-muted-foreground">
+                        <span className="text-destructive font-medium">{entry.errorCode}</span>
+                        <span>{new Date(entry.timestamp).toLocaleString()}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </motion.div>
+            )}
           </motion.div>
         </div>
       </div>
