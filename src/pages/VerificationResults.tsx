@@ -2,8 +2,10 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { LegalLinks } from "@/components/LegalLinks";
+import { useToast } from "@/hooks/use-toast";
 import { 
   CheckCircle2,
   AlertCircle,
@@ -14,7 +16,8 @@ import {
   Shield,
   Loader2,
   XCircle,
-  Info
+  Info,
+  Bell
 } from "lucide-react";
 
 interface StripeStatus {
@@ -57,10 +60,14 @@ const formatCurrency = (amountInCents: number, currency: string): string => {
 
 const VerificationResults = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [insights, setInsights] = useState<StripeInsights | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+  const [alertEmail, setAlertEmail] = useState('');
+  const [isSettingUpAlerts, setIsSettingUpAlerts] = useState(false);
+  const [alertsEnabled, setAlertsEnabled] = useState(false);
 
   useEffect(() => {
     checkStripeStatus();
@@ -121,7 +128,63 @@ const VerificationResults = () => {
         isMockData: true,
       });
     } finally {
-      setIsScanning(false);
+    setIsScanning(false);
+    }
+  };
+
+  const setupEmailAlerts = async () => {
+    if (!alertEmail || !alertEmail.includes('@')) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSettingUpAlerts(true);
+    try {
+      const response = await fetch(
+        'https://rdstyfaveeokocztayri.supabase.co/functions/v1/stripe-monitor',
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ alert_email: alertEmail }),
+        }
+      );
+      const data = await response.json();
+      
+      if (data.alertSent) {
+        setAlertsEnabled(true);
+        toast({
+          title: "Alerts enabled!",
+          description: `You'll receive payment failure alerts at ${alertEmail}`,
+        });
+      } else if (data.failedPayments === 0) {
+        setAlertsEnabled(true);
+        toast({
+          title: "Alerts enabled!",
+          description: "No failed payments found. You'll be notified when issues are detected.",
+        });
+      } else {
+        toast({
+          title: "Alert setup issue",
+          description: data.message || "Failed to setup alerts",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error setting up alerts:', error);
+      toast({
+        title: "Error",
+        description: "Failed to setup email alerts. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSettingUpAlerts(false);
     }
   };
 
@@ -423,6 +486,62 @@ const VerificationResults = () => {
             >
               This runs automatically once enabled.
             </motion.p>
+          </motion.div>
+
+          {/* Email Alerts Setup */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.15 }}
+            className="bg-card border border-border rounded-2xl p-5 mb-6"
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Bell className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                Payment failure alerts
+              </h2>
+            </div>
+            
+            {alertsEnabled ? (
+              <div className="flex items-center gap-3 bg-primary/10 rounded-lg p-4">
+                <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <p className="text-foreground font-medium">Alerts enabled</p>
+                  <p className="text-sm text-muted-foreground">
+                    You'll receive notifications at {alertEmail}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Get notified instantly when payment failures are detected.
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={alertEmail}
+                    onChange={(e) => setAlertEmail(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={setupEmailAlerts}
+                    disabled={isSettingUpAlerts || !alertEmail}
+                    className="shrink-0"
+                  >
+                    {isSettingUpAlerts ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Bell className="w-4 h-4 mr-2" />
+                        Enable
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* CTAs */}
