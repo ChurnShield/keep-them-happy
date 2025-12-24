@@ -53,7 +53,7 @@ serve(async (req) => {
     const stripeOAuthUrl = new URL('https://connect.stripe.com/oauth/authorize');
     stripeOAuthUrl.searchParams.set('response_type', 'code');
     stripeOAuthUrl.searchParams.set('client_id', STRIPE_CLIENT_ID);
-    stripeOAuthUrl.searchParams.set('scope', 'read_write');
+    stripeOAuthUrl.searchParams.set('scope', 'read_only');
     stripeOAuthUrl.searchParams.set('state', statePayload);
     stripeOAuthUrl.searchParams.set('redirect_uri', redirectUri);
 
