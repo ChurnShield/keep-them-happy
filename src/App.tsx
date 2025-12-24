@@ -16,7 +16,9 @@ import TermsOfService from "./pages/TermsOfService";
 import Security from "./pages/Security";
 import AdminPaymentRecovery from "./pages/AdminPaymentRecovery";
 import AdminEmailTest from "./pages/AdminEmailTest";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import { AdminRoute } from "./components/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +30,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/welcome" element={<Welcome />} />
           <Route path="/churn-risk" element={<ChurnRisk />} />
@@ -38,8 +41,16 @@ const App = () => (
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/security" element={<Security />} />
-          <Route path="/admin/payment-recovery" element={<AdminPaymentRecovery />} />
-          <Route path="/admin/email-test" element={<AdminEmailTest />} />
+          <Route path="/admin/payment-recovery" element={
+            <AdminRoute>
+              <AdminPaymentRecovery />
+            </AdminRoute>
+          } />
+          <Route path="/admin/email-test" element={
+            <AdminRoute>
+              <AdminEmailTest />
+            </AdminRoute>
+          } />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
