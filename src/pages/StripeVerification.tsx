@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { LegalLinks } from "@/components/LegalLinks";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Shield, 
   Eye, 
@@ -10,11 +11,32 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  ArrowRight
+  ArrowRight,
+  AlertTriangle
 } from "lucide-react";
+
+const getErrorMessage = (errorCode: string | null): string | null => {
+  if (!errorCode) return null;
+  
+  const errorMessages: Record<string, string> = {
+    'access_denied': 'You denied access to your Stripe account. Please try again if you want to proceed.',
+    'invalid_request': 'The authorization request was invalid. Please try again.',
+    'invalid_state': 'Session expired or invalid. Please try connecting again.',
+    'session_mismatch': 'Session verification failed. Please try connecting again.',
+    'config': 'There was a configuration error. Please contact support.',
+    'db_error': 'Failed to save your connection. Please try again.',
+    'server_error': 'An unexpected error occurred. Please try again.',
+    'invalid_scope': 'The requested permissions are not available. Please try again.',
+  };
+  
+  return errorMessages[errorCode] || `Connection failed: ${errorCode}. Please try again.`;
+};
 
 const StripeVerification = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const errorCode = searchParams.get('error');
+  const errorMessage = getErrorMessage(errorCode);
 
   const safetyPoints = [
     {
@@ -46,6 +68,21 @@ const StripeVerification = () => {
           <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
 
           <div className="relative z-10 container max-w-lg mx-auto px-6 py-6 md:py-12">
+          {/* Error Alert */}
+          {errorMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6"
+            >
+              <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="ml-2">
+                  {errorMessage}
+                </AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
           {/* Shield Icon */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
