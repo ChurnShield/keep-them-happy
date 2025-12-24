@@ -48,11 +48,12 @@ serve(async (req) => {
     const statePayload = `${state}:${sessionId}`;
 
     // Build Stripe OAuth URL with read_only scope
-    const redirectUri = `${APP_URL}/api/stripe/callback`;
+    // Use the Supabase edge function URL for callback
+    const redirectUri = `${SUPABASE_URL}/functions/v1/stripe-callback`;
     const stripeOAuthUrl = new URL('https://connect.stripe.com/oauth/authorize');
     stripeOAuthUrl.searchParams.set('response_type', 'code');
     stripeOAuthUrl.searchParams.set('client_id', STRIPE_CLIENT_ID);
-    stripeOAuthUrl.searchParams.set('scope', 'read_only');
+    stripeOAuthUrl.searchParams.set('scope', 'read_write');
     stripeOAuthUrl.searchParams.set('state', statePayload);
     stripeOAuthUrl.searchParams.set('redirect_uri', redirectUri);
 
