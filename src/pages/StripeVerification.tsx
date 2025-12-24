@@ -35,8 +35,16 @@ const getErrorMessage = (errorCode: string | null): string | null => {
 const StripeVerification = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const errorCode = searchParams.get('error');
+  const errorCode = searchParams.get("error");
   const errorMessage = getErrorMessage(errorCode);
+
+  const stripeConnectUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-connect`;
+
+  const startStripeOAuth = () => {
+    // Stripe blocks rendering inside iframes; open in a new tab to ensure the OAuth screen loads.
+    const win = window.open(stripeConnectUrl, "_blank", "noopener,noreferrer");
+    if (!win) window.location.assign(stripeConnectUrl);
+  };
 
   const safetyPoints = [
     {
@@ -83,9 +91,9 @@ const StripeVerification = () => {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      // Clear error from URL and redirect to OAuth
-                      navigate('/verify-stripe', { replace: true });
-                      window.location.href = `https://rdstyfaveeokocztayri.supabase.co/functions/v1/stripe-connect`;
+                      // Clear error from URL and restart the OAuth flow
+                      navigate("/verify-stripe", { replace: true });
+                      startStripeOAuth();
                     }}
                     className="shrink-0 border-destructive/30 hover:bg-destructive/20"
                   >
@@ -190,10 +198,7 @@ const StripeVerification = () => {
           >
             <Button
               size="lg"
-              onClick={() => {
-                // Full page redirect to Stripe OAuth
-                window.location.href = `https://rdstyfaveeokocztayri.supabase.co/functions/v1/stripe-connect`;
-              }}
+              onClick={startStripeOAuth}
               className="gap-2 text-base w-full"
             >
               <Lock className="w-4 h-4" />
