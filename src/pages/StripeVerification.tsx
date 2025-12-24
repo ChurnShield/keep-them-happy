@@ -68,7 +68,7 @@ const StripeVerification = () => {
           <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
 
           <div className="relative z-10 container max-w-lg mx-auto px-6 py-6 md:py-12">
-          {/* Error Alert */}
+          {/* Error Alert with Retry */}
           {errorMessage && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -77,8 +77,20 @@ const StripeVerification = () => {
             >
               <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="ml-2">
-                  {errorMessage}
+                <AlertDescription className="ml-2 flex items-center justify-between gap-4">
+                  <span>{errorMessage}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Clear error from URL and redirect to OAuth
+                      navigate('/verify-stripe', { replace: true });
+                      window.location.href = `https://rdstyfaveeokocztayri.supabase.co/functions/v1/stripe-connect`;
+                    }}
+                    className="shrink-0 border-destructive/30 hover:bg-destructive/20"
+                  >
+                    Try again
+                  </Button>
                 </AlertDescription>
               </Alert>
             </motion.div>
