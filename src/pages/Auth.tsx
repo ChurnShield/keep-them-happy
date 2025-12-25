@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, Loader2, ArrowLeft } from 'lucide-react';
+import { Shield, Loader2, ArrowLeft, CheckCircle, Mail } from 'lucide-react';
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: 'Please enter a valid email address' }),
@@ -19,24 +19,37 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading, signIn, signUp } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { user, loading, signIn, signUp, emailVerified } = useAuth();
+
+  // Check if user just verified their email
+  const justVerified = searchParams.get('verified') === 'true';
 
   // Get the intended destination from location state
   const from = (location.state as { from?: string })?.from || '/welcome';
   const isFromProtectedRoute = location.state?.from != null;
 
   useEffect(() => {
-    if (!loading && user) {
+    if (justVerified && !user) {
+      setSuccessMessage('Email verified successfully! Please sign in to continue.');
+      setIsLogin(true);
+    }
+  }, [justVerified, user]);
+
+  useEffect(() => {
+    if (!loading && user && emailVerified) {
       navigate(from, { replace: true });
     }
-  }, [user, loading, navigate, from]);
+  }, [user, loading, emailVerified, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessMessage(null);
 
     // Validate inputs
     const validation = authSchema.safeParse({ email, password });
@@ -53,18 +66,25 @@ export default function Auth() {
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             setError('Invalid email or password. Please try again.');
+          } else if (error.message.includes('Email not confirmed')) {
+            setError('Please verify your email before signing in. Check your inbox for the verification link.');
           } else {
             setError(error.message);
           }
         }
       } else {
-        const { error } = await signUp(email, password);
+        const { data, error } = await signUp(email, password);
         if (error) {
           if (error.message.includes('User already registered')) {
             setError('An account with this email already exists. Please sign in instead.');
           } else {
             setError(error.message);
           }
+        } else if (data?.user && !data.user.email_confirmed_at) {
+          // Signup successful, show verification message
+          setSuccessMessage('Check your email! We sent you a verification link. Click it to activate your account.');
+          setEmail('');
+          setPassword('');
         }
       }
     } finally {
@@ -111,6 +131,15 @@ export default function Auth() {
           </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {successMessage && (
+              <Alert className="border-green-500/50 bg-green-500/10">
+                <CheckCircle className="h-4 w-4 text-green-500" />
+                <AlertDescription className="text-green-700 dark:text-green-400">
+                  {successMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {error && (
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
