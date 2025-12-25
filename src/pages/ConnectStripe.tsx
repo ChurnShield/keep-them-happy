@@ -14,13 +14,25 @@ import {
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { toast } from "@/hooks/use-toast";
+
+const PRICE_ID = "price_1SiDB0I94SrMi3IbveIokX3Y";
 
 const ConnectStripe = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { hasActiveSubscription, status, loading: subLoading, isTrialing, trialDaysRemaining } = useSubscription();
+  const { createCheckoutSession, isLoading: checkoutLoading } = useStripeCheckout();
   const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleStartTrial = () => {
+    createCheckoutSession({
+      planId: PRICE_ID,
+      successUrl: `${window.location.origin}/success?checkout=success`,
+      cancelUrl: `${window.location.origin}/connect-stripe`,
+    });
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -58,11 +70,21 @@ const ConnectStripe = () => {
         <Button
           variant="hero"
           size="lg"
-          onClick={() => navigate("/#pricing")}
+          onClick={handleStartTrial}
+          disabled={checkoutLoading}
           className="w-full"
         >
-          <CreditCard className="w-4 h-4 mr-2" />
-          Start Free Trial
+          {checkoutLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            <>
+              <CreditCard className="w-4 h-4 mr-2" />
+              Start Free Trial
+            </>
+          )}
         </Button>
         
         <Button
