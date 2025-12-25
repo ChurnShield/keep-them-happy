@@ -106,14 +106,18 @@ const App = () => (
             
             {/* Recovery routes - require auth + verification */}
             <Route path="/recovery" element={
-              <ProtectedRoute>
-                <RecoveryInbox />
-              </ProtectedRoute>
+              import.meta.env.DEV ? <RecoveryInbox /> : (
+                <ProtectedRoute>
+                  <RecoveryInbox />
+                </ProtectedRoute>
+              )
             } />
             <Route path="/recovery/:caseId" element={
-              <ProtectedRoute>
-                <RecoveryCaseDetail />
-              </ProtectedRoute>
+              import.meta.env.DEV ? <RecoveryCaseDetail /> : (
+                <ProtectedRoute>
+                  <RecoveryCaseDetail />
+                </ProtectedRoute>
+              )
             } />
             {/* Admin routes */}
             <Route path="/admin/payment-recovery" element={
