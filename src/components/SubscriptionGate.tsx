@@ -46,7 +46,10 @@ export function SubscriptionGate({ children, feature = 'this feature' }: Subscri
     );
   }
 
-  if (!hasActiveSubscription) {
+  // DEV MODE: Bypass subscription check for testing
+  const isDev = import.meta.env.DEV;
+  
+  if (!hasActiveSubscription && !isDev) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="absolute inset-0 hero-glow opacity-30" />
