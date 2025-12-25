@@ -17,7 +17,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { toast } from "@/hooks/use-toast";
 
-const PRICE_ID = "price_1SiDB0I94SrMi3IbveIokX3Y";
+const PLAN_ID = "starter";
 
 const ConnectStripe = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ const ConnectStripe = () => {
 
   const handleStartTrial = () => {
     createCheckoutSession({
-      planId: PRICE_ID,
+      planId: PLAN_ID,
       successUrl: `${window.location.origin}/success?checkout=success`,
       cancelUrl: `${window.location.origin}/connect-stripe`,
     });

@@ -23,7 +23,8 @@ serve(async (req) => {
   }
 
   try {
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    const rawStripeKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
+    const STRIPE_SECRET_KEY = rawStripeKey.trim();
     const APP_URL = Deno.env.get('APP_URL');
 
     if (!STRIPE_SECRET_KEY) {
@@ -34,8 +35,12 @@ serve(async (req) => {
       });
     }
 
-    if (!STRIPE_SECRET_KEY.startsWith('sk_')) {
-      console.error('STRIPE_SECRET_KEY should start with sk_test_ or sk_live_');
+    // Some secret managers can include trailing newlines/spaces; we trim above.
+    if (!STRIPE_SECRET_KEY.startsWith('sk_test_') && !STRIPE_SECRET_KEY.startsWith('sk_live_')) {
+      console.error('Invalid STRIPE_SECRET_KEY prefix', {
+        prefix: STRIPE_SECRET_KEY.slice(0, 8),
+        length: STRIPE_SECRET_KEY.length,
+      });
       return new Response(JSON.stringify({ error: 'Invalid Stripe configuration' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
