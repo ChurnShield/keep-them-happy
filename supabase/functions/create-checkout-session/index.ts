@@ -6,11 +6,14 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Price IDs - these should be created in Stripe Dashboard and updated here
+// ChurnShield subscription price (TEST MODE)
+const CHURNSHIELD_PRICE_ID = 'price_1SiDB0I94SrMi3IbveIokX3Y';
+
 const PRICE_CONFIG: Record<string, { priceId: string; mode: 'subscription' | 'payment' }> = {
-  starter: { priceId: 'price_starter_monthly', mode: 'subscription' },
-  growth: { priceId: 'price_growth_monthly', mode: 'subscription' },
-  scale: { priceId: 'price_scale_monthly', mode: 'subscription' },
+  churnshield: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
+  starter: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
+  growth: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
+  scale: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
 };
 
 serve(async (req) => {
@@ -73,8 +76,8 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      success_url: successUrl || `${baseUrl}/welcome?checkout=success`,
-      cancel_url: cancelUrl || `${baseUrl}/signup?checkout=cancelled`,
+      success_url: successUrl || `${baseUrl}/success`,
+      cancel_url: cancelUrl || `${baseUrl}/pricing`,
       allow_promotion_codes: true,
     };
 
@@ -83,10 +86,10 @@ serve(async (req) => {
       sessionParams.customer_email = email;
     }
 
-    // For subscriptions, allow customer to update payment method later
+    // For subscriptions, add 7-day free trial (no charge until trial ends)
     if (planConfig.mode === 'subscription') {
       sessionParams.subscription_data = {
-        trial_period_days: 30,
+        trial_period_days: 7,
       };
     }
 
