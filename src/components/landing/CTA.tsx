@@ -2,10 +2,19 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export function CTA() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
+  const handleStartTrial = () => {
+    if (user) {
+      navigate('/welcome');
+    } else {
+      navigate('/auth', { state: { from: '/welcome' } });
+    }
+  };
   return (
     <section className="py-24 relative overflow-hidden">
       {/* Background */}
@@ -45,7 +54,7 @@ export function CTA() {
                 variant="hero" 
                 size="xl" 
                 className="group"
-                onClick={() => navigate('/signup')}
+                onClick={handleStartTrial}
               >
                 Start Your Free Trial
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />

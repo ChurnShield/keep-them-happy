@@ -2,10 +2,19 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, Shield, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 export function Hero() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
+  const handleStartTrial = () => {
+    if (user) {
+      navigate('/welcome');
+    } else {
+      navigate('/auth', { state: { from: '/welcome' } });
+    }
+  };
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
       {/* Background Effects */}
@@ -84,7 +93,7 @@ export function Hero() {
               variant="hero" 
               size="xl" 
               className="group"
-              onClick={() => navigate('/signup')}
+              onClick={handleStartTrial}
             >
               Start Risk-Free Trial
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
