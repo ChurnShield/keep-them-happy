@@ -185,6 +185,86 @@ export type Database = {
         }
         Relationships: []
       }
+      recovery_actions: {
+        Row: {
+          action_type: Database["public"]["Enums"]["recovery_action_type"]
+          created_at: string
+          id: string
+          note: string | null
+          recovery_case_id: string
+        }
+        Insert: {
+          action_type: Database["public"]["Enums"]["recovery_action_type"]
+          created_at?: string
+          id?: string
+          note?: string | null
+          recovery_case_id: string
+        }
+        Update: {
+          action_type?: Database["public"]["Enums"]["recovery_action_type"]
+          created_at?: string
+          id?: string
+          note?: string | null
+          recovery_case_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_actions_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recovery_cases: {
+        Row: {
+          amount_at_risk: number
+          created_at: string
+          currency: string
+          customer_reference: string
+          deadline_at: string
+          first_action_at: string | null
+          id: string
+          invoice_reference: string | null
+          opened_at: string
+          owner_user_id: string
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["recovery_case_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount_at_risk: number
+          created_at?: string
+          currency?: string
+          customer_reference: string
+          deadline_at?: string
+          first_action_at?: string | null
+          id?: string
+          invoice_reference?: string | null
+          opened_at?: string
+          owner_user_id: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["recovery_case_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount_at_risk?: number
+          created_at?: string
+          currency?: string
+          customer_reference?: string
+          deadline_at?: string
+          first_action_at?: string | null
+          id?: string
+          invoice_reference?: string | null
+          opened_at?: string
+          owner_user_id?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["recovery_case_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stripe_accounts: {
         Row: {
           connected: boolean | null
@@ -478,6 +558,12 @@ export type Database = {
         | "emailed_1"
         | "emailed_2"
         | "resolved"
+      recovery_action_type:
+        | "message_sent"
+        | "note"
+        | "marked_recovered"
+        | "marked_expired"
+      recovery_case_status: "open" | "recovered" | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -612,6 +698,13 @@ export const Constants = {
         "emailed_2",
         "resolved",
       ],
+      recovery_action_type: [
+        "message_sent",
+        "note",
+        "marked_recovered",
+        "marked_expired",
+      ],
+      recovery_case_status: ["open", "recovered", "expired"],
     },
   },
 } as const
