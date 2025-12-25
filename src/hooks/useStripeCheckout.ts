@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -9,26 +9,20 @@ interface CheckoutOptions {
   cancelUrl?: string;
 }
 
-function redirectToUrl(url: string) {
-  // Stripe Checkout can't render inside an iframe (it sets frame protections).
-  // In Lovable preview, the app runs in an iframe, so we must navigate the top window.
-  try {
-    if (window.top && window.top !== window) {
-      window.top.location.assign(url);
-      return;
-    }
-  } catch {
-    // If top navigation is blocked, fall back to current window.
-  }
-
-  window.location.assign(url);
+interface CheckoutResult {
+  success: boolean;
+  url?: string;
+  popupBlocked?: boolean;
 }
 
 export function useStripeCheckout() {
   const [isLoading, setIsLoading] = useState(false);
+  const [fallbackUrl, setFallbackUrl] = useState<string | null>(null);
+  const [showFallbackDialog, setShowFallbackDialog] = useState(false);
 
-  const createCheckoutSession = async (options: CheckoutOptions) => {
+  const createCheckoutSession = useCallback(async (options: CheckoutOptions): Promise<CheckoutResult> => {
     setIsLoading(true);
+    setFallbackUrl(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
@@ -39,11 +33,31 @@ export function useStripeCheckout() {
         throw new Error(error.message || 'Failed to create checkout session');
       }
 
-      if (data?.url) {
-        redirectToUrl(data.url);
-      } else {
+      if (!data?.url) {
         throw new Error('No checkout URL returned');
       }
+
+      const checkoutUrl = data.url;
+
+      // Try to open in new tab first (works best across all contexts)
+      const newWindow = window.open(checkoutUrl, '_blank', 'noopener,noreferrer');
+      
+      if (newWindow) {
+        // Popup opened successfully
+        toast({
+          title: 'Checkout opened',
+          description: 'Complete your purchase in the new tab.',
+        });
+        return { success: true, url: checkoutUrl };
+      }
+
+      // Popup was blocked - show fallback dialog
+      console.log('Popup blocked, showing fallback dialog');
+      setFallbackUrl(checkoutUrl);
+      setShowFallbackDialog(true);
+      
+      return { success: false, url: checkoutUrl, popupBlocked: true };
+
     } catch (error) {
       console.error('Checkout error:', error);
       toast({
@@ -51,13 +65,22 @@ export function useStripeCheckout() {
         description: error instanceof Error ? error.message : 'Failed to start checkout',
         variant: 'destructive',
       });
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  const closeFallbackDialog = useCallback(() => {
+    setShowFallbackDialog(false);
+    setFallbackUrl(null);
+  }, []);
 
   return {
     createCheckoutSession,
     isLoading,
+    fallbackUrl,
+    showFallbackDialog,
+    closeFallbackDialog,
   };
 }
