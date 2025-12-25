@@ -23,6 +23,8 @@ import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
 import AtRiskCustomers from "./pages/AtRiskCustomers";
 import CustomerDetail from "./pages/CustomerDetail";
+import RecoveryInbox from "./pages/RecoveryInbox";
+import RecoveryCaseDetail from "./pages/RecoveryCaseDetail";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SubscriptionGate } from "./components/SubscriptionGate";
@@ -102,6 +104,17 @@ const App = () => (
               </ProtectedRoute>
             } />
             
+            {/* Recovery routes - require auth + verification */}
+            <Route path="/recovery" element={
+              <ProtectedRoute>
+                <RecoveryInbox />
+              </ProtectedRoute>
+            } />
+            <Route path="/recovery/:caseId" element={
+              <ProtectedRoute>
+                <RecoveryCaseDetail />
+              </ProtectedRoute>
+            } />
             {/* Admin routes */}
             <Route path="/admin/payment-recovery" element={
               <AdminRoute>
