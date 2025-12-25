@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Shield, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { name: "Features", href: "#features" },
   { name: "Pricing", href: "#pricing" },
   { name: "Testimonials", href: "#testimonials" },
+  { name: "Recovery", href: "/recovery" },
 ];
 
 export function Header() {
@@ -18,8 +19,14 @@ export function Header() {
 
   const handleNavClick = (href: string) => {
     setIsMenuOpen(false);
-    const element = document.querySelector(href);
-    element?.scrollIntoView({ behavior: "smooth" });
+
+    if (href.startsWith("#")) {
+      const element = document.querySelector(href);
+      element?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    navigate(href);
   };
 
   const handleStartTrial = () => {
@@ -46,27 +53,36 @@ export function Header() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="mt-4 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-lg">
           <div className="flex h-16 items-center justify-between px-6">
-            {/* Logo */}
-            <a href="/" className="flex items-center gap-2 group">
+            <Link to="/" className="flex items-center gap-2 group" onClick={() => setIsMenuOpen(false)}>
               <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
                 <Shield className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="text-xl font-bold text-foreground">
                 Churn<span className="gradient-text">Shield</span>
               </span>
-            </a>
+            </Link>
 
-            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-8">
-              {navLinks.map((link) => (
-                <button
-                  key={link.name}
-                  onClick={() => handleNavClick(link.href)}
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {link.name}
-                </button>
-              ))}
+              {navLinks.map((link) =>
+                link.href.startsWith("#") ? (
+                  <button
+                    key={link.name}
+                    onClick={() => handleNavClick(link.href)}
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {link.name}
+                  </button>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {link.name}
+                  </Link>
+                ),
+              )}
             </nav>
 
             {/* Desktop CTA */}
@@ -113,15 +129,26 @@ export function Header() {
               className="md:hidden mt-2 rounded-2xl border border-border/50 bg-card/95 backdrop-blur-xl p-6 shadow-lg"
             >
               <nav className="flex flex-col gap-4">
-                {navLinks.map((link) => (
-                  <button
-                    key={link.name}
-                    onClick={() => handleNavClick(link.href)}
-                    className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground text-left"
-                  >
-                    {link.name}
-                  </button>
-                ))}
+                {navLinks.map((link) =>
+                  link.href.startsWith("#") ? (
+                    <button
+                      key={link.name}
+                      onClick={() => handleNavClick(link.href)}
+                      className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground text-left"
+                    >
+                      {link.name}
+                    </button>
+                  ) : (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="text-base font-medium text-muted-foreground transition-colors hover:text-foreground text-left"
+                    >
+                      {link.name}
+                    </Link>
+                  ),
+                )}
                 <div className="pt-4 border-t border-border flex flex-col gap-3">
                   {user ? (
                     <>

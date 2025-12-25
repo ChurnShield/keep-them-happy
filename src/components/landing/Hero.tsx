@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, TrendingUp, Shield, DollarSign } from "lucide-react";
+import { ArrowRight, TrendingUp, Shield, DollarSign, Inbox } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
+import { useNavigate } from "react-router-dom";
 
 const PLAN_ID = "starter";
 
 export function Hero() {
+  const navigate = useNavigate();
   const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
 
   const handleStartTrial = () => {
@@ -15,6 +17,10 @@ export function Hero() {
       successUrl: `${window.location.origin}/success?checkout=success`,
       cancelUrl: `${window.location.origin}/`,
     });
+  };
+
+  const handleOpenRecovery = () => {
+    navigate('/recovery');
   };
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
@@ -83,12 +89,12 @@ export function Hero() {
             </div>
           </motion.div>
 
-          {/* CTA Button */}
+          {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-10"
+            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
           >
             <Button 
               variant="hero" 
@@ -99,6 +105,15 @@ export function Hero() {
             >
               {isLoading ? "Loading..." : "Start Risk-Free Trial"}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="xl"
+              onClick={handleOpenRecovery}
+            >
+              <Inbox className="h-5 w-5 mr-2" />
+              Open Recovery Inbox
             </Button>
           </motion.div>
 
