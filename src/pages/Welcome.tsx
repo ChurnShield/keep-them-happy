@@ -100,10 +100,10 @@ const Welcome = () => {
               <div>
                 <Button
                   variant="ghost"
-                  onClick={() => navigate("/verify-stripe")}
+                  onClick={() => navigate("/")}
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  Connect Stripe now
+                  Go back to example
                 </Button>
               </div>
 
