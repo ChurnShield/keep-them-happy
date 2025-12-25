@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Check, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
 
 const plans = [
   {
@@ -65,7 +66,7 @@ const plans = [
 ];
 
 export function Pricing() {
-  const { createCheckoutSession, isLoading } = useStripeCheckout();
+  const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
 
   const handleSelectPlan = (planId: string) => {
     createCheckoutSession({
@@ -200,6 +201,12 @@ export function Pricing() {
           </p>
         </motion.div>
       </div>
+
+      <CheckoutFallbackDialog 
+        open={showFallbackDialog} 
+        onOpenChange={closeFallbackDialog}
+        checkoutUrl={fallbackUrl || ''} 
+      />
     </section>
   );
 }
