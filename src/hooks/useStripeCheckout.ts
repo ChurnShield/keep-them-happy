@@ -9,6 +9,21 @@ interface CheckoutOptions {
   cancelUrl?: string;
 }
 
+function redirectToUrl(url: string) {
+  // Stripe Checkout can't render inside an iframe (it sets frame protections).
+  // In Lovable preview, the app runs in an iframe, so we must navigate the top window.
+  try {
+    if (window.top && window.top !== window) {
+      window.top.location.assign(url);
+      return;
+    }
+  } catch {
+    // If top navigation is blocked, fall back to current window.
+  }
+
+  window.location.assign(url);
+}
+
 export function useStripeCheckout() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -25,8 +40,7 @@ export function useStripeCheckout() {
       }
 
       if (data?.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
+        redirectToUrl(data.url);
       } else {
         throw new Error('No checkout URL returned');
       }
