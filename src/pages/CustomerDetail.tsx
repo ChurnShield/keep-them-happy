@@ -1,59 +1,100 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  AlertTriangle, 
   ArrowLeft,
   Loader2,
   User,
   CreditCard,
   Calendar,
+  Mail,
+  DollarSign,
   Clock,
-  Lightbulb,
-  Activity
+  AlertTriangle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { 
-  useCustomerDetail, 
-  formatEventType, 
-  getSeverityColor,
-  getScoreColor 
-} from '@/hooks/useChurnDashboard';
-import { useSubscription } from '@/hooks/useSubscription';
-import { format, formatDistanceToNow } from 'date-fns';
+import { useCustomers, Customer } from '@/hooks/useCustomers';
+import { RiskBadge } from '@/components/customers/RiskBadge';
+import { SignalsList } from '@/components/customers/SignalsList';
+import { format } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { enrichCustomerWithRisk, CustomerWithRisk } from '@/hooks/useCustomers';
 
 export default function CustomerDetail() {
-  const { userId } = useParams<{ userId: string }>();
+  const { userId: customerId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { data: customer, isLoading, error } = useCustomerDetail(userId);
-  const { hasActiveSubscription, loading: subLoading } = useSubscription();
+  const { user, loading: authLoading } = useAuth();
+  const [customer, setCustomer] = useState<CustomerWithRisk | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Show subscription required message
-  if (!subLoading && !hasActiveSubscription) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center">
-          <CardHeader>
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-              <AlertTriangle className="h-7 w-7 text-amber-500" />
-            </div>
-            <CardTitle>Subscription Required</CardTitle>
-            <CardDescription>
-              You need an active subscription to view churn insights.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate('/')} className="w-full">
-              View Plans
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const fetchCustomer = async () => {
+      if (!user || !customerId) {
+        setLoading(false);
+        return;
+      }
 
-  if (isLoading || subLoading) {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const { data, error: fetchError } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('id', customerId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (fetchError) {
+          console.error('Error fetching customer:', fetchError);
+          setError('Failed to load customer');
+          return;
+        }
+
+        if (!data) {
+          setError('Customer not found');
+          return;
+        }
+
+        setCustomer(enrichCustomerWithRisk(data as Customer));
+      } catch (err) {
+        console.error('Customer fetch error:', err);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) {
+      fetchCustomer();
+    }
+  }, [customerId, user, authLoading]);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(amount / 100);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Active</Badge>;
+      case 'past_due':
+        return <Badge className="bg-red-500/10 text-red-500 border-red-500/20">Past Due</Badge>;
+      case 'canceled':
+        return <Badge className="bg-gray-500/10 text-gray-500 border-gray-500/20">Canceled</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -66,23 +107,23 @@ export default function CustomerDetail() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
           <CardHeader>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle className="h-7 w-7 text-destructive" />
+            </div>
             <CardTitle className="text-destructive">Customer Not Found</CardTitle>
             <CardDescription>
-              {error?.message || 'Unable to load customer details'}
+              {error || 'Unable to load customer details'}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate('/dashboard/at-risk')} variant="outline">
-              Back to At-Risk List
+            <Button onClick={() => navigate('/dashboard')} variant="outline">
+              Back to Dashboard
             </Button>
           </CardContent>
         </Card>
       </div>
     );
   }
-
-  const subscription = customer.subscription;
-  const riskSnapshot = customer.riskSnapshot;
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,31 +133,29 @@ export default function CustomerDetail() {
           <Button 
             variant="ghost" 
             className="mb-4"
-            onClick={() => navigate('/dashboard/at-risk')}
+            onClick={() => navigate('/dashboard')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to At-Risk Customers
+            Back to Dashboard
           </Button>
           
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                <User className="h-8 w-8" />
-                {customer.email}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Customer ID: {customer.userId.slice(0, 8)}...
-              </p>
-            </div>
-            
-            {riskSnapshot && (
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Risk Score</p>
-                <p className={`text-4xl font-bold ${getScoreColor(riskSnapshot.score)}`}>
-                  {riskSnapshot.score}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+                <User className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                  {customer.name}
+                </h1>
+                <p className="text-muted-foreground flex items-center gap-1 mt-1">
+                  <Mail className="h-4 w-4" />
+                  {customer.email}
                 </p>
               </div>
-            )}
+            </div>
+            
+            <RiskBadge level={customer.riskLevel} />
           </div>
         </div>
 
@@ -124,159 +163,92 @@ export default function CustomerDetail() {
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Left Column */}
           <div className="space-y-6">
-            {/* Subscription Status */}
+            {/* Customer Info */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CreditCard className="h-5 w-5" />
-                  Subscription Status
+                  Subscription Details
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {subscription ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Status</span>
-                      <Badge 
-                        variant={
-                          subscription.status === 'active' ? 'default' :
-                          subscription.status === 'trialing' ? 'secondary' :
-                          'destructive'
-                        }
-                      >
-                        {subscription.status}
-                      </Badge>
-                    </div>
-                    
-                    {subscription.cancel_at_period_end && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Cancellation</span>
-                        <Badge variant="destructive">
-                          Scheduled at period end
-                        </Badge>
-                      </div>
-                    )}
-                    
-                    {subscription.trial_end && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Trial Ends</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(subscription.trial_end), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                    )}
-                    
-                    {subscription.current_period_end && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Period Ends</span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          {format(new Date(subscription.current_period_end), 'MMM d, yyyy')}
-                        </span>
-                      </div>
-                    )}
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Status</span>
+                  {getStatusBadge(customer.subscription_status)}
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Plan Amount</span>
+                  <span className="flex items-center gap-1 font-medium">
+                    <DollarSign className="h-4 w-4" />
+                    {formatCurrency(customer.plan_amount)}/mo
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Last Active</span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {customer.last_active_at 
+                      ? format(new Date(customer.last_active_at), 'MMM d, yyyy')
+                      : 'Never'
+                    }
+                  </span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Customer Since</span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    {format(new Date(customer.created_at), 'MMM d, yyyy')}
+                  </span>
+                </div>
+
+                {customer.canceled_at && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Canceled On</span>
+                    <span className="flex items-center gap-1 text-destructive">
+                      <Calendar className="h-4 w-4" />
+                      {format(new Date(customer.canceled_at), 'MMM d, yyyy')}
+                    </span>
                   </div>
-                ) : (
-                  <p className="text-muted-foreground">No subscription found</p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Risk Factors */}
-            {riskSnapshot && riskSnapshot.top_reasons && (riskSnapshot.top_reasons as string[]).length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    Risk Factors
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {(riskSnapshot.top_reasons as string[]).map((reason, idx) => (
-                      <div 
-                        key={idx}
-                        className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10"
-                      >
-                        <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
-                        <span>{reason}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Recommended Action */}
-            <Card className="border-primary/50">
+            {/* Risk Summary */}
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Lightbulb className="h-5 w-5 text-primary" />
-                  Recommended Action
+                  <AlertTriangle className="h-5 w-5 text-orange-500" />
+                  Risk Summary
                 </CardTitle>
+                <CardDescription>
+                  {customer.signals.length === 0 
+                    ? 'This customer shows no risk signals'
+                    : `${customer.signals.length} risk signal${customer.signals.length > 1 ? 's' : ''} detected`
+                  }
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-lg">{customer.recommendedAction}</p>
+                <SignalsList signals={customer.signals} variant="inline" />
               </CardContent>
             </Card>
           </div>
 
-          {/* Right Column - Event Timeline */}
+          {/* Right Column - Timeline */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Event Timeline
+                <Clock className="h-5 w-5" />
+                Risk Timeline
               </CardTitle>
               <CardDescription>
-                Recent churn risk events (last 30 days)
+                Detailed breakdown of churn risk factors
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {customer.recentEvents.length > 0 ? (
-                <div className="space-y-4">
-                  {customer.recentEvents.map((event, idx) => (
-                    <div key={event.id}>
-                      <div className="flex items-start gap-3">
-                        <div className={`mt-1 h-2 w-2 rounded-full ${
-                          event.severity >= 5 ? 'bg-red-500' :
-                          event.severity >= 4 ? 'bg-orange-500' :
-                          event.severity >= 3 ? 'bg-yellow-500' :
-                          'bg-blue-500'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className={`font-medium ${getSeverityColor(event.severity)}`}>
-                              {formatEventType(event.event_type)}
-                            </span>
-                            <Badge variant="outline" className="shrink-0">
-                              Severity {event.severity}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDistanceToNow(new Date(event.occurred_at), { addSuffix: true })}
-                          </p>
-                          {event.stripe_object_id && (
-                            <p className="text-xs text-muted-foreground mt-1 font-mono truncate">
-                              {event.stripe_object_id}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      {idx < customer.recentEvents.length - 1 && (
-                        <Separator className="my-4" />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No recent events</p>
-                </div>
-              )}
+              <SignalsList signals={customer.signals} variant="timeline" />
             </CardContent>
           </Card>
         </div>
