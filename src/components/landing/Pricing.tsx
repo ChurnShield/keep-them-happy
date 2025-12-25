@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Check, Sparkles, ArrowRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Check, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 
 const plans = [
   {
+    id: "starter",
     name: "Starter",
     price: "49",
     period: "/month",
@@ -22,6 +23,7 @@ const plans = [
     popular: false,
   },
   {
+    id: "growth",
     name: "Growth",
     price: "149",
     period: "/month",
@@ -41,6 +43,7 @@ const plans = [
     popular: true,
   },
   {
+    id: "scale",
     name: "Scale",
     price: "349",
     period: "/month",
@@ -62,7 +65,15 @@ const plans = [
 ];
 
 export function Pricing() {
-  const navigate = useNavigate();
+  const { createCheckoutSession, isLoading } = useStripeCheckout();
+
+  const handleSelectPlan = (planId: string) => {
+    createCheckoutSession({
+      planId,
+      successUrl: `${window.location.origin}/welcome?checkout=success`,
+      cancelUrl: `${window.location.origin}/#pricing`,
+    });
+  };
 
   return (
     <section id="pricing" className="py-24 relative overflow-hidden">
@@ -141,10 +152,20 @@ export function Pricing() {
                     variant={plan.popular ? "hero" : "outline"}
                     className="w-full mt-8 group"
                     size="lg"
-                    onClick={() => navigate('/signup')}
+                    onClick={() => handleSelectPlan(plan.id)}
+                    disabled={isLoading}
                   >
-                    {plan.cta}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Loading...
+                      </>
+                    ) : (
+                      <>
+                        {plan.cta}
+                        <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </>
+                    )}
                   </Button>
 
                   {/* Features */}

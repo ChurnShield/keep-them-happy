@@ -9,8 +9,6 @@ import Welcome from "./pages/Welcome";
 import ExampleAlert from "./pages/ExampleAlert";
 import ChurnRisk from "./pages/ChurnRisk";
 import Calculator from "./pages/Calculator";
-import StripeVerification from "./pages/StripeVerification";
-import VerificationResults from "./pages/VerificationResults";
 import HowItWorks from "./pages/HowItWorks";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -56,16 +54,6 @@ const App = () => (
           <Route path="/example-alert" element={
             <ProtectedRoute>
               <ExampleAlert />
-            </ProtectedRoute>
-          } />
-          <Route path="/verify-stripe" element={
-            <ProtectedRoute>
-              <StripeVerification />
-            </ProtectedRoute>
-          } />
-          <Route path="/verification-results" element={
-            <ProtectedRoute>
-              <VerificationResults />
             </ProtectedRoute>
           } />
           
