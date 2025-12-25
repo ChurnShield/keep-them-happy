@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      churn_risk_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          occurred_at: string
+          severity: number
+          stripe_object_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          severity: number
+          stripe_object_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          occurred_at?: string
+          severity?: number
+          stripe_object_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      churn_risk_snapshot: {
+        Row: {
+          score: number
+          top_reasons: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          score?: number
+          top_reasons?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          score?: number
+          top_reasons?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           company: string
@@ -71,6 +125,54 @@ export type Database = {
         }
         Relationships: []
       }
+      processed_stripe_events: {
+        Row: {
+          event_type: string
+          id: string
+          processed_at: string
+          stripe_event_id: string
+        }
+        Insert: {
+          event_type: string
+          id?: string
+          processed_at?: string
+          stripe_event_id: string
+        }
+        Update: {
+          event_type?: string
+          id?: string
+          processed_at?: string
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
+      stripe_accounts: {
+        Row: {
+          connected: boolean | null
+          created_at: string
+          id: string
+          stripe_account_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          connected?: boolean | null
+          created_at?: string
+          id?: string
+          stripe_account_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          connected?: boolean | null
+          created_at?: string
+          id?: string
+          stripe_account_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stripe_connections: {
         Row: {
           access_token: string
@@ -104,6 +206,120 @@ export type Database = {
           session_id?: string
           stripe_user_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      stripe_customers: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          stripe_customer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          stripe_customer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          stripe_customer_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stripe_invoices: {
+        Row: {
+          amount_due: number | null
+          amount_paid: number | null
+          attempt_count: number | null
+          created_at: string
+          id: string
+          next_payment_attempt: string | null
+          status: string
+          stripe_invoice_id: string
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_due?: number | null
+          amount_paid?: number | null
+          attempt_count?: number | null
+          created_at?: string
+          id?: string
+          next_payment_attempt?: string | null
+          status: string
+          stripe_invoice_id: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_due?: number | null
+          amount_paid?: number | null
+          attempt_count?: number | null
+          created_at?: string
+          id?: string
+          next_payment_attempt?: string | null
+          status?: string
+          stripe_invoice_id?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stripe_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
