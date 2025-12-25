@@ -64,7 +64,7 @@ serve(async (req) => {
       status: 302,
       headers: {
         'Location': stripeOAuthUrl.toString(),
-        'Set-Cookie': `stripe_oauth_session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`,
+        'Set-Cookie': `stripe_oauth_session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=600`,
         ...corsHeaders,
       },
     });

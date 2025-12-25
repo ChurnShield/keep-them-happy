@@ -175,7 +175,7 @@ serve(async (req) => {
       status: 302,
       headers: {
         'Location': `${APP_URL}/verification-results`,
-        'Set-Cookie': `stripe_session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=2592000`,
+        'Set-Cookie': `stripe_session=${sessionId}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=2592000`,
       },
     });
   } catch (error) {
