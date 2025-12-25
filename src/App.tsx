@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Signup from "./pages/Signup";
 import Welcome from "./pages/Welcome";
+import Success from "./pages/Success";
 import ExampleAlert from "./pages/ExampleAlert";
 import ChurnRisk from "./pages/ChurnRisk";
 import Calculator from "./pages/Calculator";
@@ -39,6 +40,8 @@ const App = () => (
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/security" element={<Security />} />
           <Route path="/calculator" element={<Calculator />} />
+          <Route path="/success" element={<Success />} />
+          <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
           
           {/* Protected routes - require auth + email verification */}
           <Route path="/welcome" element={
