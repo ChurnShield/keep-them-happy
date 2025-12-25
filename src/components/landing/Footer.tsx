@@ -34,7 +34,7 @@ const footerLinks: Record<string, FooterLink[]> = {
   ],
 };
 
-function FooterLinkItem({ link }: { link: FooterLink }) {
+const FooterLinkItem = ({ link }: { link: FooterLink }) => {
   if (link.comingSoon) {
     return (
       <span className="text-sm text-muted-foreground/50 cursor-not-allowed">
@@ -64,7 +64,7 @@ function FooterLinkItem({ link }: { link: FooterLink }) {
       {link.name}
     </Link>
   );
-}
+};
 
 export function Footer() {
   return (
