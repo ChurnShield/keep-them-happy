@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Shield } from "lucide-react";
+import { Menu, X, Shield, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { name: "Features", href: "#features" },
@@ -13,11 +14,31 @@ const navLinks = [
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const handleNavClick = (href: string) => {
     setIsMenuOpen(false);
     const element = document.querySelector(href);
     element?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleStartTrial = () => {
+    setIsMenuOpen(false);
+    if (user) {
+      navigate('/welcome');
+    } else {
+      navigate('/auth', { state: { from: '/welcome' } });
+    }
+  };
+
+  const handleSignIn = () => {
+    setIsMenuOpen(false);
+    navigate('/auth');
+  };
+
+  const handleSignOut = async () => {
+    setIsMenuOpen(false);
+    await signOut();
   };
 
   return (
@@ -50,12 +71,26 @@ export function Header() {
 
             {/* Desktop CTA */}
             <div className="hidden md:flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => navigate("/signup")}>
-                Sign In
-              </Button>
-              <Button variant="default" size="sm" onClick={() => navigate("/signup")}>
-                Start Free Trial
-              </Button>
+              {user ? (
+                <>
+                  <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                  <Button variant="default" size="sm" onClick={() => navigate("/welcome")}>
+                    Dashboard
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" onClick={handleSignIn}>
+                    Sign In
+                  </Button>
+                  <Button variant="default" size="sm" onClick={handleStartTrial}>
+                    Start Free Trial
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -88,12 +123,26 @@ export function Header() {
                   </button>
                 ))}
                 <div className="pt-4 border-t border-border flex flex-col gap-3">
-                  <Button variant="ghost" className="w-full" onClick={() => { setIsMenuOpen(false); navigate("/signup"); }}>
-                    Sign In
-                  </Button>
-                  <Button variant="default" className="w-full" onClick={() => { setIsMenuOpen(false); navigate("/signup"); }}>
-                    Start Free Trial
-                  </Button>
+                  {user ? (
+                    <>
+                      <Button variant="ghost" className="w-full" onClick={handleSignOut}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                      <Button variant="default" className="w-full" onClick={() => { setIsMenuOpen(false); navigate("/welcome"); }}>
+                        Dashboard
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button variant="ghost" className="w-full" onClick={handleSignIn}>
+                        Sign In
+                      </Button>
+                      <Button variant="default" className="w-full" onClick={handleStartTrial}>
+                        Start Free Trial
+                      </Button>
+                    </>
+                  )}
                 </div>
               </nav>
             </motion.div>

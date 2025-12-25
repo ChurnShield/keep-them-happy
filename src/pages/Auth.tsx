@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, Loader2 } from 'lucide-react';
+import { Shield, Loader2, ArrowLeft } from 'lucide-react';
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: 'Please enter a valid email address' }),
@@ -21,13 +21,18 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, signIn, signUp } = useAuth();
+
+  // Get the intended destination from location state
+  const from = (location.state as { from?: string })?.from || '/welcome';
+  const isFromProtectedRoute = location.state?.from != null;
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,20 +82,33 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Shield className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-bold">
-            {isLogin ? 'Welcome back' : 'Create an account'}
-          </CardTitle>
-          <CardDescription>
-            {isLogin
-              ? 'Sign in to access your account'
-              : 'Sign up to get started'}
-          </CardDescription>
-        </CardHeader>
+      <div className="absolute inset-0 hero-glow opacity-30" />
+      <div className="w-full max-w-md relative z-10">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/')}
+          className="mb-6 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Home
+        </Button>
+        
+        <Card>
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Shield className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold">
+              {isLogin ? 'Welcome back' : 'Create an account'}
+            </CardTitle>
+            <CardDescription>
+              {isFromProtectedRoute && !isLogin
+                ? 'Create an account to start your free trial.'
+                : isLogin
+                  ? 'Sign in to access your account'
+                  : 'Sign up to get started'}
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -152,6 +170,7 @@ export default function Auth() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

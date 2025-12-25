@@ -81,11 +81,14 @@ export function useAuth() {
     return { error };
   };
 
+  const emailVerified = user?.email_confirmed_at != null;
+
   return {
     user,
     session,
     loading,
     isAdmin,
+    emailVerified,
     signIn,
     signUp,
     signOut,
