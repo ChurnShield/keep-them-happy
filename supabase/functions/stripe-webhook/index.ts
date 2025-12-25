@@ -66,29 +66,93 @@ serve(async (req) => {
           sessionId: session.id,
           customerEmail: session.customer_email,
           subscriptionId: session.subscription,
+          customerId: session.customer,
         });
-        // TODO: Update user's subscription status in database
+
+        // If this is a subscription checkout, the subscription.created event will handle storage
+        // But we can log for tracking
+        if (session.subscription && session.customer_email) {
+          console.log('Subscription checkout completed for:', session.customer_email);
+        }
         break;
       }
 
-      case 'customer.subscription.created': {
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log('Subscription created:', subscription.id);
-        // TODO: Store subscription details
-        break;
-      }
-
+      case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log('Subscription updated:', subscription.id, 'Status:', subscription.status);
-        // TODO: Update subscription status
+        console.log('Subscription event:', event.type, {
+          subscriptionId: subscription.id,
+          customerId: subscription.customer,
+          status: subscription.status,
+        });
+
+        // Get customer email from Stripe
+        const customer = await stripe.customers.retrieve(subscription.customer as string);
+        const customerEmail = 'email' in customer ? customer.email : null;
+
+        // Try to find user by email
+        let userId: string | null = null;
+        if (customerEmail) {
+          const { data: users } = await supabase.auth.admin.listUsers();
+          const matchingUser = users?.users?.find(u => u.email === customerEmail);
+          if (matchingUser) {
+            userId = matchingUser.id;
+          }
+        }
+
+        // Upsert subscription
+        const { error: upsertError } = await supabase
+          .from('subscriptions')
+          .upsert({
+            stripe_subscription_id: subscription.id,
+            stripe_customer_id: subscription.customer as string,
+            user_id: userId,
+            status: subscription.status,
+            plan_id: subscription.items.data[0]?.price?.id || null,
+            current_period_start: subscription.current_period_start 
+              ? new Date(subscription.current_period_start * 1000).toISOString() 
+              : null,
+            current_period_end: subscription.current_period_end 
+              ? new Date(subscription.current_period_end * 1000).toISOString() 
+              : null,
+            trial_start: subscription.trial_start 
+              ? new Date(subscription.trial_start * 1000).toISOString() 
+              : null,
+            trial_end: subscription.trial_end 
+              ? new Date(subscription.trial_end * 1000).toISOString() 
+              : null,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            updated_at: new Date().toISOString(),
+          }, {
+            onConflict: 'stripe_subscription_id',
+          });
+
+        if (upsertError) {
+          console.error('Error upserting subscription:', upsertError);
+        } else {
+          console.log('Subscription stored successfully:', subscription.id);
+        }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
         console.log('Subscription cancelled:', subscription.id);
-        // TODO: Handle subscription cancellation
+
+        // Update subscription status to cancelled
+        const { error: updateError } = await supabase
+          .from('subscriptions')
+          .update({ 
+            status: 'canceled',
+            updated_at: new Date().toISOString(),
+          })
+          .eq('stripe_subscription_id', subscription.id);
+
+        if (updateError) {
+          console.error('Error updating cancelled subscription:', updateError);
+        } else {
+          console.log('Subscription marked as cancelled:', subscription.id);
+        }
         break;
       }
 
@@ -101,7 +165,21 @@ serve(async (req) => {
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
         console.log('Payment failed for invoice:', invoice.id);
-        // TODO: Trigger payment recovery flow
+        
+        // Update subscription status
+        if (invoice.subscription) {
+          const { error: updateError } = await supabase
+            .from('subscriptions')
+            .update({ 
+              status: 'past_due',
+              updated_at: new Date().toISOString(),
+            })
+            .eq('stripe_subscription_id', invoice.subscription);
+
+          if (updateError) {
+            console.error('Error updating subscription status:', updateError);
+          }
+        }
         break;
       }
 

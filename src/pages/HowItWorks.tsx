@@ -138,7 +138,7 @@ const HowItWorks = () => {
               transition={{ delay: 0.8, duration: 0.5 }}
               className="text-muted-foreground text-lg mb-8"
             >
-              To do this with your real customers, connect Stripe.
+              Ready to protect your revenue? Start your free trial today.
             </motion.p>
 
             {/* CTAs */}
@@ -151,10 +151,10 @@ const HowItWorks = () => {
               <Button
                 variant="hero"
                 size="xl"
-                onClick={() => navigate("/verify-stripe")}
+                onClick={() => navigate("/#pricing")}
                 className="group w-full sm:w-auto"
               >
-                Connect Stripe
+                Start Risk-Free Trial
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
 
