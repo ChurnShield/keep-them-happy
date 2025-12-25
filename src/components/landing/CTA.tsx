@@ -1,14 +1,19 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+
+const PRICE_ID = "price_1SiDB0I94SrMi3IbveIokX3Y";
 
 export function CTA() {
-  const navigate = useNavigate();
+  const { createCheckoutSession, isLoading } = useStripeCheckout();
 
   const handleStartTrial = () => {
-    // Navigate to pricing section to select a plan and start Stripe Checkout
-    navigate('/#pricing');
+    createCheckoutSession({
+      planId: PRICE_ID,
+      successUrl: `${window.location.origin}/success?checkout=success`,
+      cancelUrl: `${window.location.origin}/`,
+    });
   };
   return (
     <section className="py-24 relative overflow-hidden">
@@ -50,8 +55,9 @@ export function CTA() {
                 size="xl" 
                 className="group"
                 onClick={handleStartTrial}
+                disabled={isLoading}
               >
-                Start Your Free Trial
+                {isLoading ? "Loading..." : "Start Your Free Trial"}
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
 

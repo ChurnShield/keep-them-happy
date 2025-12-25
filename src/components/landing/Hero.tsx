@@ -1,14 +1,19 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, Shield, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+
+const PRICE_ID = "price_1SiDB0I94SrMi3IbveIokX3Y";
 
 export function Hero() {
-  const navigate = useNavigate();
+  const { createCheckoutSession, isLoading } = useStripeCheckout();
 
   const handleStartTrial = () => {
-    // Navigate to pricing section to select a plan and start Stripe Checkout
-    navigate('/#pricing');
+    createCheckoutSession({
+      planId: PRICE_ID,
+      successUrl: `${window.location.origin}/success?checkout=success`,
+      cancelUrl: `${window.location.origin}/`,
+    });
   };
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
@@ -89,8 +94,9 @@ export function Hero() {
               size="xl" 
               className="group"
               onClick={handleStartTrial}
+              disabled={isLoading}
             >
-              Start Risk-Free Trial
+              {isLoading ? "Loading..." : "Start Risk-Free Trial"}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Button>
           </motion.div>
