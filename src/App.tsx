@@ -42,6 +42,7 @@ const App = () => (
           <Route path="/calculator" element={<Calculator />} />
           <Route path="/success" element={<Success />} />
           <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+          <Route path="/verify-stripe" element={<Navigate to="/" replace />} />
           
           {/* Protected routes - require auth + email verification */}
           <Route path="/welcome" element={
