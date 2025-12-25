@@ -3,14 +3,17 @@ import { ArrowRight, TrendingUp, Shield, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/use-onboarding";
 
 export function Hero() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isCompleted } = useOnboarding();
 
   const handleStartTrial = () => {
     if (user) {
-      navigate('/welcome');
+      // If onboarding completed, go to main app; otherwise go to welcome
+      navigate(isCompleted() ? '/churn-risk' : '/welcome');
     } else {
       navigate('/auth', { state: { from: '/welcome' } });
     }
