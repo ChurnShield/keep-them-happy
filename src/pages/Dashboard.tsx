@@ -8,7 +8,8 @@ import {
   ArrowRight,
   Loader2,
   ShieldAlert,
-  CheckCircle
+  CheckCircle,
+  Inbox
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -298,6 +299,13 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-3">
+              <Button 
+                variant="default"
+                onClick={() => navigate('/recovery')}
+              >
+                <Inbox className="h-4 w-4 mr-2" />
+                Recovery Inbox
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={() => navigate('/connect-stripe')}
