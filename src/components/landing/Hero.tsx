@@ -2,11 +2,12 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, Shield, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
 
 const PLAN_ID = "starter";
 
 export function Hero() {
-  const { createCheckoutSession, isLoading } = useStripeCheckout();
+  const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
 
   const handleStartTrial = () => {
     createCheckoutSession({
@@ -155,6 +156,12 @@ export function Hero() {
           </motion.div>
         </div>
       </div>
+
+      <CheckoutFallbackDialog 
+        open={showFallbackDialog} 
+        onOpenChange={closeFallbackDialog}
+        checkoutUrl={fallbackUrl || ''} 
+      />
     </section>
   );
 }

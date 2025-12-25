@@ -2,11 +2,12 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
 
 const PLAN_ID = "starter";
 
 export function CTA() {
-  const { createCheckoutSession, isLoading } = useStripeCheckout();
+  const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
 
   const handleStartTrial = () => {
     createCheckoutSession({
@@ -69,6 +70,12 @@ export function CTA() {
           </div>
         </motion.div>
       </div>
+
+      <CheckoutFallbackDialog 
+        open={showFallbackDialog} 
+        onOpenChange={closeFallbackDialog}
+        checkoutUrl={fallbackUrl || ''} 
+      />
     </section>
   );
 }
