@@ -25,6 +25,7 @@ import AtRiskCustomers from "./pages/AtRiskCustomers";
 import CustomerDetail from "./pages/CustomerDetail";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { SubscriptionGate } from "./components/SubscriptionGate";
 
 const queryClient = new QueryClient();
 
@@ -49,8 +50,14 @@ const App = () => (
             <Route path="/success" element={<Success />} />
             <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
             
-            {/* Connect Stripe - protected, requires subscription */}
-            <Route path="/connect-stripe" element={<ConnectStripe />} />
+            {/* Connect Stripe - protected, requires auth + verification + subscription */}
+            <Route path="/connect-stripe" element={
+              <ProtectedRoute>
+                <SubscriptionGate feature="Stripe Connect">
+                  <ConnectStripe />
+                </SubscriptionGate>
+              </ProtectedRoute>
+            } />
             <Route path="/verify-stripe" element={<Navigate to="/connect-stripe" replace />} />
             
             {/* Protected routes - require auth + email verification */}
@@ -59,31 +66,39 @@ const App = () => (
                 <Welcome />
               </ProtectedRoute>
             } />
-            <Route path="/churn-risk" element={
-              <ProtectedRoute>
-                <ChurnRisk />
-              </ProtectedRoute>
-            } />
             <Route path="/example-alert" element={
               <ProtectedRoute>
                 <ExampleAlert />
               </ProtectedRoute>
             } />
             
-            {/* Dashboard routes - require auth + subscription */}
+            {/* Dashboard routes - require auth + verification */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
               </ProtectedRoute>
             } />
+            
+            {/* Churn insights routes - require auth + verification + subscription */}
+            <Route path="/churn-risk" element={
+              <ProtectedRoute>
+                <SubscriptionGate feature="churn insights">
+                  <ChurnRisk />
+                </SubscriptionGate>
+              </ProtectedRoute>
+            } />
             <Route path="/dashboard/at-risk" element={
               <ProtectedRoute>
-                <AtRiskCustomers />
+                <SubscriptionGate feature="at-risk customer insights">
+                  <AtRiskCustomers />
+                </SubscriptionGate>
               </ProtectedRoute>
             } />
             <Route path="/dashboard/customer/:userId" element={
               <ProtectedRoute>
-                <CustomerDetail />
+                <SubscriptionGate feature="customer details">
+                  <CustomerDetail />
+                </SubscriptionGate>
               </ProtectedRoute>
             } />
             
