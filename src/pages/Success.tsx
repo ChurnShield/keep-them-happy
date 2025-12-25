@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CheckCircle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCircle, Link as LinkIcon, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Success = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const checkoutSuccess = searchParams.get('checkout') === 'success';
 
   useEffect(() => {
     // Clear any checkout-related state if needed
@@ -28,18 +30,39 @@ const Success = () => {
           </p>
         </div>
 
-        <div className="bg-muted/50 rounded-lg p-4 text-left space-y-2">
+        <div className="bg-muted/50 rounded-lg p-4 text-left space-y-3">
           <h3 className="font-semibold text-foreground">What's next?</h3>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Connect your payment data sources</li>
-            <li>• Configure churn risk alerts</li>
-            <li>• Set up automated recovery campaigns</li>
+          <ul className="text-sm text-muted-foreground space-y-2">
+            <li className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs text-primary font-bold">1</span>
+              </div>
+              <span>Connect your Stripe account to start monitoring</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs text-primary font-bold">2</span>
+              </div>
+              <span>Configure churn risk alerts</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <span className="text-xs text-primary font-bold">3</span>
+              </div>
+              <span>Set up automated recovery campaigns</span>
+            </li>
           </ul>
         </div>
 
         <div className="flex flex-col gap-3">
-          <Button onClick={() => navigate('/welcome')} size="lg" className="w-full">
-            Get Started
+          <Button 
+            onClick={() => navigate('/connect-stripe')} 
+            size="lg" 
+            className="w-full group"
+          >
+            <LinkIcon className="w-4 h-4 mr-2" />
+            Connect Stripe
+            <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
           </Button>
           <Button 
             variant="outline" 

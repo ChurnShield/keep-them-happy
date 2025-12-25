@@ -70,7 +70,7 @@ export function Pricing() {
   const handleSelectPlan = (planId: string) => {
     createCheckoutSession({
       planId,
-      successUrl: `${window.location.origin}/welcome?checkout=success`,
+      successUrl: `${window.location.origin}/success?checkout=success`,
       cancelUrl: `${window.location.origin}/#pricing`,
     });
   };

@@ -11,6 +11,7 @@ import ExampleAlert from "./pages/ExampleAlert";
 import ChurnRisk from "./pages/ChurnRisk";
 import Calculator from "./pages/Calculator";
 import HowItWorks from "./pages/HowItWorks";
+import ConnectStripe from "./pages/ConnectStripe";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Security from "./pages/Security";
@@ -42,7 +43,10 @@ const App = () => (
           <Route path="/calculator" element={<Calculator />} />
           <Route path="/success" element={<Success />} />
           <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
-          <Route path="/verify-stripe" element={<Navigate to="/" replace />} />
+          
+          {/* Connect Stripe - protected, requires subscription */}
+          <Route path="/connect-stripe" element={<ConnectStripe />} />
+          <Route path="/verify-stripe" element={<Navigate to="/connect-stripe" replace />} />
           
           {/* Protected routes - require auth + email verification */}
           <Route path="/welcome" element={
