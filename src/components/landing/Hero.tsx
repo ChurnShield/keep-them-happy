@@ -3,14 +3,14 @@ import { ArrowRight, TrendingUp, Shield, DollarSign } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 
-const PRICE_ID = "price_1SiDB0I94SrMi3IbveIokX3Y";
+const PLAN_ID = "starter";
 
 export function Hero() {
   const { createCheckoutSession, isLoading } = useStripeCheckout();
 
   const handleStartTrial = () => {
     createCheckoutSession({
-      planId: PRICE_ID,
+      planId: PLAN_ID,
       successUrl: `${window.location.origin}/success?checkout=success`,
       cancelUrl: `${window.location.origin}/`,
     });

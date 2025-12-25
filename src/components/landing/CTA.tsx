@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield } from "lucide-react";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 
-const PRICE_ID = "price_1SiDB0I94SrMi3IbveIokX3Y";
+const PLAN_ID = "starter";
 
 export function CTA() {
   const { createCheckoutSession, isLoading } = useStripeCheckout();
 
   const handleStartTrial = () => {
     createCheckoutSession({
-      planId: PRICE_ID,
+      planId: PLAN_ID,
       successUrl: `${window.location.origin}/success?checkout=success`,
       cancelUrl: `${window.location.origin}/`,
     });
