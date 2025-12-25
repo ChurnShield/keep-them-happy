@@ -101,23 +101,21 @@ serve(async (req) => {
       name: `ChurnShield ${config.name}`,
       metadata: { plan_id: normalizedPlanId },
     });
+    console.log('Product created:', product.id);
 
-    // Create price
+    // Create price with monthly recurring
     const priceParams: Record<string, unknown> = {
       product: product.id,
       currency: config.currency,
       unit_amount: config.unitAmount,
+      recurring: { interval: 'month' },
     };
-    
-    if (config.mode === 'subscription') {
-      priceParams.recurring = { interval: 'month' };
-    }
-
     const price = await stripeRequest('/prices', STRIPE_SECRET_KEY, 'POST', priceParams);
+    console.log('Price created:', price.id);
 
     const baseUrl = APP_URL || 'https://preview--churnshield-saas.lovable.app';
 
-    // Create customer first (required for Stripe Accounts V2 testmode)
+    // Create customer (required for Stripe Accounts V2 testmode)
     const customerParams: Record<string, unknown> = {
       metadata: { plan_id: normalizedPlanId },
     };
@@ -125,10 +123,16 @@ serve(async (req) => {
       customerParams.email = email;
     }
     const customer = await stripeRequest('/customers', STRIPE_SECRET_KEY, 'POST', customerParams);
+    console.log('Customer created:', customer.id);
+
+    // Trial configuration - DYNAMIC, relative to checkout time
+    // Using trial_period_days ensures trial starts from subscription creation
+    // NO hard-coded trial_end timestamp, NO billing_cycle_anchor
+    const trialPeriodDays = 7;
 
     // Build checkout session params
     const sessionParams: Record<string, unknown> = {
-      mode: config.mode,
+      mode: 'subscription',
       customer: customer.id,
       'payment_method_types[0]': 'card',
       'line_items[0][price]': price.id,
@@ -136,11 +140,19 @@ serve(async (req) => {
       success_url: successUrl || `${baseUrl}/success`,
       cancel_url: cancelUrl || `${baseUrl}/`,
       allow_promotion_codes: true,
+      'subscription_data[trial_period_days]': trialPeriodDays,
     };
 
-    if (config.mode === 'subscription') {
-      sessionParams['subscription_data[trial_period_days]'] = 7;
-    }
+    // Log checkout session parameters for verification
+    const now = new Date();
+    const expectedTrialEnd = new Date(now.getTime() + trialPeriodDays * 24 * 60 * 60 * 1000);
+    console.log('=== CHECKOUT SESSION CONFIGURATION ===');
+    console.log('Current time:', now.toISOString());
+    console.log('trial_period_days:', trialPeriodDays);
+    console.log('billing_cycle_anchor: NOT SET (billing starts after trial)');
+    console.log('Expected trial end:', expectedTrialEnd.toISOString());
+    console.log('Expected first billing:', expectedTrialEnd.toISOString());
+    console.log('=====================================');
 
     const session = await stripeRequest('/checkout/sessions', STRIPE_SECRET_KEY, 'POST', sessionParams);
 
