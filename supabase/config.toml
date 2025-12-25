@@ -9,17 +9,11 @@ verify_jwt = false
 [functions.payment-recovery]
 verify_jwt = false
 
-[functions.stripe-connect]
-verify_jwt = false
-
-[functions.stripe-callback]
-verify_jwt = false
-
-[functions.stripe-status]
-verify_jwt = false
-
-[functions.stripe-insights]
-verify_jwt = false
-
 [functions.stripe-monitor]
+verify_jwt = false
+
+[functions.create-checkout-session]
+verify_jwt = false
+
+[functions.stripe-webhook]
 verify_jwt = false
