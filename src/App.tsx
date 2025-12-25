@@ -20,6 +20,9 @@ import AdminPaymentRecovery from "./pages/AdminPaymentRecovery";
 import AdminEmailTest from "./pages/AdminEmailTest";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Dashboard from "./pages/Dashboard";
+import AtRiskCustomers from "./pages/AtRiskCustomers";
+import CustomerDetail from "./pages/CustomerDetail";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -64,6 +67,23 @@ const App = () => (
             <Route path="/example-alert" element={
               <ProtectedRoute>
                 <ExampleAlert />
+              </ProtectedRoute>
+            } />
+            
+            {/* Dashboard routes - require auth + subscription */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/at-risk" element={
+              <ProtectedRoute>
+                <AtRiskCustomers />
+              </ProtectedRoute>
+            } />
+            <Route path="/dashboard/customer/:userId" element={
+              <ProtectedRoute>
+                <CustomerDetail />
               </ProtectedRoute>
             } />
             
