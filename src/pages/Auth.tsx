@@ -41,10 +41,14 @@ export default function Auth() {
   }, [justVerified, user]);
 
   useEffect(() => {
+    // Only redirect if user is fully authenticated and email is verified
     if (!loading && user && emailVerified) {
       navigate(from, { replace: true });
     }
   }, [user, loading, emailVerified, navigate, from]);
+
+  // Show loading only briefly while checking initial auth state
+  // Don't stay in loading state indefinitely
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,13 +96,8 @@ export default function Auth() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Show the auth form even while loading - the loading state is only for initial check
+  // This prevents the infinite spinner issue
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
