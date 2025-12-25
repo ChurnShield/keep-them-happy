@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,108 +7,73 @@ const corsHeaders = {
 
 type PlanConfig = {
   name: string;
-  currency: 'gbp' | 'usd' | 'eur';
-  unitAmount: number; // in minor units (e.g. pence)
-  lookupKey: string;
+  currency: string;
+  unitAmount: number;
   mode: 'subscription' | 'payment';
 };
 
-// Server-controlled pricing (keeps clients from passing arbitrary Stripe price IDs)
 const PLAN_CONFIG: Record<string, PlanConfig> = {
-  starter: {
-    name: 'Starter',
-    currency: 'gbp',
-    unitAmount: 4900,
-    lookupKey: 'churnshield_starter_monthly',
-    mode: 'subscription',
-  },
-  growth: {
-    name: 'Growth',
-    currency: 'gbp',
-    unitAmount: 14900,
-    lookupKey: 'churnshield_growth_monthly',
-    mode: 'subscription',
-  },
-  scale: {
-    name: 'Scale',
-    currency: 'gbp',
-    unitAmount: 34900,
-    lookupKey: 'churnshield_scale_monthly',
-    mode: 'subscription',
-  },
-  // backwards-compat alias
-  churnshield: {
-    name: 'Starter',
-    currency: 'gbp',
-    unitAmount: 4900,
-    lookupKey: 'churnshield_starter_monthly',
-    mode: 'subscription',
-  },
+  starter: { name: 'Starter', currency: 'gbp', unitAmount: 4900, mode: 'subscription' },
+  growth: { name: 'Growth', currency: 'gbp', unitAmount: 14900, mode: 'subscription' },
+  scale: { name: 'Scale', currency: 'gbp', unitAmount: 34900, mode: 'subscription' },
+  churnshield: { name: 'Starter', currency: 'gbp', unitAmount: 4900, mode: 'subscription' },
 };
 
-async function getOrCreatePriceId(stripe: Stripe, planId: string, config: PlanConfig) {
-  const existing = await stripe.prices.list({
-    lookup_keys: [config.lookupKey],
-    active: true,
-    limit: 1,
-  });
+async function stripeRequest(endpoint: string, apiKey: string, method = 'GET', body?: Record<string, unknown>) {
+  const headers: Record<string, string> = {
+    'Authorization': `Bearer ${apiKey}`,
+    'Content-Type': 'application/x-www-form-urlencoded',
+  };
 
-  if (existing.data.length > 0) {
-    return existing.data[0].id;
+  const options: RequestInit = { method, headers };
+  
+  if (body && method !== 'GET') {
+    options.body = new URLSearchParams(flattenObject(body)).toString();
   }
 
-  console.log('No price found for lookup_key, creating one:', config.lookupKey);
-  const created = await stripe.prices.create({
-    currency: config.currency,
-    unit_amount: config.unitAmount,
-    recurring: config.mode === 'subscription' ? { interval: 'month' } : undefined,
-    lookup_key: config.lookupKey,
-    nickname: `ChurnShield ${config.name}`,
-    product_data: {
-      name: `ChurnShield ${config.name}`,
-      metadata: { plan_id: planId },
-    },
-  });
-
-  return created.id;
+  const res = await fetch(`https://api.stripe.com/v1${endpoint}`, options);
+  const data = await res.json();
+  
+  if (!res.ok) {
+    console.error('Stripe API error:', data);
+    throw new Error(data.error?.message || 'Stripe API error');
+  }
+  
+  return data;
 }
 
+function flattenObject(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
+  const result: Record<string, string> = {};
+  
+  for (const [key, value] of Object.entries(obj)) {
+    const newKey = prefix ? `${prefix}[${key}]` : key;
+    
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      Object.assign(result, flattenObject(value as Record<string, unknown>, newKey));
+    } else if (value !== undefined && value !== null) {
+      result[newKey] = String(value);
+    }
+  }
+  
+  return result;
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const rawStripeKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
-    const STRIPE_SECRET_KEY = rawStripeKey.trim();
+    const STRIPE_SECRET_KEY = (Deno.env.get('STRIPE_SECRET_KEY') ?? '').trim();
     const APP_URL = Deno.env.get('APP_URL');
 
-    if (!STRIPE_SECRET_KEY) {
-      console.error('Missing STRIPE_SECRET_KEY');
+    if (!STRIPE_SECRET_KEY || (!STRIPE_SECRET_KEY.startsWith('sk_test_') && !STRIPE_SECRET_KEY.startsWith('sk_live_'))) {
+      console.error('Invalid or missing STRIPE_SECRET_KEY');
       return new Response(JSON.stringify({ error: 'Server configuration error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-
-    // Some secret managers can include trailing newlines/spaces; we trim above.
-    if (!STRIPE_SECRET_KEY.startsWith('sk_test_') && !STRIPE_SECRET_KEY.startsWith('sk_live_')) {
-      console.error('Invalid STRIPE_SECRET_KEY prefix', {
-        prefix: STRIPE_SECRET_KEY.slice(0, 8),
-        length: STRIPE_SECRET_KEY.length,
-      });
-      return new Response(JSON.stringify({ error: 'Invalid Stripe configuration' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    });
 
     const { planId, email, successUrl, cancelUrl } = await req.json();
 
@@ -121,67 +85,74 @@ serve(async (req) => {
     }
 
     const normalizedPlanId = String(planId).toLowerCase();
-    const planConfig = PLAN_CONFIG[normalizedPlanId];
-    if (!planConfig) {
+    const config = PLAN_CONFIG[normalizedPlanId];
+    
+    if (!config) {
       return new Response(JSON.stringify({ error: 'Invalid plan ID' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const priceId = await getOrCreatePriceId(stripe, normalizedPlanId, planConfig);
+    console.log('Creating checkout for plan:', normalizedPlanId);
 
-    const baseUrl = APP_URL || 'http://localhost:5173';
-
-    // Create a customer first (required for some Stripe Accounts V2 testmode setups)
-    const customer = await stripe.customers.create({
-      ...(email ? { email } : {}),
-      metadata: {
-        plan_id: normalizedPlanId,
-      },
+    // Create product
+    const product = await stripeRequest('/products', STRIPE_SECRET_KEY, 'POST', {
+      name: `ChurnShield ${config.name}`,
+      metadata: { plan_id: normalizedPlanId },
     });
 
-    // Create checkout session
-    const sessionParams: Stripe.Checkout.SessionCreateParams = {
-      mode: planConfig.mode,
-      payment_method_types: ['card'],
+    // Create price
+    const priceParams: Record<string, unknown> = {
+      product: product.id,
+      currency: config.currency,
+      unit_amount: config.unitAmount,
+    };
+    
+    if (config.mode === 'subscription') {
+      priceParams.recurring = { interval: 'month' };
+    }
+
+    const price = await stripeRequest('/prices', STRIPE_SECRET_KEY, 'POST', priceParams);
+
+    const baseUrl = APP_URL || 'https://preview--churnshield-saas.lovable.app';
+
+    // Create customer first (required for Stripe Accounts V2 testmode)
+    const customerParams: Record<string, unknown> = {
+      metadata: { plan_id: normalizedPlanId },
+    };
+    if (email) {
+      customerParams.email = email;
+    }
+    const customer = await stripeRequest('/customers', STRIPE_SECRET_KEY, 'POST', customerParams);
+
+    // Build checkout session params
+    const sessionParams: Record<string, unknown> = {
+      mode: config.mode,
       customer: customer.id,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      'payment_method_types[0]': 'card',
+      'line_items[0][price]': price.id,
+      'line_items[0][quantity]': 1,
       success_url: successUrl || `${baseUrl}/success`,
-      cancel_url: cancelUrl || `${baseUrl}/pricing`,
+      cancel_url: cancelUrl || `${baseUrl}/`,
       allow_promotion_codes: true,
     };
 
-    // For subscriptions, add 7-day free trial (no charge until trial ends)
-    if (planConfig.mode === 'subscription') {
-      sessionParams.subscription_data = {
-        trial_period_days: 7,
-      };
+    if (config.mode === 'subscription') {
+      sessionParams['subscription_data[trial_period_days]'] = 7;
     }
 
-    console.log('Creating checkout session for plan:', planId);
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    const session = await stripeRequest('/checkout/sessions', STRIPE_SECRET_KEY, 'POST', sessionParams);
 
     console.log('Checkout session created:', session.id);
-    return new Response(
-      JSON.stringify({ 
-        sessionId: session.id, 
-        url: session.url 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    
+    return new Response(JSON.stringify({ sessionId: session.id, url: session.url }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Error creating checkout session:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(JSON.stringify({ error: message }), {
+    console.error('Error:', error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
