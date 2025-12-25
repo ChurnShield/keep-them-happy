@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
@@ -5,18 +6,98 @@ import {
   TrendingUp, 
   Activity,
   ArrowRight,
-  Loader2
+  Loader2,
+  ShieldAlert,
+  CheckCircle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useDashboardOverview, formatEventType } from '@/hooks/useChurnDashboard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useCustomers } from '@/hooks/useCustomers';
+import { CustomerList } from '@/components/customers/CustomerList';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+
+// Mock customer data generator
+const generateMockCustomers = (userId: string) => [
+  {
+    user_id: userId,
+    name: 'Acme Corporation',
+    email: 'billing@acme.com',
+    last_active_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), // 20 days ago
+    subscription_status: 'active',
+    plan_amount: 9900,
+  },
+  {
+    user_id: userId,
+    name: 'TechStart Inc',
+    email: 'admin@techstart.io',
+    last_active_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    subscription_status: 'past_due',
+    plan_amount: 4900,
+  },
+  {
+    user_id: userId,
+    name: 'Global Solutions',
+    email: 'accounts@globalsol.com',
+    last_active_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
+    subscription_status: 'canceled',
+    plan_amount: 19900,
+    canceled_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+  },
+  {
+    user_id: userId,
+    name: 'Healthy Business',
+    email: 'team@healthybiz.co',
+    last_active_at: new Date().toISOString(), // Today
+    subscription_status: 'active',
+    plan_amount: 9900,
+  },
+  {
+    user_id: userId,
+    name: 'Startup Labs',
+    email: 'founder@startuplabs.dev',
+    last_active_at: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(), // 18 days ago
+    subscription_status: 'past_due',
+    plan_amount: 4900,
+  },
+];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { data: overview, isLoading, error } = useDashboardOverview();
+  const { user } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
+  const { customers, loading, error, stats, refetch, getAtRiskCustomers } = useCustomers();
+  const [isAddingMock, setIsAddingMock] = useState(false);
+
+  const handleAddMockData = async () => {
+    if (!user) return;
+    
+    setIsAddingMock(true);
+    try {
+      const mockData = generateMockCustomers(user.id);
+      const { error: insertError } = await supabase
+        .from('customers')
+        .insert(mockData);
+
+      if (insertError) {
+        console.error('Error inserting mock data:', insertError);
+        toast.error('Failed to add mock customers');
+        return;
+      }
+
+      toast.success('Mock customers added successfully!');
+      refetch();
+    } catch (err) {
+      console.error('Error adding mock data:', err);
+      toast.error('An error occurred');
+    } finally {
+      setIsAddingMock(false);
+    }
+  };
 
   // Show subscription required message
   if (!subLoading && !hasActiveSubscription) {
@@ -42,7 +123,7 @@ export default function Dashboard() {
     );
   }
 
-  if (isLoading || subLoading) {
+  if (loading || subLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -50,28 +131,7 @@ export default function Dashboard() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center">
-          <CardHeader>
-            <CardTitle className="text-destructive">Error Loading Dashboard</CardTitle>
-            <CardDescription>{error.message}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => window.location.reload()} variant="outline">
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Sort reason counts for display
-  const sortedReasons = Object.entries(overview?.topReasonCounts || {})
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5);
+  const atRiskCustomers = getAtRiskCustomers();
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,7 +145,7 @@ export default function Dashboard() {
         </div>
 
         {/* Overview Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4 mb-8">
           {/* Total Customers */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -95,134 +155,162 @@ export default function Dashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{overview?.totalCustomers || 0}</div>
+              <div className="text-3xl font-bold">{stats.total}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Monitored via Stripe
+                Being monitored
               </p>
             </CardContent>
           </Card>
 
           {/* At-Risk Count */}
-          <Card className={overview?.atRiskCount ? 'border-orange-500/50' : ''}>
+          <Card className={stats.atRisk > 0 ? 'border-orange-500/50' : ''}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                At-Risk Customers
+                At-Risk
               </CardTitle>
-              <AlertTriangle className={`h-4 w-4 ${overview?.atRiskCount ? 'text-orange-500' : 'text-muted-foreground'}`} />
+              <AlertTriangle className={`h-4 w-4 ${stats.atRisk > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
             </CardHeader>
             <CardContent>
-              <div className={`text-3xl font-bold ${overview?.atRiskCount ? 'text-orange-500' : ''}`}>
-                {overview?.atRiskCount || 0}
+              <div className={`text-3xl font-bold ${stats.atRisk > 0 ? 'text-orange-500' : ''}`}>
+                {stats.atRisk}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Risk score ≥ 50
+                Need attention
               </p>
             </CardContent>
           </Card>
 
-          {/* Risk Rate */}
+          {/* High Risk */}
+          <Card className={stats.highRisk > 0 ? 'border-red-500/50' : ''}>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                High Risk
+              </CardTitle>
+              <ShieldAlert className={`h-4 w-4 ${stats.highRisk > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+            </CardHeader>
+            <CardContent>
+              <div className={`text-3xl font-bold ${stats.highRisk > 0 ? 'text-red-500' : ''}`}>
+                {stats.highRisk}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Critical priority
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Healthy */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Risk Rate
+                Healthy
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CheckCircle className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">
-                {overview?.totalCustomers 
-                  ? Math.round((overview.atRiskCount / overview.totalCustomers) * 100) 
-                  : 0}%
+              <div className="text-3xl font-bold text-green-500">
+                {stats.total - stats.atRisk}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Of total customers
+                No risk signals
               </p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Top Risk Reasons */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
-                Top Risk Signals (Last 30 Days)
-              </CardTitle>
-              <CardDescription>
-                Most common churn risk events detected
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {sortedReasons.length > 0 ? (
-                <div className="space-y-3">
-                  {sortedReasons.map(([eventType, count]) => (
-                    <div 
-                      key={eventType} 
-                      className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-                    >
-                      <span className="font-medium">{formatEventType(eventType)}</span>
-                      <Badge variant="secondary">{count}</Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>No risk events in the last 30 days</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        {/* Customers Section */}
+        <Tabs defaultValue="at-risk" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="at-risk" className="gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                At Risk
+                {stats.atRisk > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                    {stats.atRisk}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="all" className="gap-2">
+                <Users className="h-4 w-4" />
+                All Customers
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Quick Actions */}
-          <Card>
+            {customers.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleAddMockData}
+                disabled={isAddingMock}
+              >
+                {isAddingMock ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  'Add More Mock Data'
+                )}
+              </Button>
+            )}
+          </div>
+
+          <TabsContent value="at-risk" className="mt-6">
+            {atRiskCustomers.length === 0 && stats.total > 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500/50" />
+                  <h3 className="text-lg font-semibold mb-2">All Clear!</h3>
+                  <p className="text-muted-foreground">
+                    None of your customers are showing churn risk signals.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <CustomerList 
+                customers={atRiskCustomers} 
+                loading={loading} 
+                error={error}
+                onAddMockData={handleAddMockData}
+                isAddingMock={isAddingMock}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="all" className="mt-6">
+            <CustomerList 
+              customers={customers} 
+              loading={loading} 
+              error={error}
+              onAddMockData={handleAddMockData}
+              isAddingMock={isAddingMock}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Quick Actions */}
+        {stats.total > 0 && (
+          <Card className="mt-8">
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
               <CardDescription>
                 Navigate to detailed views
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="flex flex-wrap gap-3">
               <Button 
                 variant="outline" 
-                className="w-full justify-between"
-                onClick={() => navigate('/dashboard/at-risk')}
-              >
-                <span className="flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-orange-500" />
-                  View At-Risk Customers
-                </span>
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full justify-between"
                 onClick={() => navigate('/connect-stripe')}
               >
-                <span className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Manage Stripe Connection
-                </span>
-                <ArrowRight className="h-4 w-4" />
+                <Users className="h-4 w-4 mr-2" />
+                Manage Stripe Connection
               </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Empty State */}
-        {overview?.totalCustomers === 0 && (
-          <Card className="mt-6">
-            <CardContent className="text-center py-12">
-              <Users className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-              <h3 className="text-lg font-semibold mb-2">No Customers Yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Connect your Stripe account to start monitoring customer churn risk.
-              </p>
-              <Button onClick={() => navigate('/connect-stripe')}>
-                Connect Stripe
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/churn-risk')}
+              >
+                <Activity className="h-4 w-4 mr-2" />
+                Advanced Churn Analysis
               </Button>
             </CardContent>
           </Card>

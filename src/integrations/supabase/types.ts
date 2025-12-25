@@ -68,6 +68,45 @@ export type Database = {
         }
         Relationships: []
       }
+      customers: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          email: string
+          id: string
+          last_active_at: string | null
+          name: string
+          plan_amount: number
+          subscription_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          last_active_at?: string | null
+          name: string
+          plan_amount?: number
+          subscription_status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          last_active_at?: string | null
+          name?: string
+          plan_amount?: number
+          subscription_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           company: string
