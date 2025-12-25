@@ -6,15 +6,74 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// ChurnShield subscription price (TEST MODE)
-const CHURNSHIELD_PRICE_ID = 'price_1SiDB0I94SrMi3IbveIokX3Y';
-
-const PRICE_CONFIG: Record<string, { priceId: string; mode: 'subscription' | 'payment' }> = {
-  churnshield: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
-  starter: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
-  growth: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
-  scale: { priceId: CHURNSHIELD_PRICE_ID, mode: 'subscription' },
+type PlanConfig = {
+  name: string;
+  currency: 'gbp' | 'usd' | 'eur';
+  unitAmount: number; // in minor units (e.g. pence)
+  lookupKey: string;
+  mode: 'subscription' | 'payment';
 };
+
+// Server-controlled pricing (keeps clients from passing arbitrary Stripe price IDs)
+const PLAN_CONFIG: Record<string, PlanConfig> = {
+  starter: {
+    name: 'Starter',
+    currency: 'gbp',
+    unitAmount: 4900,
+    lookupKey: 'churnshield_starter_monthly',
+    mode: 'subscription',
+  },
+  growth: {
+    name: 'Growth',
+    currency: 'gbp',
+    unitAmount: 14900,
+    lookupKey: 'churnshield_growth_monthly',
+    mode: 'subscription',
+  },
+  scale: {
+    name: 'Scale',
+    currency: 'gbp',
+    unitAmount: 34900,
+    lookupKey: 'churnshield_scale_monthly',
+    mode: 'subscription',
+  },
+  // backwards-compat alias
+  churnshield: {
+    name: 'Starter',
+    currency: 'gbp',
+    unitAmount: 4900,
+    lookupKey: 'churnshield_starter_monthly',
+    mode: 'subscription',
+  },
+};
+
+async function getOrCreatePriceId(stripe: Stripe, planId: string, config: PlanConfig) {
+  const existing = await stripe.prices.list({
+    lookup_keys: [config.lookupKey],
+    active: true,
+    limit: 1,
+  });
+
+  if (existing.data.length > 0) {
+    return existing.data[0].id;
+  }
+
+  console.log('No price found for lookup_key, creating one:', config.lookupKey);
+  const created = await stripe.prices.create({
+    currency: config.currency,
+    unit_amount: config.unitAmount,
+    recurring: config.mode === 'subscription' ? { interval: 'month' } : undefined,
+    lookup_key: config.lookupKey,
+    nickname: `ChurnShield ${config.name}`,
+    product_data: {
+      name: `ChurnShield ${config.name}`,
+      metadata: { plan_id: planId },
+    },
+  });
+
+  return created.id;
+}
+
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -61,7 +120,8 @@ serve(async (req) => {
       });
     }
 
-    const planConfig = PRICE_CONFIG[planId.toLowerCase()];
+    const normalizedPlanId = String(planId).toLowerCase();
+    const planConfig = PLAN_CONFIG[normalizedPlanId];
     if (!planConfig) {
       return new Response(JSON.stringify({ error: 'Invalid plan ID' }), {
         status: 400,
@@ -69,15 +129,26 @@ serve(async (req) => {
       });
     }
 
+    const priceId = await getOrCreatePriceId(stripe, normalizedPlanId, planConfig);
+
     const baseUrl = APP_URL || 'http://localhost:5173';
+
+    // Create a customer first (required for some Stripe Accounts V2 testmode setups)
+    const customer = await stripe.customers.create({
+      ...(email ? { email } : {}),
+      metadata: {
+        plan_id: normalizedPlanId,
+      },
+    });
 
     // Create checkout session
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: planConfig.mode,
       payment_method_types: ['card'],
+      customer: customer.id,
       line_items: [
         {
-          price: planConfig.priceId,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -85,11 +156,6 @@ serve(async (req) => {
       cancel_url: cancelUrl || `${baseUrl}/pricing`,
       allow_promotion_codes: true,
     };
-
-    // Add customer email if provided
-    if (email) {
-      sessionParams.customer_email = email;
-    }
 
     // For subscriptions, add 7-day free trial (no charge until trial ends)
     if (planConfig.mode === 'subscription') {
