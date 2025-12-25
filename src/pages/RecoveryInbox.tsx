@@ -4,9 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Clock, DollarSign, Inbox, ArrowRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { AlertTriangle, Clock, DollarSign, Inbox, ArrowRight, Plus } from 'lucide-react';
 import { useRecoveryCases, getTimeRemaining, getUrgencyLevel, RecoveryCase } from '@/hooks/useRecoveryCases';
-import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 function CountdownTimer({ deadline_at }: { deadline_at: string }) {
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(deadline_at));
@@ -133,17 +144,96 @@ function LoadingSkeleton() {
 }
 
 export default function RecoveryInbox() {
-  const { getOpenCases, loading, error, stats } = useRecoveryCases();
+  const { getOpenCases, loading, error, stats, createCase, refetch } = useRecoveryCases();
   const openCases = getOpenCases();
+  
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [customerRef, setCustomerRef] = useState('');
+  const [amount, setAmount] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCreateTestCase = async () => {
+    if (!customerRef.trim() || !amount) return;
+    
+    try {
+      setIsSubmitting(true);
+      await createCase({
+        customer_reference: customerRef.trim(),
+        amount_at_risk: parseFloat(amount),
+        currency: 'USD',
+      });
+      toast.success('Test case created');
+      setCustomerRef('');
+      setAmount('');
+      setIsCreateOpen(false);
+      await refetch();
+    } catch (err) {
+      toast.error('Failed to create test case');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-3xl py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Recovery Inbox</h1>
-          <p className="text-muted-foreground">
-            Active payment recovery cases that need your attention.
-          </p>
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight mb-2">Recovery Inbox</h1>
+            <p className="text-muted-foreground">
+              Active payment recovery cases that need your attention.
+            </p>
+          </div>
+          
+          {/* Test Case Creator */}
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Test Case
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Test Recovery Case</DialogTitle>
+                <DialogDescription>
+                  Add a mock recovery case to test the feature. The 48-hour countdown starts now.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customer">Customer Reference</Label>
+                  <Input
+                    id="customer"
+                    placeholder="e.g., customer@example.com"
+                    value={customerRef}
+                    onChange={(e) => setCustomerRef(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount at Risk ($)</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    placeholder="e.g., 99.00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleCreateTestCase}
+                  disabled={!customerRef.trim() || !amount || isSubmitting}
+                >
+                  Create Case
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Stats summary */}
