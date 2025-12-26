@@ -110,6 +110,21 @@ export function useAuth() {
     return { error };
   };
 
+  const signOutEverywhere = async () => {
+    // Clear all local auth tokens
+    localStorage.removeItem('sb-rdstyfaveeokocztayri-auth-token');
+    
+    // Sign out from all sessions (scope: 'global')
+    const { error } = await supabase.auth.signOut({ scope: 'global' });
+    
+    // Clear state
+    setSession(null);
+    setUser(null);
+    setIsAdmin(false);
+    
+    return { error };
+  };
+
   const emailVerified = user?.email_confirmed_at != null;
 
   return {
@@ -121,5 +136,6 @@ export function useAuth() {
     signIn,
     signUp,
     signOut,
+    signOutEverywhere,
   };
 }
