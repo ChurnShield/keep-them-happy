@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { RecoveryCase } from '@/hooks/useRecoveryCases';
-import { useMemo } from 'react';
+import { useMemo, useState, createContext, useContext } from 'react';
+
+// Hover context to share state between cards and connectors
+const HoverContext = createContext<{ isHovered: boolean }>({ isHovered: false });
 
 interface RecoveryStatsProps {
   cases: RecoveryCase[];
@@ -14,9 +17,10 @@ interface StatCardProps {
   subtext: string;
   variant: 'default' | 'success' | 'muted' | 'primary';
   delay: number;
+  onHoverChange: (hovered: boolean) => void;
 }
 
-function StatCard({ icon, label, value, subtext, variant, delay }: StatCardProps) {
+function StatCard({ icon, label, value, subtext, variant, delay, onHoverChange }: StatCardProps) {
   const colorClasses = {
     default: 'text-foreground',
     success: 'text-primary',
@@ -29,7 +33,9 @@ function StatCard({ icon, label, value, subtext, variant, delay }: StatCardProps
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="relative p-4 rounded-xl bg-white/[0.03] border border-border/50 backdrop-blur-sm"
+      className="relative p-4 rounded-xl bg-white/[0.03] border border-border/50 backdrop-blur-sm hover:border-primary/50 transition-colors cursor-pointer"
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
     >
       <div className="flex items-center gap-2 mb-2">
         {icon}
@@ -42,6 +48,8 @@ function StatCard({ icon, label, value, subtext, variant, delay }: StatCardProps
 }
 
 function HorizontalConnector({ delay }: { delay: number }) {
+  const { isHovered } = useContext(HoverContext);
+  
   return (
     <div className="hidden lg:flex items-center justify-center">
       <svg width="40" height="24" viewBox="0 0 40 24" className="overflow-visible">
@@ -55,27 +63,44 @@ function HorizontalConnector({ delay }: { delay: number }) {
           animate={{ pathLength: 1, opacity: 1 }}
           transition={{ duration: 0.6, delay, ease: "easeOut" }}
         />
-        <motion.circle
-          cx="40"
-          cy="12"
-          r="3"
-          fill="hsl(var(--primary))"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3, delay: delay + 0.4 }}
-        />
+        {/* Glow filter for pulsing effect */}
         <defs>
+          <filter id="glow-h" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
           <linearGradient id="connector-gradient-h" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
             <stop offset="100%" stopColor="hsl(var(--primary))" />
           </linearGradient>
         </defs>
+        <motion.circle
+          cx="40"
+          cy="12"
+          r="3"
+          fill="hsl(var(--primary))"
+          filter={isHovered ? "url(#glow-h)" : undefined}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ 
+            scale: isHovered ? [1, 1.3, 1] : 1, 
+            opacity: 1,
+          }}
+          transition={isHovered ? { 
+            scale: { duration: 0.8, repeat: Infinity, ease: "easeInOut" },
+            opacity: { duration: 0.3, delay: delay + 0.4 }
+          } : { duration: 0.3, delay: delay + 0.4 }}
+        />
       </svg>
     </div>
   );
 }
 
 function VerticalConnector({ delay }: { delay: number }) {
+  const { isHovered } = useContext(HoverContext);
+  
   return (
     <div className="flex lg:hidden items-center justify-center col-span-2 py-1">
       <svg width="24" height="32" viewBox="0 0 24 32" className="overflow-visible">
@@ -89,27 +114,44 @@ function VerticalConnector({ delay }: { delay: number }) {
           animate={{ pathLength: 1, opacity: 1 }}
           transition={{ duration: 0.5, delay, ease: "easeOut" }}
         />
-        <motion.circle
-          cx="12"
-          cy="32"
-          r="3"
-          fill="hsl(var(--primary))"
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.3, delay: delay + 0.3 }}
-        />
+        {/* Glow filter for pulsing effect */}
         <defs>
+          <filter id="glow-v" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
           <linearGradient id="connector-gradient-v" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
             <stop offset="100%" stopColor="hsl(var(--primary))" />
           </linearGradient>
         </defs>
+        <motion.circle
+          cx="12"
+          cy="32"
+          r="3"
+          fill="hsl(var(--primary))"
+          filter={isHovered ? "url(#glow-v)" : undefined}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ 
+            scale: isHovered ? [1, 1.3, 1] : 1, 
+            opacity: 1,
+          }}
+          transition={isHovered ? { 
+            scale: { duration: 0.8, repeat: Infinity, ease: "easeInOut" },
+            opacity: { duration: 0.3, delay: delay + 0.3 }
+          } : { duration: 0.3, delay: delay + 0.3 }}
+        />
       </svg>
     </div>
   );
 }
 
 export function RecoveryStats({ cases }: RecoveryStatsProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const metrics = useMemo(() => {
     const resolved = cases.filter(c => c.status !== 'open');
     const recovered = cases.filter(c => c.status === 'recovered');
@@ -140,82 +182,92 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
     amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
   return (
-    <div className="mb-8">
-      {/* Desktop layout with horizontal connectors */}
-      <div className="hidden lg:grid lg:grid-cols-[1fr_40px_1fr_40px_1fr_40px_1fr] gap-3 items-center">
-        <StatCard
-          icon={<TrendingUp className="h-4 w-4 text-primary" />}
-          label="Recovery Rate"
-          value={`${metrics.recoveryRate}%`}
-          subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
-          variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
-          delay={0}
-        />
-        <HorizontalConnector delay={0.15} />
-        <StatCard
-          icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
-          label="Recovered"
-          value={formatCurrency(metrics.revenueRecovered)}
-          subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
-          variant="success"
-          delay={0.1}
-        />
-        <HorizontalConnector delay={0.25} />
-        <StatCard
-          icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
-          label="Lost"
-          value={formatCurrency(metrics.revenueLost)}
-          subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
-          variant="muted"
-          delay={0.2}
-        />
-        <HorizontalConnector delay={0.35} />
-        <StatCard
-          icon={<Clock className="h-4 w-4 text-primary" />}
-          label="At Risk"
-          value={formatCurrency(metrics.revenueAtRisk)}
-          subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
-          variant="primary"
-          delay={0.3}
-        />
-      </div>
+    <HoverContext.Provider value={{ isHovered }}>
+      <div className="mb-8">
+        {/* Desktop layout with horizontal connectors */}
+        <div className="hidden lg:grid lg:grid-cols-[1fr_40px_1fr_40px_1fr_40px_1fr] gap-3 items-center">
+          <StatCard
+            icon={<TrendingUp className="h-4 w-4 text-primary" />}
+            label="Recovery Rate"
+            value={`${metrics.recoveryRate}%`}
+            subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
+            variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
+            delay={0}
+            onHoverChange={setIsHovered}
+          />
+          <HorizontalConnector delay={0.15} />
+          <StatCard
+            icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+            label="Recovered"
+            value={formatCurrency(metrics.revenueRecovered)}
+            subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
+            variant="success"
+            delay={0.1}
+            onHoverChange={setIsHovered}
+          />
+          <HorizontalConnector delay={0.25} />
+          <StatCard
+            icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+            label="Lost"
+            value={formatCurrency(metrics.revenueLost)}
+            subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
+            variant="muted"
+            delay={0.2}
+            onHoverChange={setIsHovered}
+          />
+          <HorizontalConnector delay={0.35} />
+          <StatCard
+            icon={<Clock className="h-4 w-4 text-primary" />}
+            label="At Risk"
+            value={formatCurrency(metrics.revenueAtRisk)}
+            subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
+            variant="primary"
+            delay={0.3}
+            onHoverChange={setIsHovered}
+          />
+        </div>
 
-      {/* Mobile layout with vertical connectors between rows */}
-      <div className="grid lg:hidden grid-cols-2 gap-3 items-center">
-        <StatCard
-          icon={<TrendingUp className="h-4 w-4 text-primary" />}
-          label="Recovery Rate"
-          value={`${metrics.recoveryRate}%`}
-          subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
-          variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
-          delay={0}
-        />
-        <StatCard
-          icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
-          label="Recovered"
-          value={formatCurrency(metrics.revenueRecovered)}
-          subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
-          variant="success"
-          delay={0.1}
-        />
-        <VerticalConnector delay={0.2} />
-        <StatCard
-          icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
-          label="Lost"
-          value={formatCurrency(metrics.revenueLost)}
-          subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
-          variant="muted"
-          delay={0.25}
-        />
-        <StatCard
-          icon={<Clock className="h-4 w-4 text-primary" />}
-          label="At Risk"
-          value={formatCurrency(metrics.revenueAtRisk)}
-          subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
-          variant="primary"
-          delay={0.3}
-        />
+        {/* Mobile layout with vertical connectors between rows */}
+        <div className="grid lg:hidden grid-cols-2 gap-3 items-center">
+          <StatCard
+            icon={<TrendingUp className="h-4 w-4 text-primary" />}
+            label="Recovery Rate"
+            value={`${metrics.recoveryRate}%`}
+            subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
+            variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
+            delay={0}
+            onHoverChange={setIsHovered}
+          />
+          <StatCard
+            icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+            label="Recovered"
+            value={formatCurrency(metrics.revenueRecovered)}
+            subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
+            variant="success"
+            delay={0.1}
+            onHoverChange={setIsHovered}
+          />
+          <VerticalConnector delay={0.2} />
+          <StatCard
+            icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+            label="Lost"
+            value={formatCurrency(metrics.revenueLost)}
+            subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
+            variant="muted"
+            delay={0.25}
+            onHoverChange={setIsHovered}
+          />
+          <StatCard
+            icon={<Clock className="h-4 w-4 text-primary" />}
+            label="At Risk"
+            value={formatCurrency(metrics.revenueAtRisk)}
+            subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
+            variant="primary"
+            delay={0.3}
+            onHoverChange={setIsHovered}
+          />
+        </div>
       </div>
-    </div>
+    </HoverContext.Provider>
   );
 }
