@@ -220,6 +220,7 @@ export type Database = {
       recovery_cases: {
         Row: {
           amount_at_risk: number
+          churn_reason: Database["public"]["Enums"]["churn_reason"]
           created_at: string
           currency: string
           customer_reference: string
@@ -235,6 +236,7 @@ export type Database = {
         }
         Insert: {
           amount_at_risk: number
+          churn_reason?: Database["public"]["Enums"]["churn_reason"]
           created_at?: string
           currency?: string
           customer_reference: string
@@ -250,6 +252,7 @@ export type Database = {
         }
         Update: {
           amount_at_risk?: number
+          churn_reason?: Database["public"]["Enums"]["churn_reason"]
           created_at?: string
           currency?: string
           customer_reference?: string
@@ -553,6 +556,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      churn_reason:
+        | "card_expired"
+        | "insufficient_funds"
+        | "bank_decline"
+        | "no_retry_attempted"
+        | "unknown_failure"
       payment_recovery_status:
         | "needs_payment"
         | "emailed_1"
@@ -692,6 +701,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      churn_reason: [
+        "card_expired",
+        "insufficient_funds",
+        "bank_decline",
+        "no_retry_attempted",
+        "unknown_failure",
+      ],
       payment_recovery_status: [
         "needs_payment",
         "emailed_1",
