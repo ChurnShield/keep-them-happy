@@ -41,14 +41,14 @@ function StatCard({ icon, label, value, subtext, variant, delay }: StatCardProps
   );
 }
 
-function ConnectorLine({ delay }: { delay: number }) {
+function HorizontalConnector({ delay }: { delay: number }) {
   return (
     <div className="hidden lg:flex items-center justify-center">
       <svg width="40" height="24" viewBox="0 0 40 24" className="overflow-visible">
         <motion.path
           d="M0 12 Q20 12 40 12"
           fill="none"
-          stroke="url(#connector-gradient)"
+          stroke="url(#connector-gradient-h)"
           strokeWidth="2"
           strokeLinecap="round"
           initial={{ pathLength: 0, opacity: 0 }}
@@ -65,7 +65,41 @@ function ConnectorLine({ delay }: { delay: number }) {
           transition={{ duration: 0.3, delay: delay + 0.4 }}
         />
         <defs>
-          <linearGradient id="connector-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id="connector-gradient-h" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function VerticalConnector({ delay }: { delay: number }) {
+  return (
+    <div className="flex lg:hidden items-center justify-center col-span-2 py-1">
+      <svg width="24" height="32" viewBox="0 0 24 32" className="overflow-visible">
+        <motion.path
+          d="M12 0 Q12 16 12 32"
+          fill="none"
+          stroke="url(#connector-gradient-v)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ duration: 0.5, delay, ease: "easeOut" }}
+        />
+        <motion.circle
+          cx="12"
+          cy="32"
+          r="3"
+          fill="hsl(var(--primary))"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3, delay: delay + 0.3 }}
+        />
+        <defs>
+          <linearGradient id="connector-gradient-v" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
             <stop offset="100%" stopColor="hsl(var(--primary))" />
           </linearGradient>
@@ -106,42 +140,82 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
     amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-[1fr_40px_1fr_40px_1fr_40px_1fr] gap-3 mb-8 items-center">
-      <StatCard
-        icon={<TrendingUp className="h-4 w-4 text-primary" />}
-        label="Recovery Rate"
-        value={`${metrics.recoveryRate}%`}
-        subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
-        variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
-        delay={0}
-      />
-      <ConnectorLine delay={0.15} />
-      <StatCard
-        icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
-        label="Recovered"
-        value={formatCurrency(metrics.revenueRecovered)}
-        subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
-        variant="success"
-        delay={0.1}
-      />
-      <ConnectorLine delay={0.25} />
-      <StatCard
-        icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
-        label="Lost"
-        value={formatCurrency(metrics.revenueLost)}
-        subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
-        variant="muted"
-        delay={0.2}
-      />
-      <ConnectorLine delay={0.35} />
-      <StatCard
-        icon={<Clock className="h-4 w-4 text-primary" />}
-        label="At Risk"
-        value={formatCurrency(metrics.revenueAtRisk)}
-        subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
-        variant="primary"
-        delay={0.3}
-      />
+    <div className="mb-8">
+      {/* Desktop layout with horizontal connectors */}
+      <div className="hidden lg:grid lg:grid-cols-[1fr_40px_1fr_40px_1fr_40px_1fr] gap-3 items-center">
+        <StatCard
+          icon={<TrendingUp className="h-4 w-4 text-primary" />}
+          label="Recovery Rate"
+          value={`${metrics.recoveryRate}%`}
+          subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
+          variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
+          delay={0}
+        />
+        <HorizontalConnector delay={0.15} />
+        <StatCard
+          icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+          label="Recovered"
+          value={formatCurrency(metrics.revenueRecovered)}
+          subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
+          variant="success"
+          delay={0.1}
+        />
+        <HorizontalConnector delay={0.25} />
+        <StatCard
+          icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+          label="Lost"
+          value={formatCurrency(metrics.revenueLost)}
+          subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
+          variant="muted"
+          delay={0.2}
+        />
+        <HorizontalConnector delay={0.35} />
+        <StatCard
+          icon={<Clock className="h-4 w-4 text-primary" />}
+          label="At Risk"
+          value={formatCurrency(metrics.revenueAtRisk)}
+          subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
+          variant="primary"
+          delay={0.3}
+        />
+      </div>
+
+      {/* Mobile layout with vertical connectors between rows */}
+      <div className="grid lg:hidden grid-cols-2 gap-3 items-center">
+        <StatCard
+          icon={<TrendingUp className="h-4 w-4 text-primary" />}
+          label="Recovery Rate"
+          value={`${metrics.recoveryRate}%`}
+          subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
+          variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
+          delay={0}
+        />
+        <StatCard
+          icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+          label="Recovered"
+          value={formatCurrency(metrics.revenueRecovered)}
+          subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
+          variant="success"
+          delay={0.1}
+        />
+        <VerticalConnector delay={0.2} />
+        <StatCard
+          icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
+          label="Lost"
+          value={formatCurrency(metrics.revenueLost)}
+          subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
+          variant="muted"
+          delay={0.25}
+        />
+        <StatCard
+          icon={<Clock className="h-4 w-4 text-primary" />}
+          label="At Risk"
+          value={formatCurrency(metrics.revenueAtRisk)}
+          subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
+          variant="primary"
+          delay={0.3}
+        />
+      </div>
     </div>
   );
 }
