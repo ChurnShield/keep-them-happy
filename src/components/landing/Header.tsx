@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 export function Header() {
@@ -40,7 +40,7 @@ export function Header() {
       <div className="container mx-auto flex items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          <div className="w-6 h-6 rounded-md bg-gradient-to-r from-teal-400 to-cyan-400" />
+          <Shield className="w-6 h-6 text-teal-400" />
           <span className="text-foreground font-semibold text-lg tracking-tight">
             ChurnShield
           </span>
