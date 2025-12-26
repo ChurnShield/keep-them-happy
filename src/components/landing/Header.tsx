@@ -15,8 +15,14 @@ export function Header() {
   const handleNavClick = (href: string) => {
     setOpen(false);
     if (href.startsWith("#")) {
-      const element = document.querySelector(href);
-      element?.scrollIntoView({ behavior: "smooth" });
+      // Check if we're on the landing page
+      if (window.location.pathname === "/") {
+        const element = document.querySelector(href);
+        element?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        // Navigate to landing page with hash
+        navigate("/" + href);
+      }
     } else {
       navigate(href);
     }
