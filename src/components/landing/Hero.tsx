@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, TrendingUp, Shield, DollarSign, Inbox } from "lucide-react";
-import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
 import { useNavigate } from "react-router-dom";
@@ -22,153 +21,80 @@ export function Hero() {
   const handleOpenRecovery = () => {
     navigate('/recovery');
   };
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
-      {/* Background Effects */}
-      <div className="absolute inset-0 hero-glow" />
-      <div className="absolute inset-0 bg-grid-pattern opacity-30" />
-      
-      {/* Floating orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/10 blur-3xl animate-pulse-slow" />
-      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-primary/5 blur-3xl animate-pulse-slow" style={{ animationDelay: "2s" }} />
+    <section className="relative overflow-hidden bg-gradient-to-b from-background to-card text-foreground py-20 md:py-28 pt-32 md:pt-36">
+      <div className="container mx-auto px-6 text-center max-w-3xl">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-teal-300 mb-6">
+          <span className="font-medium">💡 Smarter pricing:</span>
+          <span>Pay only for revenue you actually keep</span>
+        </div>
 
-      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-5xl mx-auto text-center">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-teal-400/10 px-4 py-1.5 text-sm font-medium text-teal-400 mb-8"
-          >
-            <DollarSign className="h-4 w-4" />
-            <span>Revolutionary pricing: Pay only for saved revenue</span>
-          </motion.div>
+        {/* Headline */}
+        <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
+          Pay only for the{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
+            customers you actually retain.
+          </span>
+        </h1>
 
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-foreground text-balance"
-          >
-            Only pay for{" "}
-            <span className="gradient-text">revenue we actually save.</span>
-          </motion.h1>
+        {/* Subheadline */}
+        <p className="text-lg text-muted-foreground mb-10">
+          Most retention tools charge you for churn.{" "}
+          <span className="text-foreground font-medium">ChurnShield only earns when you do</span> — if we don't recover revenue, you don't pay a cent. Simple, fair, and performance-driven.
+        </p>
 
-          {/* Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-3xl mx-auto text-balance"
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          <Button 
+            onClick={handleStartTrial}
+            disabled={isLoading}
+            className="w-full sm:w-auto bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-semibold hover:opacity-90 transition"
           >
-            Unlike competitors who charge % of total churn, ChurnShield only bills you for customers we actually retain. 
-            Zero saved? Zero cost. It's that simple.
-          </motion.p>
+            {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleOpenRecovery}
+            className="w-full sm:w-auto border-teal-400/60 text-teal-300 hover:bg-teal-400/10 transition"
+          >
+            See Recovery Inbox
+          </Button>
+        </div>
 
-          {/* Value Prop Highlight - The Hero Differentiator */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className="mt-8 relative"
-          >
-            <div className="absolute inset-0 rounded-2xl bg-teal-400/20 blur-xl" />
-            <div className="relative inline-flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-teal-400/30 bg-card/80 backdrop-blur-sm px-6 py-4">
-              <div className="flex items-center gap-3 text-sm sm:text-base">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive">
-                  <span className="font-medium">Others: % of total churn</span>
-                </div>
-                <ArrowRight className="h-5 w-5 text-teal-400 hidden sm:block" />
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-400/10 text-teal-400 font-semibold">
-                  <Shield className="h-4 w-4" />
-                  <span>ChurnShield: % of saved revenue only</span>
-                </div>
-              </div>
+        {/* Trust Indicators */}
+        <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-muted-foreground text-sm mb-10">
+          <li className="flex items-center gap-1">
+            <Check className="w-4 h-4 text-teal-400" /> No setup fees or lock-ins
+          </li>
+          <li className="flex items-center gap-1">
+            <Check className="w-4 h-4 text-teal-400" /> Pay only for results
+          </li>
+          <li className="flex items-center gap-1">
+            <Check className="w-4 h-4 text-teal-400" /> Zero-risk guarantee
+          </li>
+        </ul>
+
+        {/* Social Proof + Stats */}
+        <div className="bg-white/5 rounded-xl p-6 md:p-8 backdrop-blur-sm border border-white/10">
+          <p className="text-sm uppercase tracking-wider text-muted-foreground mb-4">
+            Trusted by leading SaaS teams — recovering millions in ARR
+          </p>
+          <div className="grid grid-cols-3 gap-4 md:gap-8 text-center">
+            <div>
+              <p className="text-3xl font-bold text-teal-400">$0</p>
+              <p className="text-sm text-muted-foreground">Cost if we save nothing</p>
             </div>
-          </motion.div>
-
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
-          >
-            <Button 
-              variant="hero" 
-              size="xl" 
-              className="group"
-              onClick={handleStartTrial}
-              disabled={isLoading}
-            >
-              {isLoading ? "Loading..." : "Start Risk-Free Trial"}
-              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Button>
-
-            <Button
-              variant="outline"
-              size="xl"
-              onClick={handleOpenRecovery}
-            >
-              <Inbox className="h-5 w-5 mr-2" />
-              Open Recovery Inbox
-            </Button>
-          </motion.div>
-
-          {/* Trust Indicators */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-muted-foreground"
-          >
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              No upfront costs
+            <div>
+              <p className="text-3xl font-bold text-teal-400">54%</p>
+              <p className="text-sm text-muted-foreground">Avg. churn reduction</p>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Pay only for results
+            <div>
+              <p className="text-3xl font-bold text-teal-400">100%</p>
+              <p className="text-sm text-muted-foreground">Aligned with your success</p>
             </div>
-            <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              Zero risk guarantee
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-8"
-          >
-            {[
-              { value: "$0", label: "Cost if we save nothing", icon: DollarSign },
-              { value: "54%", label: "Average churn reduction", icon: TrendingUp },
-              { value: "100%", label: "Aligned with your success", icon: Shield },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="relative group"
-              >
-                <div className="absolute inset-0 rounded-2xl bg-teal-400/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 transition-all hover:border-teal-400/30">
-                  <stat.icon className="h-8 w-8 text-teal-400 mb-4 mx-auto" />
-                  <div className="text-4xl font-bold gradient-text">{stat.value}</div>
-                  <div className="mt-2 text-sm text-muted-foreground">{stat.label}</div>
-                </div>
-              </div>
-            ))}
-          </motion.div>
+          </div>
         </div>
       </div>
 
