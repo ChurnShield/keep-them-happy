@@ -1,12 +1,14 @@
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
+import { useNavigate } from "react-router-dom";
 
 const PLAN_ID = "starter";
 
 export function CTA() {
+  const navigate = useNavigate();
   const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
 
   const handleStartTrial = () => {
@@ -17,65 +19,95 @@ export function CTA() {
     });
   };
 
-  return (
-    <section className="relative bg-background text-foreground py-24 md:py-32 border-t border-white/10 overflow-hidden">
-      {/* Animated glow effect */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-teal-400/10 rounded-full blur-3xl animate-pulse-slow" />
-      
-      {/* Accent line animation */}
-      <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[300px] h-[2px] bg-gradient-to-r from-transparent via-teal-400/60 to-transparent blur-sm animate-pulse-slow" />
+  const handleHowItWorks = () => {
+    const element = document.querySelector("#how-it-works");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    } else {
+      navigate("/how-it-works");
+    }
+  };
 
-      <div className="container mx-auto px-6 max-w-4xl text-center relative z-10">
+  return (
+    <section className="relative overflow-hidden bg-gradient-to-b from-background to-card text-foreground py-28 md:py-36 border-t border-white/10">
+      {/* Gradient Glow Background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-teal-400/10 via-cyan-400/10 to-transparent blur-3xl opacity-40 pointer-events-none" />
+
+      <div className="container mx-auto px-6 text-center relative z-10 max-w-3xl">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          {/* Glowing CTA Card */}
-          <div className="relative bg-white/5 border border-white/10 rounded-3xl backdrop-blur-md p-12 md:p-16 shadow-2xl hover:border-teal-400/30 transition">
-            {/* Top glow line */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-px bg-gradient-to-r from-transparent via-teal-400/50 to-transparent" />
-            
-            {/* Radial glow behind content */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-80 h-40 bg-teal-400/20 rounded-full blur-3xl" />
+          {/* Headline */}
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+            Ready to{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
+              stop paying for churn?
+            </span>
+          </h2>
 
-            <div className="relative">
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-                Ready to{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
-                  stop losing customers?
-                </span>
-              </h2>
-              
-              <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-10">
-                Join hundreds of SaaS companies using ChurnShield to reduce churn, 
-                recover revenue, and build lasting customer relationships — with zero risk.
-              </p>
+          {/* Subheadline */}
+          <p className="text-lg text-muted-foreground mb-10">
+            Start your risk-free trial today and pay only when ChurnShield
+            actually retains your customers. Simple, transparent, and aligned
+            with your success.
+          </p>
 
-              {/* Glowing CTA Button */}
-              <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-10">
+            {/* Motion Glow Button */}
+            <motion.div
+              animate={{
+                boxShadow: [
+                  "0 0 0px rgba(45, 212, 191, 0.0)",
+                  "0 0 25px rgba(45, 212, 191, 0.4)",
+                  "0 0 0px rgba(45, 212, 191, 0.0)",
+                ],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="w-full sm:w-auto rounded-lg"
+            >
+              <Button 
+                onClick={handleStartTrial}
+                disabled={isLoading}
+                className="w-full sm:w-auto bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-semibold hover:opacity-90 transition shadow-md"
               >
-                <Button 
-                  onClick={handleStartTrial}
-                  disabled={isLoading}
-                  className="bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-semibold text-lg px-10 py-6 h-auto rounded-xl shadow-lg shadow-teal-400/30 hover:shadow-xl hover:shadow-teal-400/40 transition-all group"
-                >
-                  {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </motion.div>
+                {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
+              </Button>
+            </motion.div>
 
-              {/* Trust note */}
-              <p className="mt-8 text-sm text-muted-foreground/60">
-                No credit card required • Cancel anytime • Results guaranteed
-              </p>
-            </div>
+            <Button
+              variant="outline"
+              onClick={handleHowItWorks}
+              className="w-full sm:w-auto border-teal-400/60 text-teal-300 hover:bg-teal-400/10 transition"
+            >
+              View How It Works
+            </Button>
           </div>
+
+          {/* Trust points */}
+          <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-muted-foreground text-sm">
+            <li className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-teal-400" /> No credit card needed
+            </li>
+            <li className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-teal-400" /> Cancel anytime
+            </li>
+            <li className="flex items-center gap-1">
+              <Check className="w-4 h-4 text-teal-400" /> Zero-risk guarantee
+            </li>
+          </ul>
         </motion.div>
       </div>
+
+      {/* Subtle bottom divider glow */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[2px] bg-gradient-to-r from-transparent via-teal-400/60 to-transparent blur-sm animate-pulse-slow" />
 
       <CheckoutFallbackDialog 
         open={showFallbackDialog} 
