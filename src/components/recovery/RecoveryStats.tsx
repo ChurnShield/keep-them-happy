@@ -12,7 +12,11 @@ const HoverContext = createContext<HoverContextType>({ hoveredIndex: null, trail
 
 interface RecoveryStatsProps {
   cases: RecoveryCase[];
+  onFilterChange?: (filter: string) => void;
+  activeFilter?: string;
 }
+
+type FilterType = 'all' | 'recovered' | 'expired' | 'open';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -22,10 +26,13 @@ interface StatCardProps {
   variant: 'default' | 'success' | 'muted' | 'primary';
   delay: number;
   index: number;
+  filterKey: FilterType;
+  isActiveFilter: boolean;
   onHoverChange: (index: number | null) => void;
+  onClick: () => void;
 }
 
-function StatCard({ icon, label, value, subtext, variant, delay, index, onHoverChange }: StatCardProps) {
+function StatCard({ icon, label, value, subtext, variant, delay, index, filterKey, isActiveFilter, onHoverChange, onClick }: StatCardProps) {
   const { hoveredIndex, trailIndex } = useContext(HoverContext);
   const isHighlighted = hoveredIndex !== null && index <= trailIndex;
   
@@ -42,17 +49,33 @@ function StatCard({ icon, label, value, subtext, variant, delay, index, onHoverC
       animate={{ 
         opacity: 1, 
         y: 0,
-        boxShadow: isHighlighted 
-          ? '0 0 20px hsl(var(--primary) / 0.3)' 
-          : '0 0 0px hsl(var(--primary) / 0)'
+        boxShadow: isActiveFilter 
+          ? '0 0 24px hsl(var(--primary) / 0.5), inset 0 0 0 1px hsl(var(--primary) / 0.5)' 
+          : isHighlighted 
+            ? '0 0 20px hsl(var(--primary) / 0.3)' 
+            : '0 0 0px hsl(var(--primary) / 0)'
       }}
       transition={{ duration: 0.4, delay }}
+      whileTap={{ scale: 0.98 }}
       className={`relative p-4 rounded-xl bg-white/[0.03] border backdrop-blur-sm cursor-pointer transition-colors ${
-        isHighlighted ? 'border-primary/60' : 'border-border/50 hover:border-primary/30'
+        isActiveFilter 
+          ? 'border-primary bg-primary/10' 
+          : isHighlighted 
+            ? 'border-primary/60' 
+            : 'border-border/50 hover:border-primary/30'
       }`}
       onMouseEnter={() => onHoverChange(index)}
       onMouseLeave={() => onHoverChange(null)}
+      onClick={onClick}
     >
+      {/* Active filter indicator */}
+      {isActiveFilter && (
+        <motion.div 
+          className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+        />
+      )}
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <span className="text-xs text-muted-foreground uppercase tracking-wide">{label}</span>
@@ -203,9 +226,16 @@ function VerticalConnector({ delay, connectorIndex }: { delay: number; connector
   );
 }
 
-export function RecoveryStats({ cases }: RecoveryStatsProps) {
+export function RecoveryStats({ cases, onFilterChange, activeFilter = 'all' }: RecoveryStatsProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [trailIndex, setTrailIndex] = useState(-1);
+  
+  const handleFilterClick = (filter: FilterType) => {
+    if (onFilterChange) {
+      // Toggle off if clicking the same filter
+      onFilterChange(activeFilter === filter ? 'all' : filter);
+    }
+  };
   
   // Animate trail sequentially when hovering
   useEffect(() => {
@@ -273,7 +303,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
             delay={0}
             index={0}
+            filterKey="all"
+            isActiveFilter={activeFilter === 'all'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('all')}
           />
           <HorizontalConnector delay={0.15} connectorIndex={1} />
           <StatCard
@@ -284,7 +317,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant="success"
             delay={0.1}
             index={1}
+            filterKey="recovered"
+            isActiveFilter={activeFilter === 'recovered'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('recovered')}
           />
           <HorizontalConnector delay={0.25} connectorIndex={2} />
           <StatCard
@@ -295,7 +331,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant="muted"
             delay={0.2}
             index={2}
+            filterKey="expired"
+            isActiveFilter={activeFilter === 'expired'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('expired')}
           />
           <HorizontalConnector delay={0.35} connectorIndex={3} />
           <StatCard
@@ -306,7 +345,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant="primary"
             delay={0.3}
             index={3}
+            filterKey="open"
+            isActiveFilter={activeFilter === 'open'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('open')}
           />
         </div>
 
@@ -320,7 +362,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
             delay={0}
             index={0}
+            filterKey="all"
+            isActiveFilter={activeFilter === 'all'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('all')}
           />
           <StatCard
             icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
@@ -330,7 +375,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant="success"
             delay={0.1}
             index={1}
+            filterKey="recovered"
+            isActiveFilter={activeFilter === 'recovered'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('recovered')}
           />
           <VerticalConnector delay={0.2} connectorIndex={2} />
           <StatCard
@@ -341,7 +389,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant="muted"
             delay={0.25}
             index={2}
+            filterKey="expired"
+            isActiveFilter={activeFilter === 'expired'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('expired')}
           />
           <StatCard
             icon={<Clock className="h-4 w-4 text-primary" />}
@@ -351,7 +402,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             variant="primary"
             delay={0.3}
             index={3}
+            filterKey="open"
+            isActiveFilter={activeFilter === 'open'}
             onHoverChange={setHoveredIndex}
+            onClick={() => handleFilterClick('open')}
           />
         </div>
       </div>
