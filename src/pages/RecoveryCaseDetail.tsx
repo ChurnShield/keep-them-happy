@@ -331,19 +331,19 @@ Thanks!`
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Amount at Risk</p>
-                <p className="text-2xl font-bold flex items-center gap-1">
-                  <DollarSign className="h-5 w-5" />
-                  {case_.amount_at_risk.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                  <span className="text-sm font-normal text-muted-foreground ml-1">
-                    {case_.currency}
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold">
+                    {case_.amount_at_risk.toLocaleString(undefined, {
+                      style: 'currency',
+                      currency: case_.currency,
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </span>
-                </p>
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Time Remaining</p>
