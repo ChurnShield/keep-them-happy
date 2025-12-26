@@ -14,11 +14,15 @@ export function Header() {
 
   const handleNavClick = (href: string) => {
     setOpen(false);
+    
     if (href.startsWith("#")) {
       // Check if we're on the landing page
       if (window.location.pathname === "/") {
-        const element = document.querySelector(href);
-        element?.scrollIntoView({ behavior: "smooth" });
+        // Small delay to let menu close before scrolling
+        setTimeout(() => {
+          const element = document.querySelector(href);
+          element?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
       } else {
         // Navigate to landing page with hash
         navigate("/" + href);
