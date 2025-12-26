@@ -12,6 +12,7 @@ import { RecoveryToolbar } from '@/components/recovery/RecoveryToolbar';
 import { RecoveryStats } from '@/components/recovery/RecoveryStats';
 import { RecoveryEmptyState } from '@/components/recovery/RecoveryEmptyState';
 import { CreateTestCaseDialog } from '@/components/recovery/CreateTestCaseDialog';
+import { SettingsDropdown } from '@/components/SettingsDropdown';
 
 function LoadingSkeleton() {
   return (
@@ -113,7 +114,10 @@ export default function RecoveryInbox() {
               Monitor and act on revenue recovery opportunities.
             </p>
           </div>
-          <CreateTestCaseDialog onCreate={handleCreateCase} />
+          <div className="flex items-center gap-2">
+            <CreateTestCaseDialog onCreate={handleCreateCase} />
+            <SettingsDropdown />
+          </div>
         </motion.div>
 
         {/* Stats */}
