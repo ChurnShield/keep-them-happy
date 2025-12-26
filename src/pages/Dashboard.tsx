@@ -9,9 +9,7 @@ import {
   Loader2,
   ShieldAlert,
   CheckCircle,
-  Inbox,
-  LogOut,
-  Settings
+  Inbox
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,13 +21,7 @@ import { CustomerList } from '@/components/customers/CustomerList';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { SettingsDropdown } from '@/components/SettingsDropdown';
 
 // Mock customer data generator
 const generateMockCustomers = (userId: string) => [
@@ -78,33 +70,10 @@ const generateMockCustomers = (userId: string) => [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user, signOut, signOutEverywhere } = useAuth();
+  const { user } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
   const { customers, loading, error, stats, refetch, getAtRiskCustomers } = useCustomers();
   const [isAddingMock, setIsAddingMock] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
-  const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast.error('Failed to sign out');
-    } else {
-      navigate('/');
-    }
-  };
-
-  const handleSignOutEverywhere = async () => {
-    setIsSigningOut(true);
-    const { error } = await signOutEverywhere();
-    setIsSigningOut(false);
-    if (error) {
-      toast.error('Failed to sign out from all devices');
-    } else {
-      toast.success('Signed out from all devices');
-      navigate('/');
-    }
-  };
-
   const handleAddMockData = async () => {
     if (!user) return;
     
@@ -177,31 +146,7 @@ export default function Dashboard() {
             </p>
           </div>
           
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem disabled className="text-xs text-muted-foreground">
-                {user?.email}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={handleSignOutEverywhere}
-                disabled={isSigningOut}
-                className="text-destructive focus:text-destructive"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                {isSigningOut ? 'Signing out...' : 'Sign out everywhere'}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <SettingsDropdown />
         </div>
 
         {/* Overview Cards */}
