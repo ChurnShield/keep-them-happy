@@ -24,9 +24,18 @@ import {
   StickyNote,
   CheckCircle2,
   XCircle,
-  AlertTriangle
+  AlertTriangle,
+  Lightbulb
 } from 'lucide-react';
-import { useRecoveryCases, useRecoveryActions, getTimeRemaining, getUrgencyLevel, RecoveryActionType } from '@/hooks/useRecoveryCases';
+import { 
+  useRecoveryCases, 
+  useRecoveryActions, 
+  getTimeRemaining, 
+  isHighRisk, 
+  RecoveryActionType,
+  getReasonLabel,
+  getRecommendation
+} from '@/hooks/useRecoveryCases';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
 
@@ -281,7 +290,9 @@ Thanks!`
     );
   }
 
-  const urgency = getUrgencyLevel(case_);
+  const highRisk = isHighRisk(case_);
+  const reasonLabel = getReasonLabel(case_.churn_reason);
+  const recommendation = getRecommendation(case_.churn_reason);
 
   return (
     <div className="min-h-screen bg-background">
@@ -296,7 +307,7 @@ Thanks!`
         </Button>
 
         {/* Case Summary */}
-        <Card className={`mb-6 ${urgency === 'high_risk' && !isResolved ? 'border-destructive/50' : ''}`}>
+        <Card className={`mb-6 ${highRisk && !isResolved ? 'border-destructive/50' : ''}`}>
           <CardHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -309,11 +320,11 @@ Thanks!`
                 variant={
                   case_.status === 'recovered' ? 'default' :
                   case_.status === 'expired' ? 'secondary' :
-                  urgency === 'high_risk' ? 'destructive' : 'outline'
+                  highRisk ? 'destructive' : 'outline'
                 }
               >
-                {case_.status === 'open' && urgency === 'high_risk' && 'High Risk'}
-                {case_.status === 'open' && urgency === 'normal' && 'Open'}
+                {case_.status === 'open' && highRisk && 'Urgent'}
+                {case_.status === 'open' && !highRisk && 'Open'}
                 {case_.status === 'recovered' && 'Recovered'}
                 {case_.status === 'expired' && 'Expired'}
               </Badge>
@@ -337,6 +348,27 @@ Thanks!`
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Time Remaining</p>
                 <CountdownDisplay deadline_at={case_.deadline_at} status={case_.status} />
+              </div>
+            </div>
+
+            {/* Churn Reason */}
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Why This Customer Is At Risk</p>
+              <Badge variant="outline" className="text-sm">
+                {reasonLabel}
+              </Badge>
+            </div>
+
+            {/* Recommended Action - Prominent Display */}
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <Lightbulb className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-primary mb-1">Recommended Next Step</p>
+                  <p className="text-foreground">{recommendation}</p>
+                </div>
               </div>
             </div>
 

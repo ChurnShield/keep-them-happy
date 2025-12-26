@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { 
+  ChurnReason, 
+  sortByPriority, 
+  getReasonLabel, 
+  getRecommendation 
+} from '@/lib/churnLogic';
 
 export type RecoveryCaseStatus = 'open' | 'recovered' | 'expired';
 export type RecoveryActionType = 'message_sent' | 'note' | 'marked_recovered' | 'marked_expired';
@@ -13,6 +19,7 @@ export interface RecoveryCase {
   amount_at_risk: number;
   currency: string;
   status: RecoveryCaseStatus;
+  churn_reason: ChurnReason;
   opened_at: string;
   deadline_at: string;
   first_action_at: string | null;
@@ -34,7 +41,12 @@ export interface CreateRecoveryCaseInput {
   invoice_reference?: string;
   amount_at_risk: number;
   currency?: string;
+  churn_reason?: ChurnReason;
 }
+
+// Re-export churn logic utilities for convenience
+export { getReasonLabel, getRecommendation } from '@/lib/churnLogic';
+export type { ChurnReason } from '@/lib/churnLogic';
 
 // Calculate time remaining until deadline
 export function getTimeRemaining(deadline_at: string): { 
@@ -57,17 +69,13 @@ export function getTimeRemaining(deadline_at: string): {
   return { hours, minutes, isExpired: false, totalMs: diffMs };
 }
 
-// Determine urgency level
-export function getUrgencyLevel(case_: RecoveryCase): 'normal' | 'high_risk' {
+// Determine if case needs urgent attention (for visual highlighting only)
+export function isHighRisk(case_: RecoveryCase): boolean {
   const { totalMs } = getTimeRemaining(case_.deadline_at);
   const hoursRemaining = totalMs / (1000 * 60 * 60);
   
   // High Risk: ≤24h remaining AND no action taken yet
-  if (hoursRemaining <= 24 && !case_.first_action_at) {
-    return 'high_risk';
-  }
-  
-  return 'normal';
+  return hoursRemaining <= 24 && !case_.first_action_at;
 }
 
 export function useRecoveryCases() {
@@ -114,9 +122,10 @@ export function useRecoveryCases() {
     }
   }, [authLoading, fetchCases]);
 
-  // Get only open cases
+  // Get only open cases, sorted by priority (highest urgency first)
   const getOpenCases = useCallback((): RecoveryCase[] => {
-    return cases.filter((c) => c.status === 'open');
+    const openCases = cases.filter((c) => c.status === 'open');
+    return sortByPriority(openCases);
   }, [cases]);
 
   // Get a single case by ID
@@ -136,6 +145,7 @@ export function useRecoveryCases() {
         invoice_reference: input.invoice_reference || null,
         amount_at_risk: input.amount_at_risk,
         currency: input.currency || 'USD',
+        churn_reason: input.churn_reason || 'unknown_failure',
       })
       .select()
       .single();

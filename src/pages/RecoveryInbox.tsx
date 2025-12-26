@@ -7,6 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -15,8 +22,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { AlertTriangle, Clock, DollarSign, Inbox, ArrowRight, Plus } from 'lucide-react';
-import { useRecoveryCases, getTimeRemaining, getUrgencyLevel, RecoveryCase } from '@/hooks/useRecoveryCases';
+import { AlertTriangle, Clock, DollarSign, Inbox, ArrowRight, Plus, Lightbulb } from 'lucide-react';
+import { 
+  useRecoveryCases, 
+  getTimeRemaining, 
+  isHighRisk, 
+  RecoveryCase, 
+  getReasonLabel, 
+  getRecommendation,
+  ChurnReason 
+} from '@/hooks/useRecoveryCases';
 import { toast } from 'sonner';
 
 function CountdownTimer({ deadline_at }: { deadline_at: string }) {
@@ -43,13 +58,15 @@ function CountdownTimer({ deadline_at }: { deadline_at: string }) {
 
 function CaseCard({ recoveryCase }: { recoveryCase: RecoveryCase }) {
   const navigate = useNavigate();
-  const urgency = getUrgencyLevel(recoveryCase);
+  const highRisk = isHighRisk(recoveryCase);
   const { isExpired } = getTimeRemaining(recoveryCase.deadline_at);
+  const reasonLabel = getReasonLabel(recoveryCase.churn_reason);
+  const recommendation = getRecommendation(recoveryCase.churn_reason);
 
   return (
     <Card 
       className={`cursor-pointer transition-all hover:shadow-md ${
-        urgency === 'high_risk' ? 'border-destructive/50 bg-destructive/5' : ''
+        highRisk ? 'border-destructive/50 bg-destructive/5' : ''
       }`}
       onClick={() => navigate(`/recovery/${recoveryCase.id}`)}
     >
@@ -58,18 +75,28 @@ function CaseCard({ recoveryCase }: { recoveryCase: RecoveryCase }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <span className="font-medium truncate">{recoveryCase.customer_reference}</span>
-              {urgency === 'high_risk' && !isExpired && (
+              {highRisk && !isExpired && (
                 <Badge variant="destructive" className="flex items-center gap-1">
                   <AlertTriangle className="h-3 w-3" />
-                  High Risk
+                  Urgent
                 </Badge>
               )}
               {isExpired && (
                 <Badge variant="secondary">Expired</Badge>
               )}
-              {urgency === 'normal' && !isExpired && (
-                <Badge variant="outline">Normal</Badge>
-              )}
+            </div>
+            
+            {/* Churn Reason */}
+            <div className="mb-2">
+              <Badge variant="outline" className="text-xs">
+                {reasonLabel}
+              </Badge>
+            </div>
+            
+            {/* Recommended Action */}
+            <div className="flex items-start gap-2 mb-3 p-2 bg-muted/50 rounded text-sm">
+              <Lightbulb className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <span className="text-muted-foreground">{recommendation}</span>
             </div>
             
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -85,12 +112,6 @@ function CaseCard({ recoveryCase }: { recoveryCase: RecoveryCase }) {
                 <CountdownTimer deadline_at={recoveryCase.deadline_at} />
               </span>
             </div>
-
-            {!recoveryCase.first_action_at && (
-              <p className="text-xs text-muted-foreground mt-2 italic">
-                No recovery attempt made yet
-              </p>
-            )}
           </div>
 
           <Button variant="ghost" size="icon" className="shrink-0">
@@ -150,6 +171,7 @@ export default function RecoveryInbox() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [customerRef, setCustomerRef] = useState('');
   const [amount, setAmount] = useState('');
+  const [churnReason, setChurnReason] = useState<ChurnReason>('unknown_failure');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateTestCase = async () => {
@@ -161,10 +183,12 @@ export default function RecoveryInbox() {
         customer_reference: customerRef.trim(),
         amount_at_risk: parseFloat(amount),
         currency: 'USD',
+        churn_reason: churnReason,
       });
       toast.success('Test case created');
       setCustomerRef('');
       setAmount('');
+      setChurnReason('unknown_failure');
       setIsCreateOpen(false);
       await refetch();
     } catch (err) {
@@ -219,6 +243,21 @@ export default function RecoveryInbox() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reason">Churn Reason</Label>
+                  <Select value={churnReason} onValueChange={(v) => setChurnReason(v as ChurnReason)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reason" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="card_expired">Card Expired</SelectItem>
+                      <SelectItem value="insufficient_funds">Insufficient Funds</SelectItem>
+                      <SelectItem value="bank_decline">Bank Decline</SelectItem>
+                      <SelectItem value="no_retry_attempted">No Retry Attempted</SelectItem>
+                      <SelectItem value="unknown_failure">Unknown Failure</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter>
