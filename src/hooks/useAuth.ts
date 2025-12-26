@@ -9,9 +9,13 @@ export function useAuth() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -19,7 +23,7 @@ export function useAuth() {
         // Defer admin check to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
-            checkAdminRole(session.user.id);
+            if (isMounted) checkAdminRole(session.user.id);
           }, 0);
         } else {
           setIsAdmin(false);
@@ -27,18 +31,40 @@ export function useAuth() {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    // THEN check for existing session with error handling
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (!isMounted) return;
+        
+        // Handle error (e.g., invalid refresh token)
+        if (error) {
+          console.warn('Session retrieval error:', error.message);
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
 
-      if (session?.user) {
-        checkAdminRole(session.user.id);
-      }
-    });
+        if (session?.user) {
+          checkAdminRole(session.user.id);
+        }
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.warn('Session check failed:', err);
+        setSession(null);
+        setUser(null);
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const checkAdminRole = async (userId: string) => {
