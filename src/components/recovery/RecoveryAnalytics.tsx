@@ -64,65 +64,65 @@ export function RecoveryAnalytics({ cases }: RecoveryAnalyticsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {/* Recovery Rate */}
-          <div className="p-3 rounded-lg bg-muted/50">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="p-2 sm:p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
               {metrics.recoveryRate >= 50 ? (
-                <TrendingUp className="h-4 w-4 text-green-600" />
+                <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
               ) : (
-                <TrendingDown className="h-4 w-4 text-destructive" />
+                <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-destructive" />
               )}
-              <span className="text-xs text-muted-foreground">Recovery Rate</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Recovery Rate</span>
             </div>
-            <p className={`text-2xl font-bold ${
+            <p className={`text-lg sm:text-2xl font-bold ${
               metrics.recoveryRate >= 50 ? 'text-green-600' : 'text-destructive'
             }`}>
               {metrics.recoveryRate}%
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               {metrics.recovered} of {metrics.recovered + metrics.expired} resolved
             </p>
           </div>
 
           {/* Revenue Recovered */}
-          <div className="p-3 rounded-lg bg-muted/50">
-            <div className="flex items-center gap-2 mb-1">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <span className="text-xs text-muted-foreground">Recovered</span>
+          <div className="p-2 sm:p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+              <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Recovered</span>
             </div>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-lg sm:text-2xl font-bold text-green-600 truncate">
               {formatCurrency(metrics.revenueRecovered)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               {metrics.recovered} case{metrics.recovered !== 1 ? 's' : ''}
             </p>
           </div>
 
           {/* Revenue Lost */}
-          <div className="p-3 rounded-lg bg-muted/50">
-            <div className="flex items-center gap-2 mb-1">
-              <XCircle className="h-4 w-4 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">Lost</span>
+          <div className="p-2 sm:p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+              <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">Lost</span>
             </div>
-            <p className="text-2xl font-bold text-muted-foreground">
+            <p className="text-lg sm:text-2xl font-bold text-muted-foreground truncate">
               {formatCurrency(metrics.revenueLost)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               {metrics.expired} case{metrics.expired !== 1 ? 's' : ''}
             </p>
           </div>
 
           {/* At Risk */}
-          <div className="p-3 rounded-lg bg-muted/50">
-            <div className="flex items-center gap-2 mb-1">
-              <Clock className="h-4 w-4 text-primary" />
-              <span className="text-xs text-muted-foreground">At Risk</span>
+          <div className="p-2 sm:p-3 rounded-lg bg-muted/50">
+            <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+              <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+              <span className="text-[10px] sm:text-xs text-muted-foreground">At Risk</span>
             </div>
-            <p className="text-2xl font-bold text-primary">
+            <p className="text-lg sm:text-2xl font-bold text-primary truncate">
               {formatCurrency(metrics.revenueAtRisk)}
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               {metrics.open} open case{metrics.open !== 1 ? 's' : ''}
             </p>
           </div>

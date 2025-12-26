@@ -282,23 +282,23 @@ export default function RecoveryInbox() {
         )}
 
         {/* Stats summary */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6">
           <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold">{stats.open}</p>
-              <p className="text-xs text-muted-foreground">Open</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold">{stats.open}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Open</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-green-600">{stats.recovered}</p>
-              <p className="text-xs text-muted-foreground">Recovered</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-green-600">{stats.recovered}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Recovered</p>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="p-4 text-center">
-              <p className="text-2xl font-bold text-muted-foreground">{stats.expired}</p>
-              <p className="text-xs text-muted-foreground">Expired</p>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <p className="text-xl sm:text-2xl font-bold text-muted-foreground">{stats.expired}</p>
+              <p className="text-[10px] sm:text-xs text-muted-foreground">Expired</p>
             </CardContent>
           </Card>
         </div>
