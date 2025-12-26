@@ -1,118 +1,102 @@
+import { Quote } from "lucide-react";
 import { motion } from "framer-motion";
-import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   {
-    quote: "ChurnShield paid for itself in the first week. We've reduced our monthly churn by 38% and recovered thousands in failed payments.",
-    author: "Sarah Chen",
-    role: "CEO, DataSync",
-    avatar: "SC",
-    rating: 5,
+    name: "Lena Hart",
+    role: "Head of Growth @ ScaleFlow",
+    initials: "LH",
+    quote:
+      "ChurnShield flipped our retention economics. We only pay when we actually save customers — and that alignment changed everything. It's performance-first pricing done right.",
   },
   {
-    quote: "The behavioural analytics are incredible. We can now predict which customers are at risk and intervene before they even think about cancelling.",
-    author: "Marcus Johnson",
-    role: "Head of Product, CloudMetrics",
-    avatar: "MJ",
-    rating: 5,
+    name: "Devon Yates",
+    role: "Founder @ RevenuePilot",
+    initials: "DY",
+    quote:
+      "Within 30 days, we saw churn drop by nearly 50%. The best part? Zero setup, no fluff, and the most transparent model we've ever seen.",
   },
   {
-    quote: "Finally, a retention tool that doesn't cost a fortune. The ROI was clear from day one, and the setup was surprisingly painless.",
-    author: "Emily Rodriguez",
-    role: "Founder, TaskFlow",
-    avatar: "ER",
-    rating: 5,
+    name: "Sofia Tran",
+    role: "COO @ RetainIQ",
+    initials: "ST",
+    quote:
+      "It's rare to find a retention tool that feels like a true partner. The results-based billing model means we're always on the same side.",
   },
 ];
 
+const companies = ["ScaleFlow", "RevenuePilot", "RetainIQ", "MetricHQ", "LaunchPad"];
+
 export function Testimonials() {
   return (
-    <section id="testimonials" className="py-24 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-card/30 via-background to-card/30" />
-      
-      <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="testimonials"
+      className="relative bg-background text-foreground py-24 md:py-32 border-t border-white/10 overflow-hidden"
+    >
+      {/* Accent line animation */}
+      <div className="absolute top-24 left-1/2 -translate-x-1/2 w-[300px] h-[2px] bg-gradient-to-r from-transparent via-teal-400/60 to-transparent blur-sm animate-pulse-slow" />
+
+      <div className="container mx-auto px-6 max-w-6xl text-center relative z-10">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center max-w-3xl mx-auto mb-16"
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="max-w-2xl mx-auto mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground text-balance">
-            Loved by{" "}
-            <span className="gradient-text">SaaS founders</span>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Teams who{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
+              trust ChurnShield
+            </span>{" "}
+            to retain their revenue.
           </h2>
-          <p className="mt-4 text-lg text-muted-foreground">
-            Join hundreds of companies already reducing churn with ChurnShield.
+          <p className="text-muted-foreground text-lg">
+            Proven impact. Authentic feedback. Real results from SaaS companies
+            aligning growth and retention the right way.
           </p>
         </motion.div>
 
         {/* Testimonials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {testimonials.map((testimonial, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10">
+          {testimonials.map((t, index) => (
             <motion.div
-              key={testimonial.author}
-              initial={{ opacity: 0, y: 20 }}
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="relative group"
+              transition={{ duration: 0.6, delay: index * 0.15, ease: "easeOut" }}
+              className="flex flex-col justify-between bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-md hover:border-teal-400/30 transition text-left"
             >
-              <div className="relative h-full rounded-3xl border border-border/50 bg-card/50 backdrop-blur-sm p-8 transition-all duration-300 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5">
-                {/* Quote icon */}
-                <Quote className="h-8 w-8 text-primary/30 mb-4" />
-
-                {/* Rating */}
-                <div className="flex gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-primary text-primary" />
-                  ))}
+              <Quote className="w-6 h-6 text-teal-400 mb-4" />
+              <p className="text-muted-foreground mb-6 leading-relaxed">"{t.quote}"</p>
+              <div className="flex items-center gap-3 mt-auto">
+                <div className="w-10 h-10 rounded-full bg-teal-400/10 border border-white/10 flex items-center justify-center">
+                  <span className="text-teal-400 font-semibold text-sm">{t.initials}</span>
                 </div>
-
-                {/* Quote */}
-                <p className="text-foreground mb-6 leading-relaxed">
-                  "{testimonial.quote}"
-                </p>
-
-                {/* Author */}
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                    <span className="text-sm font-bold text-primary">
-                      {testimonial.avatar}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="font-semibold text-foreground">
-                      {testimonial.author}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      {testimonial.role}
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-foreground font-medium">{t.name}</p>
+                  <p className="text-muted-foreground text-sm">{t.role}</p>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Logo Cloud */}
+        {/* Logo strip */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-20"
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="flex flex-wrap justify-center gap-8 mt-16 opacity-50"
         >
-          <p className="text-center text-sm text-muted-foreground mb-8">
-            Trusted by innovative companies worldwide
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-50">
-            {["DataSync", "CloudMetrics", "TaskFlow", "ShipFast", "MetricHQ", "LaunchPad"].map((company) => (
-              <span key={company} className="text-xl font-bold text-muted-foreground">
-                {company}
-              </span>
-            ))}
-          </div>
+          {companies.map((company) => (
+            <span key={company} className="text-lg font-semibold text-muted-foreground">
+              {company}
+            </span>
+          ))}
         </motion.div>
       </div>
     </section>
