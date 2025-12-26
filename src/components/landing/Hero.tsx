@@ -39,7 +39,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-8"
+            className="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-teal-400/10 px-4 py-1.5 text-sm font-medium text-teal-400 mb-8"
           >
             <DollarSign className="h-4 w-4" />
             <span>Revolutionary pricing: Pay only for saved revenue</span>
@@ -74,14 +74,14 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.25 }}
             className="mt-8 relative"
           >
-            <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl" />
-            <div className="relative inline-flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-primary/30 bg-card/80 backdrop-blur-sm px-6 py-4">
+            <div className="absolute inset-0 rounded-2xl bg-teal-400/20 blur-xl" />
+            <div className="relative inline-flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-teal-400/30 bg-card/80 backdrop-blur-sm px-6 py-4">
               <div className="flex items-center gap-3 text-sm sm:text-base">
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive">
                   <span className="font-medium">Others: % of total churn</span>
                 </div>
-                <ArrowRight className="h-5 w-5 text-primary hidden sm:block" />
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 text-primary font-semibold">
+                <ArrowRight className="h-5 w-5 text-teal-400 hidden sm:block" />
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-400/10 text-teal-400 font-semibold">
                   <Shield className="h-4 w-4" />
                   <span>ChurnShield: % of saved revenue only</span>
                 </div>
@@ -125,19 +125,19 @@ export function Hero() {
             className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-8 text-sm text-muted-foreground"
           >
             <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-5 w-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               No upfront costs
             </div>
             <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-5 w-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               Pay only for results
             </div>
             <div className="flex items-center gap-2">
-              <svg className="h-5 w-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="h-5 w-5 text-teal-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               Zero risk guarantee
@@ -160,9 +160,9 @@ export function Hero() {
                 key={stat.label}
                 className="relative group"
               >
-                <div className="absolute inset-0 rounded-2xl bg-primary/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 transition-all hover:border-primary/30">
-                  <stat.icon className="h-8 w-8 text-primary mb-4 mx-auto" />
+                <div className="absolute inset-0 rounded-2xl bg-teal-400/5 blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-6 transition-all hover:border-teal-400/30">
+                  <stat.icon className="h-8 w-8 text-teal-400 mb-4 mx-auto" />
                   <div className="text-4xl font-bold gradient-text">{stat.value}</div>
                   <div className="mt-2 text-sm text-muted-foreground">{stat.label}</div>
                 </div>
