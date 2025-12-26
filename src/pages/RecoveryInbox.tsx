@@ -118,7 +118,7 @@ export default function RecoveryInbox() {
 
         {/* Stats */}
         {!loading && cases.length > 0 && (
-          <RecoveryStats cases={cases} />
+          <RecoveryStats cases={cases} onFilterChange={setStatusFilter} activeFilter={statusFilter} />
         )}
 
         {/* Toolbar */}
