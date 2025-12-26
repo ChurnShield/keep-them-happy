@@ -128,8 +128,10 @@ export default function CustomerDetail() {
   return (
     <ProtectedLayout
       title={customer.name}
-      backTo="/dashboard"
-      backLabel="Back to Dashboard"
+      breadcrumbs={[
+        { label: 'Dashboard', href: '/dashboard' },
+        { label: customer.name }
+      ]}
       headerContent={<RiskBadge level={customer.riskLevel} />}
     >
       <div className="flex items-center gap-4 mb-6 -mt-4">

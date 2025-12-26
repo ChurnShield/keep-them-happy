@@ -1,8 +1,21 @@
 import { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsDropdown } from '@/components/SettingsDropdown';
+import {
+  Breadcrumb,
+  BreadcrumbItem as BreadcrumbItemUI,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
+
+export interface BreadcrumbItemData {
+  label: string;
+  href?: string;
+}
 
 interface ProtectedLayoutProps {
   children: ReactNode;
@@ -13,6 +26,7 @@ interface ProtectedLayoutProps {
   showLogo?: boolean;
   headerContent?: ReactNode;
   className?: string;
+  breadcrumbs?: BreadcrumbItemData[];
 }
 
 export function ProtectedLayout({
@@ -24,6 +38,7 @@ export function ProtectedLayout({
   showLogo = false,
   headerContent,
   className = '',
+  breadcrumbs,
 }: ProtectedLayoutProps) {
   const navigate = useNavigate();
 
@@ -37,7 +52,7 @@ export function ProtectedLayout({
         <header className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              {backTo && (
+              {backTo && !breadcrumbs && (
                 <Button 
                   variant="ghost" 
                   size="sm"
@@ -67,6 +82,26 @@ export function ProtectedLayout({
             
             <SettingsDropdown />
           </div>
+
+          {/* Breadcrumbs - only shown on detail pages */}
+          {breadcrumbs && breadcrumbs.length > 0 && (
+            <Breadcrumb className="mb-4">
+              <BreadcrumbList>
+                {breadcrumbs.map((item, index) => (
+                  <BreadcrumbItemUI key={index}>
+                    {index > 0 && <BreadcrumbSeparator />}
+                    {item.href ? (
+                      <BreadcrumbLink asChild>
+                        <Link to={item.href}>{item.label}</Link>
+                      </BreadcrumbLink>
+                    ) : (
+                      <BreadcrumbPage>{item.label}</BreadcrumbPage>
+                    )}
+                  </BreadcrumbItemUI>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
+          )}
           
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
