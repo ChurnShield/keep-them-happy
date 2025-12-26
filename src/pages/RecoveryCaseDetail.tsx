@@ -283,8 +283,10 @@ Thanks!`
     return (
       <ProtectedLayout
         title="Loading..."
-        backTo="/recovery"
-        backLabel="Back to Inbox"
+        breadcrumbs={[
+          { label: 'Recovery Inbox', href: '/recovery' },
+          { label: 'Loading...' }
+        ]}
       >
         <Skeleton className="h-64 w-full mb-6 bg-white/5" />
         <Skeleton className="h-48 w-full bg-white/5" />
@@ -296,8 +298,10 @@ Thanks!`
     return (
       <ProtectedLayout
         title="Case Not Found"
-        backTo="/recovery"
-        backLabel="Back to Inbox"
+        breadcrumbs={[
+          { label: 'Recovery Inbox', href: '/recovery' },
+          { label: 'Not Found' }
+        ]}
       >
         <motion.div 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -329,8 +333,10 @@ Thanks!`
     <ProtectedLayout
       title={case_.customer_reference}
       subtitle={`Opened ${formatDistanceToNow(new Date(case_.opened_at), { addSuffix: true })}`}
-      backTo="/recovery"
-      backLabel="Back to Inbox"
+      breadcrumbs={[
+        { label: 'Recovery Inbox', href: '/recovery' },
+        { label: case_.customer_reference }
+      ]}
       className="max-w-4xl"
       headerContent={
         <Badge 
