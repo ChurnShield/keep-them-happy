@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { enrichCustomerWithRisk, CustomerWithRisk } from '@/hooks/useCustomers';
+import { SettingsDropdown } from '@/components/SettingsDropdown';
 
 export default function CustomerDetail() {
   const { userId: customerId } = useParams<{ userId: string }>();
@@ -129,34 +130,37 @@ export default function CustomerDetail() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <Button 
-            variant="ghost" 
-            className="mb-4"
-            onClick={() => navigate('/dashboard')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
-                <User className="h-7 w-7" />
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                  {customer.name}
-                </h1>
-                <p className="text-muted-foreground flex items-center gap-1 mt-1">
-                  <Mail className="h-4 w-4" />
-                  {customer.email}
-                </p>
-              </div>
-            </div>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <Button 
+              variant="ghost" 
+              className="mb-4"
+              onClick={() => navigate('/dashboard')}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
             
-            <RiskBadge level={customer.riskLevel} />
+            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+                  <User className="h-7 w-7" />
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+                    {customer.name}
+                  </h1>
+                  <p className="text-muted-foreground flex items-center gap-1 mt-1">
+                    <Mail className="h-4 w-4" />
+                    {customer.email}
+                  </p>
+                </div>
+              </div>
+              
+              <RiskBadge level={customer.riskLevel} />
+            </div>
           </div>
+          <SettingsDropdown />
         </div>
 
         {/* Main Grid */}
