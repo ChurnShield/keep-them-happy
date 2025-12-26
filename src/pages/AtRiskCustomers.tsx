@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { 
   AlertTriangle, 
-  ArrowLeft,
   ArrowRight,
   Loader2,
   Users,
@@ -21,7 +20,7 @@ import {
 import { useAtRiskCustomers, getScoreColor } from '@/hooks/useChurnDashboard';
 import { useSubscription } from '@/hooks/useSubscription';
 import { formatDistanceToNow } from 'date-fns';
-import { SettingsDropdown } from '@/components/SettingsDropdown';
+import { ProtectedLayout } from '@/components/ProtectedLayout';
 
 export default function AtRiskCustomers() {
   const navigate = useNavigate();
@@ -79,26 +78,12 @@ export default function AtRiskCustomers() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <Button 
-              variant="ghost" 
-              className="mb-4"
-              onClick={() => navigate('/dashboard')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            <h1 className="text-3xl font-bold text-foreground">At-Risk Customers</h1>
-            <p className="text-muted-foreground mt-1">
-              Customers with churn risk score of 50 or higher
-            </p>
-          </div>
-          <SettingsDropdown />
-        </div>
+    <ProtectedLayout
+      title="At-Risk Customers"
+      subtitle="Customers with churn risk score of 50 or higher"
+      backTo="/dashboard"
+      backLabel="Back to Dashboard"
+    >
 
         {/* Stats */}
         <Card className="mb-6">
@@ -204,7 +189,6 @@ export default function AtRiskCustomers() {
             </CardContent>
           </Card>
         )}
-      </div>
-    </div>
+    </ProtectedLayout>
   );
 }

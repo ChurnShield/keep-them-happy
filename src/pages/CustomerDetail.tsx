@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft,
   Loader2,
   User,
   CreditCard,
@@ -21,7 +20,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { enrichCustomerWithRisk, CustomerWithRisk } from '@/hooks/useCustomers';
-import { SettingsDropdown } from '@/components/SettingsDropdown';
+import { ProtectedLayout } from '@/components/ProtectedLayout';
 
 export default function CustomerDetail() {
   const { userId: customerId } = useParams<{ userId: string }>();
@@ -127,41 +126,21 @@ export default function CustomerDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <Button 
-              variant="ghost" 
-              className="mb-4"
-              onClick={() => navigate('/dashboard')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Dashboard
-            </Button>
-            
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
-                  <User className="h-7 w-7" />
-                </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-                    {customer.name}
-                  </h1>
-                  <p className="text-muted-foreground flex items-center gap-1 mt-1">
-                    <Mail className="h-4 w-4" />
-                    {customer.email}
-                  </p>
-                </div>
-              </div>
-              
-              <RiskBadge level={customer.riskLevel} />
-            </div>
-          </div>
-          <SettingsDropdown />
+    <ProtectedLayout
+      title={customer.name}
+      backTo="/dashboard"
+      backLabel="Back to Dashboard"
+      headerContent={<RiskBadge level={customer.riskLevel} />}
+    >
+      <div className="flex items-center gap-4 mb-6 -mt-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
+          <User className="h-7 w-7" />
         </div>
+        <p className="text-muted-foreground flex items-center gap-1">
+          <Mail className="h-4 w-4" />
+          {customer.email}
+        </p>
+      </div>
 
         {/* Main Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -254,9 +233,8 @@ export default function CustomerDetail() {
             <CardContent>
               <SignalsList signals={customer.signals} variant="timeline" />
             </CardContent>
-          </Card>
-        </div>
+        </Card>
       </div>
-    </div>
+    </ProtectedLayout>
   );
 }

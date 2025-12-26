@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
 import { 
   useRecoveryCases, 
   isHighRisk,
@@ -12,7 +11,7 @@ import { RecoveryToolbar } from '@/components/recovery/RecoveryToolbar';
 import { RecoveryStats } from '@/components/recovery/RecoveryStats';
 import { RecoveryEmptyState } from '@/components/recovery/RecoveryEmptyState';
 import { CreateTestCaseDialog } from '@/components/recovery/CreateTestCaseDialog';
-import { SettingsDropdown } from '@/components/SettingsDropdown';
+import { ProtectedLayout } from '@/components/ProtectedLayout';
 
 function LoadingSkeleton() {
   return (
@@ -94,31 +93,12 @@ export default function RecoveryInbox() {
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 hero-glow pointer-events-none" />
-      
-      <div className="relative container max-w-6xl py-8 px-4 sm:px-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8"
-        >
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 text-foreground">
-              Recovery Inbox
-            </h1>
-            <p className="text-muted-foreground">
-              Monitor and act on revenue recovery opportunities.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <CreateTestCaseDialog onCreate={handleCreateCase} />
-            <SettingsDropdown />
-          </div>
-        </motion.div>
+    <ProtectedLayout
+      title="Recovery Inbox"
+      subtitle="Monitor and act on revenue recovery opportunities."
+      showLogo
+      headerContent={<CreateTestCaseDialog onCreate={handleCreateCase} />}
+    >
 
         {/* Stats */}
         {!loading && cases.length > 0 && (
@@ -179,7 +159,6 @@ export default function RecoveryInbox() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </ProtectedLayout>
   );
 }
