@@ -41,6 +41,40 @@ function StatCard({ icon, label, value, subtext, variant, delay }: StatCardProps
   );
 }
 
+function ConnectorLine({ delay }: { delay: number }) {
+  return (
+    <div className="hidden lg:flex items-center justify-center">
+      <svg width="40" height="24" viewBox="0 0 40 24" className="overflow-visible">
+        <motion.path
+          d="M0 12 Q20 12 40 12"
+          fill="none"
+          stroke="url(#connector-gradient)"
+          strokeWidth="2"
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: 1, opacity: 1 }}
+          transition={{ duration: 0.6, delay, ease: "easeOut" }}
+        />
+        <motion.circle
+          cx="40"
+          cy="12"
+          r="3"
+          fill="hsl(var(--primary))"
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.3, delay: delay + 0.4 }}
+        />
+        <defs>
+          <linearGradient id="connector-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
+            <stop offset="100%" stopColor="hsl(var(--primary))" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
 export function RecoveryStats({ cases }: RecoveryStatsProps) {
   const metrics = useMemo(() => {
     const resolved = cases.filter(c => c.status !== 'open');
@@ -72,7 +106,7 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
     amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+    <div className="grid grid-cols-2 lg:grid-cols-[1fr_40px_1fr_40px_1fr_40px_1fr] gap-3 mb-8 items-center">
       <StatCard
         icon={<TrendingUp className="h-4 w-4 text-primary" />}
         label="Recovery Rate"
@@ -81,6 +115,7 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
         variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
         delay={0}
       />
+      <ConnectorLine delay={0.15} />
       <StatCard
         icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
         label="Recovered"
@@ -89,6 +124,7 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
         variant="success"
         delay={0.1}
       />
+      <ConnectorLine delay={0.25} />
       <StatCard
         icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
         label="Lost"
@@ -97,6 +133,7 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
         variant="muted"
         delay={0.2}
       />
+      <ConnectorLine delay={0.35} />
       <StatCard
         icon={<Clock className="h-4 w-4 text-primary" />}
         label="At Risk"
