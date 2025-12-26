@@ -39,7 +39,7 @@ import {
 } from '@/hooks/useRecoveryCases';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
-import { SettingsDropdown } from '@/components/SettingsDropdown';
+import { ProtectedLayout } from '@/components/ProtectedLayout';
 
 function CountdownDisplay({ deadline_at, status }: { deadline_at: string; status: string }) {
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(deadline_at));
@@ -281,49 +281,36 @@ Thanks!`
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        <div className="absolute inset-0 hero-glow pointer-events-none" />
-        <div className="relative container max-w-4xl py-8 px-4 sm:px-6">
-          <Skeleton className="h-8 w-32 mb-8 bg-white/5" />
-          <Skeleton className="h-64 w-full mb-6 bg-white/5" />
-          <Skeleton className="h-48 w-full bg-white/5" />
-        </div>
-      </div>
+      <ProtectedLayout
+        title="Loading..."
+        backTo="/recovery"
+        backLabel="Back to Inbox"
+      >
+        <Skeleton className="h-64 w-full mb-6 bg-white/5" />
+        <Skeleton className="h-48 w-full bg-white/5" />
+      </ProtectedLayout>
     );
   }
 
   if (!case_) {
     return (
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        <div className="absolute inset-0 hero-glow pointer-events-none" />
-        <div className="relative container max-w-4xl py-8 px-4 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <Button 
-              variant="ghost" 
-              className="mb-8 text-muted-foreground hover:text-foreground"
-              onClick={() => navigate('/recovery')}
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Inbox
-            </Button>
-          </motion.div>
-          
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-2xl border border-destructive/30 bg-destructive/5 backdrop-blur-sm p-8 text-center"
-          >
-            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-xl font-semibold mb-2 text-foreground">Case not found</h2>
-            <p className="text-muted-foreground">
-              This recovery case doesn&apos;t exist or you don&apos;t have access to it.
-            </p>
-          </motion.div>
-        </div>
-      </div>
+      <ProtectedLayout
+        title="Case Not Found"
+        backTo="/recovery"
+        backLabel="Back to Inbox"
+      >
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-2xl border border-destructive/30 bg-destructive/5 backdrop-blur-sm p-8 text-center"
+        >
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2 text-foreground">Case not found</h2>
+          <p className="text-muted-foreground">
+            This recovery case doesn&apos;t exist or you don&apos;t have access to it.
+          </p>
+        </motion.div>
+      </ProtectedLayout>
     );
   }
 
@@ -339,27 +326,31 @@ Thanks!`
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 hero-glow pointer-events-none" />
-      
-      <div className="relative container max-w-4xl py-8 px-4 sm:px-6">
-        {/* Back button & Settings */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-6"
+    <ProtectedLayout
+      title={case_.customer_reference}
+      subtitle={`Opened ${formatDistanceToNow(new Date(case_.opened_at), { addSuffix: true })}`}
+      backTo="/recovery"
+      backLabel="Back to Inbox"
+      className="max-w-4xl"
+      headerContent={
+        <Badge 
+          className={`px-3 py-1 text-sm font-medium ${
+            case_.status === 'recovered' 
+              ? 'bg-primary/20 text-primary border-primary/30' 
+              : case_.status === 'expired'
+                ? 'bg-muted text-muted-foreground border-border'
+                : highRisk 
+                  ? 'bg-destructive/20 text-destructive border-destructive/30'
+                  : 'bg-white/10 text-foreground border-border'
+          }`}
         >
-          <Button 
-            variant="ghost" 
-            className="text-muted-foreground hover:text-foreground transition-colors"
-            onClick={() => navigate('/recovery')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Inbox
-          </Button>
-          <SettingsDropdown />
-        </motion.div>
+          {case_.status === 'open' && highRisk && 'Urgent'}
+          {case_.status === 'open' && !highRisk && 'Open'}
+          {case_.status === 'recovered' && 'Recovered'}
+          {case_.status === 'expired' && 'Expired'}
+        </Badge>
+      }
+    >
 
         {/* Case Summary Card */}
         <motion.div
@@ -368,33 +359,6 @@ Thanks!`
           transition={{ delay: 0.1 }}
           className={`rounded-2xl bg-white/[0.03] border backdrop-blur-sm p-6 sm:p-8 mb-6 ${getBorderClass()}`}
         >
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground mb-1">
-                {case_.customer_reference}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Opened {formatDistanceToNow(new Date(case_.opened_at), { addSuffix: true })}
-              </p>
-            </div>
-            <Badge 
-              className={`px-3 py-1 text-sm font-medium ${
-                case_.status === 'recovered' 
-                  ? 'bg-primary/20 text-primary border-primary/30' 
-                  : case_.status === 'expired'
-                    ? 'bg-muted text-muted-foreground border-border'
-                    : highRisk 
-                      ? 'bg-destructive/20 text-destructive border-destructive/30'
-                      : 'bg-white/10 text-foreground border-border'
-              }`}
-            >
-              {case_.status === 'open' && highRisk && 'Urgent'}
-              {case_.status === 'open' && !highRisk && 'Open'}
-              {case_.status === 'recovered' && 'Recovered'}
-              {case_.status === 'expired' && 'Expired'}
-            </Badge>
-          </div>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -593,7 +557,6 @@ Thanks!`
           </p>
           <ActionTimeline caseId={case_.id} />
         </motion.div>
-      </div>
-    </div>
+    </ProtectedLayout>
   );
 }

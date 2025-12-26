@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   AlertTriangle, 
-  TrendingUp, 
-  Activity,
-  ArrowRight,
   Loader2,
   ShieldAlert,
   CheckCircle,
-  Inbox
+  Inbox,
+  Activity
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +19,7 @@ import { CustomerList } from '@/components/customers/CustomerList';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { SettingsDropdown } from '@/components/SettingsDropdown';
+import { ProtectedLayout } from '@/components/ProtectedLayout';
 
 // Mock customer data generator
 const generateMockCustomers = (userId: string) => [
@@ -135,19 +133,11 @@ export default function Dashboard() {
   const atRiskCustomers = getAtRiskCustomers();
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Churn Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Monitor and prevent customer churn with real-time insights
-            </p>
-          </div>
-          
-          <SettingsDropdown />
-        </div>
+    <ProtectedLayout
+      title="Churn Dashboard"
+      subtitle="Monitor and prevent customer churn with real-time insights"
+      showLogo
+    >
 
         {/* Overview Cards */}
         <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4 mb-8">
@@ -327,7 +317,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
-      </div>
-    </div>
+    </ProtectedLayout>
   );
 }
