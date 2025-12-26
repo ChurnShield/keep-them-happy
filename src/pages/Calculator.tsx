@@ -17,6 +17,17 @@ const Calculator = () => {
   const [failedPaymentRate, setFailedPaymentRate] = useState(5);
   const [avgSubscriptionValue, setAvgSubscriptionValue] = useState(99);
 
+  // Parse number input, stripping leading zeros
+  const parseNumberInput = (value: string): number => {
+    const parsed = parseInt(value, 10);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const parseFloatInput = (value: string): number => {
+    const parsed = parseFloat(value);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const recoveryEstimate = useMemo(() => {
     const failedAmount = (monthlyRevenue * failedPaymentRate) / 100;
     // ChurnShield typically recovers 40-60% of failed payments
@@ -75,9 +86,11 @@ const Calculator = () => {
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="revenue"
-                    type="number"
-                    value={monthlyRevenue}
-                    onChange={(e) => setMonthlyRevenue(Number(e.target.value))}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={monthlyRevenue || ''}
+                    onChange={(e) => setMonthlyRevenue(parseNumberInput(e.target.value))}
                     className="pl-9 text-lg h-12"
                   />
                 </div>
@@ -92,11 +105,11 @@ const Calculator = () => {
                   <Percent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="failedRate"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={failedPaymentRate}
-                    onChange={(e) => setFailedPaymentRate(Number(e.target.value))}
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*\.?[0-9]*"
+                    value={failedPaymentRate || ''}
+                    onChange={(e) => setFailedPaymentRate(parseFloatInput(e.target.value))}
                     className="pl-9 text-lg h-12"
                   />
                 </div>
@@ -111,9 +124,11 @@ const Calculator = () => {
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="avgValue"
-                    type="number"
-                    value={avgSubscriptionValue}
-                    onChange={(e) => setAvgSubscriptionValue(Number(e.target.value))}
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={avgSubscriptionValue || ''}
+                    onChange={(e) => setAvgSubscriptionValue(parseNumberInput(e.target.value))}
                     className="pl-9 text-lg h-12"
                   />
                 </div>
