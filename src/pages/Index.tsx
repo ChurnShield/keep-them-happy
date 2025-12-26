@@ -5,10 +5,16 @@ import { Pricing } from "@/components/landing/Pricing";
 import { Testimonials } from "@/components/landing/Testimonials";
 import { CTA } from "@/components/landing/CTA";
 import { Footer } from "@/components/landing/Footer";
+import { motion } from "framer-motion";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen bg-background"
+    >
       <Header />
       <main>
         <Hero />
@@ -18,7 +24,7 @@ const Index = () => {
         <CTA />
       </main>
       <Footer />
-    </div>
+    </motion.div>
   );
 };
 
