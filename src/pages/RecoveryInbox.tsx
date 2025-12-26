@@ -32,6 +32,7 @@ import {
   getRecommendation,
   ChurnReason 
 } from '@/hooks/useRecoveryCases';
+import { RecoveryAnalytics } from '@/components/recovery/RecoveryAnalytics';
 import { toast } from 'sonner';
 
 function CountdownTimer({ deadline_at }: { deadline_at: string }) {
@@ -165,7 +166,7 @@ function LoadingSkeleton() {
 }
 
 export default function RecoveryInbox() {
-  const { getOpenCases, loading, error, stats, createCase, refetch } = useRecoveryCases();
+  const { cases, getOpenCases, loading, error, stats, createCase, refetch } = useRecoveryCases();
   const openCases = getOpenCases();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -274,6 +275,11 @@ export default function RecoveryInbox() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* Analytics Section */}
+        {!loading && cases.length > 0 && (
+          <RecoveryAnalytics cases={cases} />
+        )}
 
         {/* Stats summary */}
         <div className="grid grid-cols-3 gap-4 mb-6">
