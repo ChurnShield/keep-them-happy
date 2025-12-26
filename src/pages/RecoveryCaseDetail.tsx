@@ -39,6 +39,7 @@ import {
 } from '@/hooks/useRecoveryCases';
 import { format, formatDistanceToNow } from 'date-fns';
 import { toast } from 'sonner';
+import { SettingsDropdown } from '@/components/SettingsDropdown';
 
 function CountdownDisplay({ deadline_at, status }: { deadline_at: string; status: string }) {
   const [timeRemaining, setTimeRemaining] = useState(getTimeRemaining(deadline_at));
@@ -343,19 +344,21 @@ Thanks!`
       <div className="absolute inset-0 hero-glow pointer-events-none" />
       
       <div className="relative container max-w-4xl py-8 px-4 sm:px-6">
-        {/* Back button */}
+        {/* Back button & Settings */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-6"
         >
           <Button 
             variant="ghost" 
-            className="mb-6 text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => navigate('/recovery')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Inbox
           </Button>
+          <SettingsDropdown />
         </motion.div>
 
         {/* Case Summary Card */}
