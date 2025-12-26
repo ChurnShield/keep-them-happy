@@ -1,10 +1,14 @@
 import { motion } from 'framer-motion';
 import { TrendingUp, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import { RecoveryCase } from '@/hooks/useRecoveryCases';
-import { useMemo, useState, createContext, useContext } from 'react';
+import { useMemo, useState, createContext, useContext, useEffect } from 'react';
 
 // Hover context to share state between cards and connectors
-const HoverContext = createContext<{ isHovered: boolean }>({ isHovered: false });
+interface HoverContextType {
+  hoveredIndex: number | null;
+  trailIndex: number;
+}
+const HoverContext = createContext<HoverContextType>({ hoveredIndex: null, trailIndex: -1 });
 
 interface RecoveryStatsProps {
   cases: RecoveryCase[];
@@ -17,10 +21,14 @@ interface StatCardProps {
   subtext: string;
   variant: 'default' | 'success' | 'muted' | 'primary';
   delay: number;
-  onHoverChange: (hovered: boolean) => void;
+  index: number;
+  onHoverChange: (index: number | null) => void;
 }
 
-function StatCard({ icon, label, value, subtext, variant, delay, onHoverChange }: StatCardProps) {
+function StatCard({ icon, label, value, subtext, variant, delay, index, onHoverChange }: StatCardProps) {
+  const { hoveredIndex, trailIndex } = useContext(HoverContext);
+  const isHighlighted = hoveredIndex !== null && index <= trailIndex;
+  
   const colorClasses = {
     default: 'text-foreground',
     success: 'text-primary',
@@ -31,11 +39,19 @@ function StatCard({ icon, label, value, subtext, variant, delay, onHoverChange }
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        boxShadow: isHighlighted 
+          ? '0 0 20px hsl(var(--primary) / 0.3)' 
+          : '0 0 0px hsl(var(--primary) / 0)'
+      }}
       transition={{ duration: 0.4, delay }}
-      className="relative p-4 rounded-xl bg-white/[0.03] border border-border/50 backdrop-blur-sm hover:border-primary/50 transition-colors cursor-pointer"
-      onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
+      className={`relative p-4 rounded-xl bg-white/[0.03] border backdrop-blur-sm cursor-pointer transition-colors ${
+        isHighlighted ? 'border-primary/60' : 'border-border/50 hover:border-primary/30'
+      }`}
+      onMouseEnter={() => onHoverChange(index)}
+      onMouseLeave={() => onHoverChange(null)}
     >
       <div className="flex items-center gap-2 mb-2">
         {icon}
@@ -47,110 +63,173 @@ function StatCard({ icon, label, value, subtext, variant, delay, onHoverChange }
   );
 }
 
-function HorizontalConnector({ delay }: { delay: number }) {
-  const { isHovered } = useContext(HoverContext);
+function HorizontalConnector({ delay, connectorIndex }: { delay: number; connectorIndex: number }) {
+  const { hoveredIndex, trailIndex } = useContext(HoverContext);
+  // Connector i is active if trail has reached card i+1 (connector sits after card i)
+  const isActive = hoveredIndex !== null && connectorIndex < trailIndex;
   
   return (
     <div className="hidden lg:flex items-center justify-center">
       <svg width="40" height="24" viewBox="0 0 40 24" className="overflow-visible">
-        <motion.path
-          d="M0 12 Q20 12 40 12"
-          fill="none"
-          stroke="url(#connector-gradient-h)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 0.6, delay, ease: "easeOut" }}
-        />
         {/* Glow filter for pulsing effect */}
         <defs>
-          <filter id="glow-h" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <filter id={`glow-h-${connectorIndex}`} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
-          <linearGradient id="connector-gradient-h" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
+          <linearGradient id={`connector-gradient-h-${connectorIndex}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={isActive ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.3)"} />
             <stop offset="100%" stopColor="hsl(var(--primary))" />
           </linearGradient>
         </defs>
+        <motion.path
+          d="M0 12 Q20 12 40 12"
+          fill="none"
+          stroke={`url(#connector-gradient-h-${connectorIndex})`}
+          strokeWidth={isActive ? 3 : 2}
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ 
+            pathLength: 1, 
+            opacity: isActive ? 1 : 0.6,
+          }}
+          transition={{ duration: 0.6, delay, ease: "easeOut" }}
+        />
         <motion.circle
           cx="40"
           cy="12"
           r="3"
           fill="hsl(var(--primary))"
-          filter={isHovered ? "url(#glow-h)" : undefined}
+          filter={isActive ? `url(#glow-h-${connectorIndex})` : undefined}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ 
-            scale: isHovered ? [1, 1.3, 1] : 1, 
+            scale: isActive ? [1, 1.4, 1] : 1, 
             opacity: 1,
+            r: isActive ? 4 : 3,
           }}
-          transition={isHovered ? { 
-            scale: { duration: 0.8, repeat: Infinity, ease: "easeInOut" },
-            opacity: { duration: 0.3, delay: delay + 0.4 }
+          transition={isActive ? { 
+            scale: { duration: 0.6, repeat: Infinity, ease: "easeInOut" },
+            opacity: { duration: 0.3 },
+            r: { duration: 0.2 }
           } : { duration: 0.3, delay: delay + 0.4 }}
         />
+        {/* Trail particle */}
+        {isActive && (
+          <motion.circle
+            cx="0"
+            cy="12"
+            r="2"
+            fill="hsl(var(--primary))"
+            initial={{ cx: 0, opacity: 0 }}
+            animate={{ cx: [0, 40], opacity: [0, 1, 0] }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
+        )}
       </svg>
     </div>
   );
 }
 
-function VerticalConnector({ delay }: { delay: number }) {
-  const { isHovered } = useContext(HoverContext);
+function VerticalConnector({ delay, connectorIndex }: { delay: number; connectorIndex: number }) {
+  const { hoveredIndex, trailIndex } = useContext(HoverContext);
+  // For mobile: connector after first row (cards 0,1) activates when trail >= 2
+  const isActive = hoveredIndex !== null && connectorIndex < trailIndex;
   
   return (
     <div className="flex lg:hidden items-center justify-center col-span-2 py-1">
       <svg width="24" height="32" viewBox="0 0 24 32" className="overflow-visible">
-        <motion.path
-          d="M12 0 Q12 16 12 32"
-          fill="none"
-          stroke="url(#connector-gradient-v)"
-          strokeWidth="2"
-          strokeLinecap="round"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 0.5, delay, ease: "easeOut" }}
-        />
         {/* Glow filter for pulsing effect */}
         <defs>
-          <filter id="glow-v" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <filter id={`glow-v-${connectorIndex}`} x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
-          <linearGradient id="connector-gradient-v" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="hsl(var(--primary) / 0.3)" />
+          <linearGradient id={`connector-gradient-v-${connectorIndex}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={isActive ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.3)"} />
             <stop offset="100%" stopColor="hsl(var(--primary))" />
           </linearGradient>
         </defs>
+        <motion.path
+          d="M12 0 Q12 16 12 32"
+          fill="none"
+          stroke={`url(#connector-gradient-v-${connectorIndex})`}
+          strokeWidth={isActive ? 3 : 2}
+          strokeLinecap="round"
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ 
+            pathLength: 1, 
+            opacity: isActive ? 1 : 0.6,
+          }}
+          transition={{ duration: 0.5, delay, ease: "easeOut" }}
+        />
         <motion.circle
           cx="12"
           cy="32"
           r="3"
           fill="hsl(var(--primary))"
-          filter={isHovered ? "url(#glow-v)" : undefined}
+          filter={isActive ? `url(#glow-v-${connectorIndex})` : undefined}
           initial={{ scale: 0, opacity: 0 }}
           animate={{ 
-            scale: isHovered ? [1, 1.3, 1] : 1, 
+            scale: isActive ? [1, 1.4, 1] : 1, 
             opacity: 1,
+            r: isActive ? 4 : 3,
           }}
-          transition={isHovered ? { 
-            scale: { duration: 0.8, repeat: Infinity, ease: "easeInOut" },
-            opacity: { duration: 0.3, delay: delay + 0.3 }
+          transition={isActive ? { 
+            scale: { duration: 0.6, repeat: Infinity, ease: "easeInOut" },
+            opacity: { duration: 0.3 },
+            r: { duration: 0.2 }
           } : { duration: 0.3, delay: delay + 0.3 }}
         />
+        {/* Trail particle */}
+        {isActive && (
+          <motion.circle
+            cx="12"
+            cy="0"
+            r="2"
+            fill="hsl(var(--primary))"
+            initial={{ cy: 0, opacity: 0 }}
+            animate={{ cy: [0, 32], opacity: [0, 1, 0] }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
+        )}
       </svg>
     </div>
   );
 }
 
 export function RecoveryStats({ cases }: RecoveryStatsProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [trailIndex, setTrailIndex] = useState(-1);
+  
+  // Animate trail sequentially when hovering
+  useEffect(() => {
+    if (hoveredIndex === null) {
+      setTrailIndex(-1);
+      return;
+    }
+    
+    // Reset and start trail animation
+    setTrailIndex(0);
+    const maxIndex = 3; // 4 cards (0-3)
+    let currentIndex = 0;
+    
+    const interval = setInterval(() => {
+      currentIndex++;
+      if (currentIndex <= maxIndex) {
+        setTrailIndex(currentIndex);
+      } else {
+        clearInterval(interval);
+      }
+    }, 120); // 120ms between each step
+    
+    return () => clearInterval(interval);
+  }, [hoveredIndex]);
   
   const metrics = useMemo(() => {
     const resolved = cases.filter(c => c.status !== 'open');
@@ -182,7 +261,7 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
     amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
   return (
-    <HoverContext.Provider value={{ isHovered }}>
+    <HoverContext.Provider value={{ hoveredIndex, trailIndex }}>
       <div className="mb-8">
         {/* Desktop layout with horizontal connectors */}
         <div className="hidden lg:grid lg:grid-cols-[1fr_40px_1fr_40px_1fr_40px_1fr] gap-3 items-center">
@@ -193,9 +272,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
             variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
             delay={0}
-            onHoverChange={setIsHovered}
+            index={0}
+            onHoverChange={setHoveredIndex}
           />
-          <HorizontalConnector delay={0.15} />
+          <HorizontalConnector delay={0.15} connectorIndex={1} />
           <StatCard
             icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
             label="Recovered"
@@ -203,9 +283,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
             variant="success"
             delay={0.1}
-            onHoverChange={setIsHovered}
+            index={1}
+            onHoverChange={setHoveredIndex}
           />
-          <HorizontalConnector delay={0.25} />
+          <HorizontalConnector delay={0.25} connectorIndex={2} />
           <StatCard
             icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
             label="Lost"
@@ -213,9 +294,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
             variant="muted"
             delay={0.2}
-            onHoverChange={setIsHovered}
+            index={2}
+            onHoverChange={setHoveredIndex}
           />
-          <HorizontalConnector delay={0.35} />
+          <HorizontalConnector delay={0.35} connectorIndex={3} />
           <StatCard
             icon={<Clock className="h-4 w-4 text-primary" />}
             label="At Risk"
@@ -223,7 +305,8 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
             variant="primary"
             delay={0.3}
-            onHoverChange={setIsHovered}
+            index={3}
+            onHoverChange={setHoveredIndex}
           />
         </div>
 
@@ -236,7 +319,8 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.recovered} of ${metrics.recovered + metrics.expired} resolved`}
             variant={metrics.recoveryRate >= 50 ? 'success' : 'muted'}
             delay={0}
-            onHoverChange={setIsHovered}
+            index={0}
+            onHoverChange={setHoveredIndex}
           />
           <StatCard
             icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
@@ -245,9 +329,10 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.recovered} case${metrics.recovered !== 1 ? 's' : ''}`}
             variant="success"
             delay={0.1}
-            onHoverChange={setIsHovered}
+            index={1}
+            onHoverChange={setHoveredIndex}
           />
-          <VerticalConnector delay={0.2} />
+          <VerticalConnector delay={0.2} connectorIndex={2} />
           <StatCard
             icon={<XCircle className="h-4 w-4 text-muted-foreground" />}
             label="Lost"
@@ -255,7 +340,8 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.expired} case${metrics.expired !== 1 ? 's' : ''}`}
             variant="muted"
             delay={0.25}
-            onHoverChange={setIsHovered}
+            index={2}
+            onHoverChange={setHoveredIndex}
           />
           <StatCard
             icon={<Clock className="h-4 w-4 text-primary" />}
@@ -264,7 +350,8 @@ export function RecoveryStats({ cases }: RecoveryStatsProps) {
             subtext={`${metrics.open} open case${metrics.open !== 1 ? 's' : ''}`}
             variant="primary"
             delay={0.3}
-            onHoverChange={setIsHovered}
+            index={3}
+            onHoverChange={setHoveredIndex}
           />
         </div>
       </div>
