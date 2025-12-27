@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { User, Bell, Shield, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Bell, Shield, Loader2, Lock } from 'lucide-react';
+import { toast } from 'sonner';
 
 const TIMEZONES = [
   { value: 'UTC', label: 'UTC' },
@@ -35,6 +37,11 @@ export default function Settings() {
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [alertThreshold, setAlertThreshold] = useState(70);
+
+  // Password change state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -61,6 +68,41 @@ export default function Settings() {
       weekly_digest: weeklyDigest,
       alert_threshold: alertThreshold,
     });
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword) {
+      toast.error('Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success('Password updated successfully');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      console.error('Error changing password:', error);
+      toast.error(error.message || 'Failed to change password');
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   if (loading) {
@@ -138,6 +180,59 @@ export default function Settings() {
                 </>
               ) : (
                 'Save Profile'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Password Section */}
+        <Card className="bg-card/50 border-border/50 backdrop-blur-sm">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-primary" />
+              <CardTitle>Change Password</CardTitle>
+            </div>
+            <CardDescription>
+              Update your account password
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                autoComplete="new-password"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <Button 
+              onClick={handleChangePassword} 
+              disabled={changingPassword || !newPassword || !confirmPassword}
+              className="mt-2"
+            >
+              {changingPassword ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Change Password'
               )}
             </Button>
           </CardContent>
