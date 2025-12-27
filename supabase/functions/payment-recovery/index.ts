@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -11,10 +12,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface PaymentRecoveryRequest {
-  action: "trigger" | "follow_up" | "resolve" | "list";
-  email?: string;
-}
+// Zod schema for payment recovery request
+const PaymentRecoveryRequestSchema = z.object({
+  action: z.enum(["trigger", "follow_up", "resolve", "list"], {
+    errorMap: () => ({ message: "Invalid action. Use: trigger, follow_up, resolve, or list" })
+  }),
+  email: z.string()
+    .max(255, "Email too long")
+    .email("Invalid email format")
+    .optional(),
+}).refine(
+  (data) => data.action === "list" || (data.email && data.email.length > 0),
+  { message: "Email is required for this action", path: ["email"] }
+);
 
 const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
 
@@ -101,7 +111,21 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Use service role for privileged operations after auth verification
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { action, email }: PaymentRecoveryRequest = await req.json();
+    
+    // Parse and validate input with Zod schema
+    const rawBody = await req.json();
+    const parseResult = PaymentRecoveryRequestSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      console.log("Validation failed:", errors);
+      return new Response(
+        JSON.stringify({ error: `Validation failed: ${errors}` }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { action, email } = parseResult.data;
 
     // List action - return all recovery records
     if (action === "list") {
@@ -124,23 +148,8 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // All other actions require email
-    if (!email || typeof email !== "string") {
-      return new Response(
-        JSON.stringify({ error: "Email is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email) || email.length > 255) {
-      return new Response(
-        JSON.stringify({ error: "Invalid email format" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const sanitizedEmail = sanitizeForLog(email);
+    // Email is guaranteed to exist here due to Zod refinement
+    const sanitizedEmail = sanitizeForLog(email!);
 
     // TRIGGER: Start recovery flow for an email
     if (action === "trigger") {
@@ -148,7 +157,7 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: existing } = await supabase
         .from("payment_recovery")
         .select("*")
-        .eq("email", email)
+        .eq("email", email!)
         .maybeSingle();
 
       if (existing && existing.status !== "resolved") {
@@ -162,7 +171,7 @@ const handler = async (req: Request): Promise<Response> => {
       const { error: upsertError } = await supabase
         .from("payment_recovery")
         .upsert({
-          email,
+          email: email!,
           status: "needs_payment",
           attempt_count: 0,
           last_emailed_at: null,
@@ -178,7 +187,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Send Email #1
       const emailResult = await sendEmail(
-        email,
+        email!,
         "Action needed: your payment didn't go through",
         `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -223,7 +232,7 @@ const handler = async (req: Request): Promise<Response> => {
           attempt_count: 1,
           last_emailed_at: new Date().toISOString(),
         })
-        .eq("email", email);
+        .eq("email", email!);
 
       console.log("Recovery email #1 sent to:", sanitizedEmail);
 
@@ -238,7 +247,7 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: record } = await supabase
         .from("payment_recovery")
         .select("*")
-        .eq("email", email)
+        .eq("email", email!)
         .maybeSingle();
 
       if (!record) {
@@ -276,7 +285,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       // Send Email #2
       const emailResult = await sendEmail(
-        email,
+        email!,
         "Still having trouble updating your payment?",
         `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -321,7 +330,7 @@ const handler = async (req: Request): Promise<Response> => {
           attempt_count: 2,
           last_emailed_at: new Date().toISOString(),
         })
-        .eq("email", email);
+        .eq("email", email!);
 
       console.log("Recovery email #2 sent to:", sanitizedEmail);
 
@@ -336,7 +345,7 @@ const handler = async (req: Request): Promise<Response> => {
       const { data: record } = await supabase
         .from("payment_recovery")
         .select("*")
-        .eq("email", email)
+        .eq("email", email!)
         .maybeSingle();
 
       if (!record) {
@@ -356,7 +365,7 @@ const handler = async (req: Request): Promise<Response> => {
       await supabase
         .from("payment_recovery")
         .update({ status: "resolved" })
-        .eq("email", email);
+        .eq("email", email!);
 
       console.log("Recovery resolved for:", sanitizedEmail);
 

@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
-// v2.0 - Production-ready welcome email with idempotency
+// v3.0 - Production-ready welcome email with Zod validation and idempotency
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -12,11 +13,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface WelcomeEmailRequest {
-  email: string;
-  company?: string;
-  forceResend?: boolean;
-}
+// Zod schema for welcome email request
+const WelcomeEmailRequestSchema = z.object({
+  email: z.string()
+    .min(1, "Email is required")
+    .max(255, "Email too long")
+    .email("Invalid email format")
+    .transform(val => val.trim().toLowerCase()),
+  company: z.string()
+    .max(200, "Company name too long")
+    .optional()
+    .transform(val => val?.trim() || ""),
+  forceResend: z.boolean().optional().default(false),
+});
 
 interface WelcomeEmailResponse {
   ok: boolean;
@@ -80,13 +89,20 @@ const handler = async (req: Request): Promise<Response> => {
       return respond({ ok: false, errorCode: "SERVICE_UNAVAILABLE" }, 500);
     }
 
-    // Parse and validate input
-    const body = await req.json();
-    const email = (body.email || "").toString().trim().toLowerCase();
-    const company = (body.company || "").toString().trim();
-    const forceResend = body.forceResend === true;
+    // Parse and validate input with Zod schema
+    const rawBody = await req.json();
+    const parseResult = WelcomeEmailRequestSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      console.warn(`Validation failed: ${errors}`);
+      return respond({ ok: false, errorCode: "VALIDATION_ERROR" }, 400);
+    }
 
-    if (!email || !isValidEmail(email)) {
+    const { email, company, forceResend } = parseResult.data;
+
+    // Additional email format validation (defense in depth)
+    if (!isValidEmail(email)) {
       return respond({ ok: false, errorCode: "INVALID_EMAIL" }, 400);
     }
 
