@@ -107,14 +107,23 @@ export default function RecoveryInbox() {
 
         {/* Toolbar */}
         {!loading && cases.length > 0 && (
-          <RecoveryToolbar
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            statusFilter={statusFilter}
-            onStatusChange={setStatusFilter}
-            sortOrder={sortOrder}
-            onSortChange={setSortOrder}
-          />
+          <div className="flex flex-col gap-3">
+            <RecoveryToolbar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={statusFilter}
+              onStatusChange={setStatusFilter}
+              sortOrder={sortOrder}
+              onSortChange={setSortOrder}
+            />
+            {(searchQuery || statusFilter !== 'all') && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Showing <span className="font-medium text-foreground">{filteredCases.length}</span> of <span className="font-medium text-foreground">{cases.length}</span> cases
+                </span>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Error state */}
