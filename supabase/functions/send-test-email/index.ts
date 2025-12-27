@@ -1,11 +1,35 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
-// v1.2 - Added admin authentication
+// v1.3 - Added rate limiting
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
+const MAX_REQUESTS_PER_WINDOW = 3; // 3 test emails per minute per user
+
+// In-memory rate limiting map (keyed by user ID after auth)
+const userRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function isUserRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const record = userRateLimitMap.get(userId);
+  
+  if (!record || now > record.resetTime) {
+    userRateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
 
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -62,6 +86,22 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ ok: false, error: authResult.error, code: authResult.code }),
         { status: authResult.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limiting check (per authenticated user)
+    if (isUserRateLimited(authResult.userId)) {
+      console.warn(`Rate limited send-test-email request from user: ${authResult.userId}`);
+      return new Response(
+        JSON.stringify({ ok: false, error: "Too many requests. Please try again later.", code: "RATE_LIMITED" }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "Retry-After": "60"
+          } 
+        }
       );
     }
 

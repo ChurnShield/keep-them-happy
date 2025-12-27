@@ -6,6 +6,31 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Rate limiting configuration - this function should be called sparingly (e.g., by cron)
+const RATE_LIMIT_WINDOW_MS = 300000; // 5 minute window
+const MAX_REQUESTS_PER_WINDOW = 2; // 2 requests per 5 minutes (allows for retries)
+
+// In-memory rate limiting (global for this function)
+let lastRequestTime = 0;
+let requestCount = 0;
+
+function isGlobalRateLimited(): boolean {
+  const now = Date.now();
+  
+  if (now > lastRequestTime + RATE_LIMIT_WINDOW_MS) {
+    lastRequestTime = now;
+    requestCount = 1;
+    return false;
+  }
+  
+  if (requestCount >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+  
+  requestCount++;
+  return false;
+}
+
 // deno-lint-ignore no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
 
@@ -13,6 +38,19 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  if (isGlobalRateLimited()) {
+    console.warn('Rate limited recompute-churn-scores request');
+    return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
+      status: 429,
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'application/json',
+        'Retry-After': '300'
+      },
+    });
   }
 
   console.log('Starting scheduled churn score recomputation...');
