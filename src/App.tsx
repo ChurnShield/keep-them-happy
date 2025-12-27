@@ -18,6 +18,7 @@ import TermsOfService from "./pages/TermsOfService";
 import Security from "./pages/Security";
 import AdminPaymentRecovery from "./pages/AdminPaymentRecovery";
 import AdminEmailTest from "./pages/AdminEmailTest";
+import AdminWebhookTests from "./pages/AdminWebhookTests";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Dashboard from "./pages/Dashboard";
@@ -134,6 +135,11 @@ const App = () => (
             <Route path="/admin/email-test" element={
               <AdminRoute>
                 <AdminEmailTest />
+              </AdminRoute>
+            } />
+            <Route path="/admin/webhook-tests" element={
+              <AdminRoute>
+                <AdminWebhookTests />
               </AdminRoute>
             } />
             
