@@ -185,6 +185,45 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          alert_threshold: number | null
+          company_name: string | null
+          created_at: string
+          display_name: string | null
+          email_notifications: boolean | null
+          id: string
+          timezone: string | null
+          updated_at: string
+          user_id: string
+          weekly_digest: boolean | null
+        }
+        Insert: {
+          alert_threshold?: number | null
+          company_name?: string | null
+          created_at?: string
+          display_name?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          timezone?: string | null
+          updated_at?: string
+          user_id: string
+          weekly_digest?: boolean | null
+        }
+        Update: {
+          alert_threshold?: number | null
+          company_name?: string | null
+          created_at?: string
+          display_name?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string
+          weekly_digest?: boolean | null
+        }
+        Relationships: []
+      }
       recovery_actions: {
         Row: {
           action_type: Database["public"]["Enums"]["recovery_action_type"]

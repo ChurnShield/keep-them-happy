@@ -25,6 +25,7 @@ import AtRiskCustomers from "./pages/AtRiskCustomers";
 import CustomerDetail from "./pages/CustomerDetail";
 import RecoveryInbox from "./pages/RecoveryInbox";
 import RecoveryCaseDetail from "./pages/RecoveryCaseDetail";
+import Settings from "./pages/Settings";
 import { AdminRoute } from "./components/AdminRoute";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { SubscriptionGate } from "./components/SubscriptionGate";
@@ -78,6 +79,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             } />
             
