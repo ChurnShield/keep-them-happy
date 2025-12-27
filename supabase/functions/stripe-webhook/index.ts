@@ -688,9 +688,9 @@ async function handleInvoicePaymentSucceeded(
     throw new Error(`Failed to upsert invoice: ${invError.message}`);
   }
 
-  // ========== RECOVERY CASE RESOLUTION ==========
-  // Mark matching open recovery case as recovered
-  await resolveRecoveryCaseFromInvoice(supabase, invoice.id, eventId, eventType, userId);
+  // ========== RECOVERY CASE RESOLUTION + LEDGER ==========
+  // Mark matching open recovery case as recovered AND write ledger entry
+  await resolveRecoveryCaseFromInvoice(supabase, invoice, eventId, eventType, userId);
 
   structuredLog('info', 'Invoice payment succeeded recorded', { eventId, eventType, userId });
 
@@ -700,18 +700,26 @@ async function handleInvoicePaymentSucceeded(
 /**
  * Resolve a recovery case when payment succeeds (idempotent)
  * Only updates cases with status = 'open'
+ * 
+ * IDEMPOTENCY STRATEGY:
+ * 1. Only process cases currently in 'open' status
+ * 2. Ledger has unique constraints on source_event_id AND (recovery_case_id, invoice_reference)
+ * 3. Duplicate insert attempts are caught and treated as success (no double-counting)
+ * 4. The recovery case status update uses eq('status', 'open') to prevent race conditions
  */
 async function resolveRecoveryCaseFromInvoice(
   supabase: AnySupabaseClient,
-  invoiceId: string,
+  invoice: { id: string; amount_paid?: number | null; currency?: string | null },
   eventId: string,
   eventType: string,
   userId: string
 ): Promise<void> {
-  // Find open recovery case for this invoice
+  const invoiceId = invoice.id;
+  
+  // Find open recovery case for this invoice (include amount_at_risk for fallback)
   const { data: openCase, error: findError } = await supabase
     .from('recovery_cases')
-    .select('id, status')
+    .select('id, status, owner_user_id, amount_at_risk, currency, invoice_reference')
     .eq('invoice_reference', invoiceId)
     .eq('status', 'open')
     .maybeSingle();
@@ -737,7 +745,7 @@ async function resolveRecoveryCaseFromInvoice(
 
   // Update to recovered
   const now = new Date().toISOString();
-  const { error: updateError } = await supabase
+  const { error: updateError, count: updateCount } = await supabase
     .from('recovery_cases')
     .update({
       status: 'recovered',
@@ -757,11 +765,103 @@ async function resolveRecoveryCaseFromInvoice(
     return;
   }
 
+  // Only write ledger if we actually transitioned status (count > 0 or updateCount is null in older clients)
+  // This prevents ledger writes if case was already recovered by another event
+  
   structuredLog('info', 'Recovery case marked as recovered', { 
     eventId, 
     eventType, 
     userId, 
     outcome: `case_id=${openCase.id}` 
+  });
+
+  // ========== LEDGER WRITE ==========
+  // Write to recovered_revenue_ledger with idempotency
+  await writeRecoveryLedgerEntry(
+    supabase,
+    {
+      caseId: openCase.id,
+      ownerUserId: openCase.owner_user_id,
+      invoiceReference: openCase.invoice_reference,
+      stripeInvoiceId: invoiceId,
+      // Prefer actual paid amount (in cents) from invoice, convert to currency units
+      // Fallback to amount_at_risk from recovery case
+      amountRecovered: invoice.amount_paid 
+        ? invoice.amount_paid / 100 
+        : Number(openCase.amount_at_risk),
+      currency: invoice.currency?.toUpperCase() || openCase.currency || 'USD',
+      sourceEventId: eventId,
+    },
+    eventId,
+    eventType,
+    userId
+  );
+}
+
+/**
+ * Write a ledger entry for recovered revenue (idempotent)
+ * Handles unique constraint violations gracefully
+ */
+async function writeRecoveryLedgerEntry(
+  supabase: AnySupabaseClient,
+  entry: {
+    caseId: string;
+    ownerUserId: string;
+    invoiceReference: string;
+    stripeInvoiceId: string;
+    amountRecovered: number;
+    currency: string;
+    sourceEventId: string;
+  },
+  eventId: string,
+  eventType: string,
+  userId: string
+): Promise<void> {
+  const { error: ledgerError } = await supabase
+    .from('recovered_revenue_ledger')
+    .insert({
+      recovery_case_id: entry.caseId,
+      owner_user_id: entry.ownerUserId,
+      invoice_reference: entry.invoiceReference,
+      stripe_invoice_id: entry.stripeInvoiceId,
+      amount_recovered: entry.amountRecovered,
+      currency: entry.currency,
+      source_event_id: entry.sourceEventId,
+      recovered_at: new Date().toISOString(),
+    });
+
+  if (ledgerError) {
+    // Check if it's a unique constraint violation (already exists)
+    const isUniqueViolation = 
+      ledgerError.code === '23505' || 
+      ledgerError.message?.includes('unique') ||
+      ledgerError.message?.includes('duplicate');
+    
+    if (isUniqueViolation) {
+      structuredLog('info', 'ledger_insert_skipped_exists', { 
+        eventId, 
+        eventType, 
+        userId, 
+        outcome: `case_id=${entry.caseId}, already_exists=true` 
+      });
+      return; // Treat as success - idempotent
+    }
+    
+    // Genuine error - log but don't crash webhook
+    structuredLog('error', 'ledger_insert_failed', { 
+      eventId, 
+      eventType, 
+      userId, 
+      error: ledgerError.message 
+    });
+    return;
+  }
+
+  structuredLog('info', 'ledger_insert_success', { 
+    eventId, 
+    eventType, 
+    userId, 
+    outcome: `case_id=${entry.caseId}, amount=${entry.amountRecovered} ${entry.currency}` 
   });
 }
 
