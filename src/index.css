@@ -166,6 +166,10 @@
   .animate-pulse-subtle {
     animation: pulse-subtle 2s ease-in-out infinite;
   }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
 }
 
 @keyframes pulse-subtle {
@@ -206,5 +210,14 @@
   }
   100% {
     background-position: 0% 50%;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0px hsl(174 72% 56% / 0);
+  }
+  50% {
+    box-shadow: 0 0 30px hsl(174 72% 56% / 0.4);
   }
 }
