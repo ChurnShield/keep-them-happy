@@ -71,17 +71,7 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
           className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10"
         >
-          <motion.div
-            animate={{
-              boxShadow: [
-                "0 0 0px hsl(174 72% 56% / 0)",
-                "0 0 30px hsl(174 72% 56% / 0.4)",
-                "0 0 0px hsl(174 72% 56% / 0)",
-              ],
-            }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            className="w-full sm:w-auto rounded-lg"
-          >
+          <div className="w-full sm:w-auto rounded-lg animate-glow-pulse">
             <Button 
               onClick={handleStartTrial}
               disabled={isLoading}
@@ -90,7 +80,7 @@ export function Hero() {
             >
               {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
             </Button>
-          </motion.div>
+          </div>
           <Button
             variant="outline"
             size="lg"
