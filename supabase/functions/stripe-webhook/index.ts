@@ -7,6 +7,82 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, stripe-signature',
 };
 
+// ============= INPUT VALIDATION HELPERS =============
+
+/**
+ * Validate email format
+ */
+function isValidEmail(email: string): boolean {
+  if (!email || typeof email !== 'string') return false;
+  if (email.length > 255) return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Validate invoice data from Stripe
+ * Returns null if valid, error message if invalid
+ */
+function validateInvoiceData(invoice: Stripe.Invoice): string | null {
+  // Validate amount_due is non-negative
+  if (typeof invoice.amount_due === 'number' && invoice.amount_due < 0) {
+    return 'Invalid invoice: amount_due is negative';
+  }
+  
+  // Validate amount_paid is non-negative
+  if (typeof invoice.amount_paid === 'number' && invoice.amount_paid < 0) {
+    return 'Invalid invoice: amount_paid is negative';
+  }
+  
+  // Validate attempt_count is non-negative
+  if (typeof invoice.attempt_count === 'number' && invoice.attempt_count < 0) {
+    return 'Invalid invoice: attempt_count is negative';
+  }
+  
+  // Validate invoice ID format (should start with 'in_')
+  if (!invoice.id || !invoice.id.startsWith('in_')) {
+    return 'Invalid invoice: malformed invoice ID';
+  }
+  
+  return null;
+}
+
+/**
+ * Validate subscription data from Stripe
+ * Returns null if valid, error message if invalid
+ */
+function validateSubscriptionData(subscription: Stripe.Subscription): string | null {
+  // Validate subscription ID format (should start with 'sub_')
+  if (!subscription.id || !subscription.id.startsWith('sub_')) {
+    return 'Invalid subscription: malformed subscription ID';
+  }
+  
+  // Validate customer ID format (should start with 'cus_')
+  if (subscription.customer && typeof subscription.customer === 'string' && !subscription.customer.startsWith('cus_')) {
+    return 'Invalid subscription: malformed customer ID';
+  }
+  
+  return null;
+}
+
+/**
+ * Validate Stripe secret key format
+ */
+function isValidStripeSecretKey(key: string | undefined): boolean {
+  if (!key || typeof key !== 'string') return false;
+  const trimmed = key.trim();
+  return (trimmed.startsWith('sk_test_') || trimmed.startsWith('sk_live_')) && trimmed.length >= 32;
+}
+
+/**
+ * Validate Stripe webhook secret format
+ */
+function isValidWebhookSecret(secret: string | undefined): boolean {
+  if (!secret || typeof secret !== 'string') return false;
+  const trimmed = secret.trim();
+  return trimmed.startsWith('whsec_') && trimmed.length >= 32;
+}
+
 // Supported event types
 const SUPPORTED_EVENTS = [
   'checkout.session.completed',
@@ -101,13 +177,23 @@ serve(async (req) => {
   const eventType = 'unknown';
 
   try {
-    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
-    const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')?.trim();
+    const STRIPE_WEBHOOK_SECRET = Deno.env.get('STRIPE_WEBHOOK_SECRET')?.trim();
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET) {
-      structuredLog('error', 'Missing Stripe configuration', { eventId, eventType, error: 'Missing STRIPE_SECRET_KEY or STRIPE_WEBHOOK_SECRET' });
+    // Validate Stripe secret key format
+    if (!isValidStripeSecretKey(STRIPE_SECRET_KEY)) {
+      structuredLog('error', 'Invalid Stripe secret key format', { eventId, eventType, error: 'STRIPE_SECRET_KEY must start with sk_test_ or sk_live_ and be at least 32 characters' });
+      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate webhook secret format
+    if (!isValidWebhookSecret(STRIPE_WEBHOOK_SECRET)) {
+      structuredLog('error', 'Invalid webhook secret format', { eventId, eventType, error: 'STRIPE_WEBHOOK_SECRET must start with whsec_ and be at least 32 characters' });
       return new Response(JSON.stringify({ error: 'Server configuration error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -205,30 +291,60 @@ serve(async (req) => {
         case 'customer.subscription.created':
         case 'customer.subscription.updated': {
           const subscription = event.data.object as Stripe.Subscription;
+          // Validate subscription data
+          const subValidationError = validateSubscriptionData(subscription);
+          if (subValidationError) {
+            structuredLog('error', subValidationError, { eventId: currentEventId, eventType: currentEventType });
+            break;
+          }
           userId = await handleSubscriptionChange(supabase, stripe, subscription, currentEventId, currentEventType);
           break;
         }
 
         case 'customer.subscription.deleted': {
           const subscription = event.data.object as Stripe.Subscription;
+          // Validate subscription data
+          const subDelValidationError = validateSubscriptionData(subscription);
+          if (subDelValidationError) {
+            structuredLog('error', subDelValidationError, { eventId: currentEventId, eventType: currentEventType });
+            break;
+          }
           userId = await handleSubscriptionDeleted(supabase, stripe, subscription, currentEventId, currentEventType);
           break;
         }
 
         case 'invoice.payment_succeeded': {
           const invoice = event.data.object as Stripe.Invoice;
+          // Validate invoice data
+          const invSuccessValidationError = validateInvoiceData(invoice);
+          if (invSuccessValidationError) {
+            structuredLog('error', invSuccessValidationError, { eventId: currentEventId, eventType: currentEventType });
+            break;
+          }
           userId = await handleInvoicePaymentSucceeded(supabase, stripe, invoice, currentEventId, currentEventType);
           break;
         }
 
         case 'invoice.payment_failed': {
           const invoice = event.data.object as Stripe.Invoice;
+          // Validate invoice data
+          const invFailValidationError = validateInvoiceData(invoice);
+          if (invFailValidationError) {
+            structuredLog('error', invFailValidationError, { eventId: currentEventId, eventType: currentEventType });
+            break;
+          }
           userId = await handleInvoicePaymentFailed(supabase, stripe, invoice, currentEventId, currentEventType);
           break;
         }
 
         case 'invoice.payment_action_required': {
           const invoice = event.data.object as Stripe.Invoice;
+          // Validate invoice data
+          const invActionValidationError = validateInvoiceData(invoice);
+          if (invActionValidationError) {
+            structuredLog('error', invActionValidationError, { eventId: currentEventId, eventType: currentEventType });
+            break;
+          }
           userId = await handleInvoicePaymentActionRequired(supabase, stripe, invoice, currentEventId, currentEventType);
           break;
         }
@@ -283,10 +399,20 @@ async function findOrCreateUserByCustomer(
   stripe: Stripe,
   customerId: string
 ): Promise<{ userId: string | null; customerEmail: string | null }> {
+  // Validate customer ID format
+  if (!customerId || !customerId.startsWith('cus_')) {
+    return { userId: null, customerEmail: null };
+  }
+
   const customer = await stripe.customers.retrieve(customerId);
   const customerEmail = 'email' in customer ? customer.email : null;
 
   if (!customerEmail) {
+    return { userId: null, customerEmail: null };
+  }
+
+  // Validate email format before using in queries
+  if (!isValidEmail(customerEmail)) {
     return { userId: null, customerEmail: null };
   }
 
