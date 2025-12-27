@@ -6,6 +6,7 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const APP_URL = Deno.env.get("APP_URL") || "https://churnshield.app";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -99,7 +100,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Lovable <onboarding@resend.dev>",
+        from: "Churnshield <onboarding@resend.dev>",
         to: [to],
         subject,
         html,
@@ -242,7 +243,7 @@ const handler = async (req: Request): Promise<Response> => {
               To keep your account active, please update your payment method:
             </p>
             <div style="text-align: center; margin: 32px 0;">
-              <a href="https://example.com/update-payment" style="background-color: #6366f1; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+              <a href="${APP_URL}/settings" style="background-color: #6366f1; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
                 Update Payment Method
               </a>
             </div>
@@ -340,7 +341,7 @@ const handler = async (req: Request): Promise<Response> => {
               Your account access may be affected if the payment issue isn't resolved soon. Here's the link to update your payment details:
             </p>
             <div style="text-align: center; margin: 32px 0;">
-              <a href="https://example.com/update-payment" style="background-color: #6366f1; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+              <a href="${APP_URL}/settings" style="background-color: #6366f1; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
                 Update Payment Method
               </a>
             </div>
