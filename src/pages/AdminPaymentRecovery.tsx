@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { RefreshCw, Send, CheckCircle, AlertCircle, Mail } from "lucide-react";
+import { AdminLayout } from "@/components/AdminLayout";
 
 interface RecoveryRecord {
   id: string;
@@ -186,8 +187,9 @@ export default function AdminPaymentRecovery() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <AdminLayout>
+      <div className="p-6">
+        <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Payment Recovery</h1>
@@ -311,7 +313,8 @@ export default function AdminPaymentRecovery() {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
