@@ -7,10 +7,30 @@
     <title>Churnshield — Reduce churn before it happens</title>
     <meta name="description" content="Churnshield helps you spot at-risk customers early and take action to reduce churn. Simple, fast, and privacy-first." />
     
-    <!-- Inter Tight Font -->
+    <!-- Preconnect to Google Fonts (critical for performance) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Non-render-blocking font loading with fallback -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+      <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    </noscript>
+
+    <!-- Critical inline styles for faster FCP -->
+    <style>
+      /* Prevent layout shift during font loading */
+      body {
+        font-family: 'Inter Tight', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: hsl(220 20% 7%);
+        color: hsl(210 40% 98%);
+        margin: 0;
+      }
+      #root {
+        min-height: 100vh;
+      }
+    </style>
 
     <!-- Open Graph -->
     <meta property="og:title" content="Churnshield — Reduce churn before it happens" />
