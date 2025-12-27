@@ -8,6 +8,30 @@ const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true',
 };
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
+const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute per session
+
+// In-memory rate limiting map (keyed by session ID)
+const sessionRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function isSessionRateLimited(sessionId: string): boolean {
+  const now = Date.now();
+  const record = sessionRateLimitMap.get(sessionId);
+  
+  if (!record || now > record.resetTime) {
+    sessionRateLimitMap.set(sessionId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
 // Zod schema for stripe monitor request body
 const StripeMonitorRequestSchema = z.object({
   alert_email: z.string()
@@ -179,6 +203,21 @@ serve(async (req) => {
       }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Rate limiting check (per session)
+    if (isSessionRateLimited(sessionId)) {
+      console.warn(`Rate limited stripe-monitor request for session: ${sessionId.substring(0, 8)}...`);
+      return new Response(JSON.stringify({ 
+        error: 'Too many requests. Please try again later.'
+      }), {
+        status: 429,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': '60'
+        },
       });
     }
 

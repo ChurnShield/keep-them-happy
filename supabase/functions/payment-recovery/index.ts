@@ -12,6 +12,30 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
+const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute per user
+
+// In-memory rate limiting map (keyed by user ID after auth)
+const userRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function isUserRateLimited(userId: string): boolean {
+  const now = Date.now();
+  const record = userRateLimitMap.get(userId);
+  
+  if (!record || now > record.resetTime) {
+    userRateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
 // Zod schema for payment recovery request
 const PaymentRecoveryRequestSchema = z.object({
   action: z.enum(["trigger", "follow_up", "resolve", "list"], {
@@ -104,6 +128,22 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ error: authResult.error }),
         { status: authResult.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limiting check (per authenticated user)
+    if (isUserRateLimited(authResult.userId)) {
+      console.warn(`Rate limited payment-recovery request from user: ${authResult.userId}`);
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please try again later." }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "Retry-After": "60"
+          } 
+        }
       );
     }
 
