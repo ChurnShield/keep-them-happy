@@ -1,36 +1,52 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
-// v1.1 - Force redeploy for secret binding
+// v1.2 - Added admin authentication
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simple in-memory rate limiting (resets on function cold start)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 3;
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return false;
-  }
-  
-  if (entry.count >= RATE_LIMIT) {
-    return true;
-  }
-  
-  entry.count++;
-  return false;
-}
-
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
+}
+
+async function verifyAdminAuth(req: Request): Promise<{ userId: string } | { error: string; status: number; code: string }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return { error: 'Unauthorized', status: 401, code: 'NO_AUTH' };
+  }
+
+  // Create Supabase client with user's JWT
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  // Verify user is authenticated
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+  if (authError || !user) {
+    console.log("Auth verification failed:", authError?.message || "No user");
+    return { error: 'Invalid token', status: 401, code: 'INVALID_TOKEN' };
+  }
+
+  // Check admin role
+  const { data: roleData, error: roleError } = await supabaseAuth
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (roleError || !roleData) {
+    console.log("Admin role check failed for user:", user.id);
+    return { error: 'Admin access required', status: 403, code: 'FORBIDDEN' };
+  }
+
+  return { userId: user.id };
 }
 
 serve(async (req) => {
@@ -40,6 +56,17 @@ serve(async (req) => {
   }
 
   try {
+    // Verify admin authentication
+    const authResult = await verifyAdminAuth(req);
+    if ('error' in authResult) {
+      return new Response(
+        JSON.stringify({ ok: false, error: authResult.error, code: authResult.code }),
+        { status: authResult.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Admin authenticated:", authResult.userId);
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const keyPresent = !!resendApiKey;
     
@@ -49,20 +76,6 @@ serve(async (req) => {
       console.error("RESEND_API_KEY is not configured");
       return new Response(
         JSON.stringify({ ok: false, error: "Email service not configured", code: "MISSING_API_KEY", keyPresent }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Get client IP for rate limiting
-    const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
-                     req.headers.get("cf-connecting-ip") || 
-                     "unknown";
-
-    // Check rate limit
-    if (isRateLimited(clientIP)) {
-      console.warn(`Rate limited IP: ${clientIP}`);
-      return new Response(
-        JSON.stringify({ ok: false, error: "Rate limited. Max 3 emails per hour.", code: "RATE_LIMITED" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

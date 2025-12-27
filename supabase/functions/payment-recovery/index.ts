@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const corsHeaders = {
@@ -19,6 +20,40 @@ const FORTY_EIGHT_HOURS_MS = 48 * 60 * 60 * 1000;
 
 function sanitizeForLog(value: string): string {
   return value.replace(/[<>&'"]/g, '');
+}
+
+async function verifyAdminAuth(req: Request): Promise<{ userId: string } | { error: string; status: number }> {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return { error: 'Unauthorized - No authorization header', status: 401 };
+  }
+
+  // Create Supabase client with user's JWT
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } }
+  });
+
+  // Verify user is authenticated
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
+  if (authError || !user) {
+    console.log("Auth verification failed:", authError?.message || "No user");
+    return { error: 'Unauthorized - Invalid token', status: 401 };
+  }
+
+  // Check admin role using the has_role function via direct query
+  const { data: roleData, error: roleError } = await supabaseAuth
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  if (roleError || !roleData) {
+    console.log("Admin role check failed for user:", user.id);
+    return { error: 'Forbidden - Admin access required', status: 403 };
+  }
+
+  return { userId: user.id };
 }
 
 async function sendEmail(to: string, subject: string, html: string): Promise<{ success: boolean; error?: string }> {
@@ -53,6 +88,18 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Verify admin authentication
+    const authResult = await verifyAdminAuth(req);
+    if ('error' in authResult) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: authResult.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Admin authenticated:", authResult.userId);
+
+    // Use service role for privileged operations after auth verification
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { action, email }: PaymentRecoveryRequest = await req.json();
 
