@@ -34,21 +34,43 @@ interface WelcomeEmailResponse {
   errorCode?: string;
 }
 
-// Simple in-memory rate limiting (per IP, 5 requests per minute)
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_WINDOW_MS = 60000;
-const MAX_REQUESTS_PER_WINDOW = 5;
+// Rate limiting configuration - stricter limits for email sending
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
+const MAX_REQUESTS_PER_IP = 3; // 3 requests per minute per IP
+const MAX_REQUESTS_PER_EMAIL = 2; // 2 requests per minute per email (allows 1 resend)
 
-function isRateLimited(ip: string): boolean {
+// In-memory rate limiting maps
+const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const emailRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function isIPRateLimited(ip: string): boolean {
   const now = Date.now();
-  const record = rateLimitMap.get(ip);
+  const record = ipRateLimitMap.get(ip);
   
   if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    ipRateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
     return false;
   }
   
-  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+  if (record.count >= MAX_REQUESTS_PER_IP) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
+function isEmailRateLimited(email: string): boolean {
+  const now = Date.now();
+  const normalizedEmail = email.toLowerCase().trim();
+  const record = emailRateLimitMap.get(normalizedEmail);
+  
+  if (!record || now > record.resetTime) {
+    emailRateLimitMap.set(normalizedEmail, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return false;
+  }
+  
+  if (record.count >= MAX_REQUESTS_PER_EMAIL) {
     return true;
   }
   
@@ -73,13 +95,14 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
   try {
-    // Rate limiting
+    // IP-based rate limiting
     const clientIP = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
                      req.headers.get("cf-connecting-ip") || 
+                     req.headers.get("x-real-ip") ||
                      "unknown";
     
-    if (isRateLimited(clientIP)) {
-      console.warn(`Rate limited: ${clientIP}`);
+    if (isIPRateLimited(clientIP)) {
+      console.warn(`IP rate limited: ${clientIP}`);
       return respond({ ok: false, errorCode: "RATE_LIMITED" }, 429);
     }
 
@@ -100,6 +123,12 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const { email, company, forceResend } = parseResult.data;
+
+    // Email-based rate limiting (prevents abuse via same email)
+    if (isEmailRateLimited(email)) {
+      console.warn(`Email rate limited: ${email}`);
+      return respond({ ok: false, errorCode: "RATE_LIMITED" }, 429);
+    }
 
     // Additional email format validation (defense in depth)
     if (!isValidEmail(email)) {

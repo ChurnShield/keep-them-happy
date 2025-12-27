@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,6 +28,38 @@ const PLAN_CONFIG: Record<string, PlanConfig> = {
   scale: { name: 'Scale', currency: 'gbp', unitAmount: 34900, mode: 'subscription' },
   churnshield: { name: 'Starter', currency: 'gbp', unitAmount: 4900, mode: 'subscription' },
 };
+
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_SECONDS = 60;
+const MAX_REQUESTS_PER_WINDOW = 5;
+
+// In-memory rate limiting as fallback
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+function getClientIP(req: Request): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
+         req.headers.get("cf-connecting-ip") || 
+         req.headers.get("x-real-ip") ||
+         "unknown";
+}
+
+// Check rate limit using in-memory fallback
+function isRateLimitedInMemory(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + (RATE_LIMIT_WINDOW_SECONDS * 1000) });
+    return false;
+  }
+  
+  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
 
 async function stripeRequest(endpoint: string, apiKey: string, method = 'GET', body?: Record<string, unknown>) {
   const headers: Record<string, string> = {
@@ -73,6 +106,21 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limiting check
+    const clientIP = getClientIP(req);
+    
+    if (isRateLimitedInMemory(clientIP)) {
+      console.warn(`Rate limited checkout request from IP: ${clientIP}`);
+      return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
+        status: 429,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': String(RATE_LIMIT_WINDOW_SECONDS)
+        },
+      });
+    }
+
     const STRIPE_SECRET_KEY = (Deno.env.get('STRIPE_SECRET_KEY') ?? '').trim();
     const APP_URL = Deno.env.get('APP_URL');
 
@@ -108,7 +156,7 @@ serve(async (req) => {
       });
     }
 
-    console.log('Creating checkout for plan:', normalizedPlanId);
+    console.log(`Creating checkout for plan: ${normalizedPlanId}, IP: ${clientIP}`);
 
     // Create product
     const product = await stripeRequest('/products', STRIPE_SECRET_KEY, 'POST', {
