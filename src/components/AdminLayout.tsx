@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { CreditCard, Mail, Webhook, ArrowLeft } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,6 +22,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     recentChurnEvents: 0,
     pendingPayments: 0,
   });
+  const [animatingBadges, setAnimatingBadges] = useState<Set<string>>(new Set());
+  const prevCountsRef = useRef<AdminCounts | null>(null);
+  const isInitialLoad = useRef(true);
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -42,11 +45,36 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           .neq("status", "resolved"),
       ]);
 
-      setCounts({
+      const newCounts = {
         openRecoveryCases: recoveryCasesResult.count || 0,
         recentChurnEvents: churnEventsResult.count || 0,
         pendingPayments: paymentRecoveryResult.count || 0,
-      });
+      };
+
+      // Detect which badges changed (skip on initial load)
+      if (!isInitialLoad.current && prevCountsRef.current) {
+        const changedBadges = new Set<string>();
+        
+        if (prevCountsRef.current.pendingPayments !== newCounts.pendingPayments) {
+          changedBadges.add("/admin/payment-recovery");
+        }
+        
+        const prevWebhookCount = prevCountsRef.current.openRecoveryCases + prevCountsRef.current.recentChurnEvents;
+        const newWebhookCount = newCounts.openRecoveryCases + newCounts.recentChurnEvents;
+        if (prevWebhookCount !== newWebhookCount) {
+          changedBadges.add("/admin/webhook-tests");
+        }
+
+        if (changedBadges.size > 0) {
+          setAnimatingBadges(changedBadges);
+          // Clear animation after it completes
+          setTimeout(() => setAnimatingBadges(new Set()), 1000);
+        }
+      }
+
+      prevCountsRef.current = newCounts;
+      isInitialLoad.current = false;
+      setCounts(newCounts);
     } catch (error) {
       console.error("Failed to fetch admin counts:", error);
     }
@@ -122,6 +150,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
               {adminLinks.map((link) => {
                 const isActive = location.pathname === link.path;
                 const Icon = link.icon;
+                const isAnimating = animatingBadges.has(link.path);
                 return (
                   <Link
                     key={link.path}
@@ -138,7 +167,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     {link.count > 0 && (
                       <Badge 
                         variant={isActive ? "secondary" : "destructive"} 
-                        className="ml-1 h-5 min-w-5 px-1.5 text-xs"
+                        className={cn(
+                          "ml-1 h-5 min-w-5 px-1.5 text-xs transition-all",
+                          isAnimating && "animate-pulse ring-2 ring-destructive/50 ring-offset-1"
+                        )}
                       >
                         {link.count}
                       </Badge>
