@@ -4,8 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Mail, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Mail, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { AdminLayout } from "@/components/AdminLayout";
 
 interface ApiResponse {
   ok: boolean;
@@ -92,17 +92,10 @@ export default function AdminEmailTest() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-xl mx-auto">
-        <Link 
-          to="/" 
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to home
-        </Link>
-
-        <Card>
+    <AdminLayout>
+      <div className="p-6">
+        <div className="max-w-xl mx-auto">
+          <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
@@ -183,10 +176,11 @@ export default function AdminEmailTest() {
                 <li>• Uses onboarding@resend.dev sender (no domain needed)</li>
                 <li>• Rate limited to 3 emails per hour</li>
               </ul>
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
