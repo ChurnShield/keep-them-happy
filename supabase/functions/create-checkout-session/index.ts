@@ -1,9 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Zod schema for checkout session request
+const CheckoutRequestSchema = z.object({
+  planId: z.string().min(1, "Plan ID is required").max(50, "Plan ID too long"),
+  email: z.string().email("Invalid email format").max(255, "Email too long").optional(),
+  successUrl: z.string().url("Invalid success URL").max(2000, "URL too long").optional(),
+  cancelUrl: z.string().url("Invalid cancel URL").max(2000, "URL too long").optional(),
+});
 
 type PlanConfig = {
   name: string;
@@ -75,20 +84,25 @@ serve(async (req) => {
       });
     }
 
-    const { planId, email, successUrl, cancelUrl } = await req.json();
-
-    if (!planId) {
-      return new Response(JSON.stringify({ error: 'Plan ID is required' }), {
+    const rawBody = await req.json();
+    
+    // Validate input with Zod schema
+    const parseResult = CheckoutRequestSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      console.error('Validation failed:', errors);
+      return new Response(JSON.stringify({ error: `Validation failed: ${errors}` }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const normalizedPlanId = String(planId).toLowerCase();
+    const { planId, email, successUrl, cancelUrl } = parseResult.data;
+    const normalizedPlanId = planId.toLowerCase();
     const config = PLAN_CONFIG[normalizedPlanId];
     
     if (!config) {
-      return new Response(JSON.stringify({ error: 'Invalid plan ID' }), {
+      return new Response(JSON.stringify({ error: 'Invalid plan ID. Valid options: starter, growth, scale' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

@@ -1,11 +1,23 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, cookie',
   'Access-Control-Allow-Credentials': 'true',
 };
+
+// Zod schema for stripe monitor request body
+const StripeMonitorRequestSchema = z.object({
+  alert_email: z.string()
+    .max(255, "Email too long")
+    .email("Invalid email format")
+    .optional(),
+  session_id: z.string()
+    .max(500, "Session ID too long")
+    .optional(),
+});
 
 interface FailedPayment {
   id: string;
@@ -122,15 +134,28 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    // Parse request body for alert email
+    // Parse and validate request body
     let alertEmail: string | undefined;
     let sessionId: string | undefined;
 
     if (req.method === 'POST') {
       try {
-        const body = await req.json();
-        alertEmail = body.alert_email;
-        sessionId = body.session_id;
+        const rawBody = await req.json();
+        const parseResult = StripeMonitorRequestSchema.safeParse(rawBody);
+        
+        if (!parseResult.success) {
+          const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+          console.error('Validation failed:', errors);
+          return new Response(JSON.stringify({ 
+            error: `Validation failed: ${errors}`
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        alertEmail = parseResult.data.alert_email;
+        sessionId = parseResult.data.session_id;
       } catch {
         // No body provided, try to get session from cookie
       }
