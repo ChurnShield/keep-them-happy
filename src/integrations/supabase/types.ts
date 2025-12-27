@@ -224,6 +224,56 @@ export type Database = {
         }
         Relationships: []
       }
+      recovered_revenue_ledger: {
+        Row: {
+          amount_recovered: number
+          created_at: string
+          currency: string
+          id: string
+          invoice_reference: string
+          notes: string | null
+          owner_user_id: string
+          recovered_at: string
+          recovery_case_id: string
+          source_event_id: string
+          stripe_invoice_id: string | null
+        }
+        Insert: {
+          amount_recovered: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_reference: string
+          notes?: string | null
+          owner_user_id: string
+          recovered_at?: string
+          recovery_case_id: string
+          source_event_id: string
+          stripe_invoice_id?: string | null
+        }
+        Update: {
+          amount_recovered?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_reference?: string
+          notes?: string | null
+          owner_user_id?: string
+          recovered_at?: string
+          recovery_case_id?: string
+          source_event_id?: string
+          stripe_invoice_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovered_revenue_ledger_recovery_case_id_fkey"
+            columns: ["recovery_case_id"]
+            isOneToOne: false
+            referencedRelation: "recovery_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recovery_actions: {
         Row: {
           action_type: Database["public"]["Enums"]["recovery_action_type"]
@@ -582,7 +632,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      recovered_revenue_summary: {
+        Row: {
+          current_month_count: number | null
+          current_month_recovered: number | null
+          last_recovered_at: string | null
+          lifetime_count: number | null
+          lifetime_recovered: number | null
+          owner_user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
