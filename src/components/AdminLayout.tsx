@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { CreditCard, Mail, Webhook, ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 
@@ -23,38 +23,62 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     pendingPayments: 0,
   });
 
-  useEffect(() => {
-    const fetchCounts = async () => {
-      try {
-        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const fetchCounts = useCallback(async () => {
+    try {
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
-        const [recoveryCasesResult, churnEventsResult, paymentRecoveryResult] = await Promise.all([
-          supabase
-            .from("recovery_cases")
-            .select("id", { count: "exact", head: true })
-            .eq("status", "open"),
-          supabase
-            .from("churn_risk_events")
-            .select("id", { count: "exact", head: true })
-            .gte("occurred_at", oneDayAgo),
-          supabase
-            .from("payment_recovery")
-            .select("id", { count: "exact", head: true })
-            .neq("status", "resolved"),
-        ]);
+      const [recoveryCasesResult, churnEventsResult, paymentRecoveryResult] = await Promise.all([
+        supabase
+          .from("recovery_cases")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "open"),
+        supabase
+          .from("churn_risk_events")
+          .select("id", { count: "exact", head: true })
+          .gte("occurred_at", oneDayAgo),
+        supabase
+          .from("payment_recovery")
+          .select("id", { count: "exact", head: true })
+          .neq("status", "resolved"),
+      ]);
 
-        setCounts({
-          openRecoveryCases: recoveryCasesResult.count || 0,
-          recentChurnEvents: churnEventsResult.count || 0,
-          pendingPayments: paymentRecoveryResult.count || 0,
-        });
-      } catch (error) {
-        console.error("Failed to fetch admin counts:", error);
-      }
-    };
-
-    fetchCounts();
+      setCounts({
+        openRecoveryCases: recoveryCasesResult.count || 0,
+        recentChurnEvents: churnEventsResult.count || 0,
+        pendingPayments: paymentRecoveryResult.count || 0,
+      });
+    } catch (error) {
+      console.error("Failed to fetch admin counts:", error);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchCounts();
+
+    // Subscribe to real-time changes on all relevant tables
+    const channel = supabase
+      .channel("admin-counts")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "recovery_cases" },
+        () => fetchCounts()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "churn_risk_events" },
+        () => fetchCounts()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "payment_recovery" },
+        () => fetchCounts()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchCounts]);
 
   const adminLinks = [
     { 
