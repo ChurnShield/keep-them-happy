@@ -28,6 +28,48 @@ const RISK_SEVERITY: Record<string, number> = {
   'renewal_soon': 2,
 };
 
+// Churn reason enum values (must match DB enum)
+type ChurnReason = 'card_expired' | 'insufficient_funds' | 'bank_decline' | 'no_retry_attempted' | 'unknown_failure';
+
+/**
+ * Map Stripe payment failure codes to churn_reason enum
+ * See: https://stripe.com/docs/declines/codes
+ */
+function mapStripeFailureToChurnReason(invoice: Stripe.Invoice): ChurnReason {
+  // Try to get the decline code from the charge or payment intent
+  const chargeId = invoice.charge as string | null;
+  const lastPaymentError = (invoice as unknown as { last_payment_error?: { code?: string; decline_code?: string } }).last_payment_error;
+  
+  const declineCode = lastPaymentError?.decline_code || lastPaymentError?.code || '';
+  
+  // Map common Stripe decline codes to our churn reasons
+  if (declineCode === 'expired_card' || declineCode === 'card_expired') {
+    return 'card_expired';
+  }
+  
+  if (declineCode === 'insufficient_funds' || declineCode === 'card_declined' && declineCode.includes('insufficient')) {
+    return 'insufficient_funds';
+  }
+  
+  if (
+    declineCode === 'do_not_honor' ||
+    declineCode === 'generic_decline' ||
+    declineCode === 'card_declined' ||
+    declineCode === 'issuer_not_available' ||
+    declineCode === 'processing_error' ||
+    declineCode === 'try_again_later'
+  ) {
+    return 'bank_decline';
+  }
+  
+  // If no retry has been attempted and this is the first failure
+  if (invoice.attempt_count === 1 && !invoice.next_payment_attempt) {
+    return 'no_retry_attempted';
+  }
+  
+  return 'unknown_failure';
+}
+
 interface LogContext {
   eventId: string;
   eventType: string;
@@ -520,9 +562,81 @@ async function handleInvoicePaymentSucceeded(
     throw new Error(`Failed to upsert invoice: ${invError.message}`);
   }
 
+  // ========== RECOVERY CASE RESOLUTION ==========
+  // Mark matching open recovery case as recovered
+  await resolveRecoveryCaseFromInvoice(supabase, invoice.id, eventId, eventType, userId);
+
   structuredLog('info', 'Invoice payment succeeded recorded', { eventId, eventType, userId });
 
   return userId;
+}
+
+/**
+ * Resolve a recovery case when payment succeeds (idempotent)
+ * Only updates cases with status = 'open'
+ */
+async function resolveRecoveryCaseFromInvoice(
+  supabase: AnySupabaseClient,
+  invoiceId: string,
+  eventId: string,
+  eventType: string,
+  userId: string
+): Promise<void> {
+  // Find open recovery case for this invoice
+  const { data: openCase, error: findError } = await supabase
+    .from('recovery_cases')
+    .select('id, status')
+    .eq('invoice_reference', invoiceId)
+    .eq('status', 'open')
+    .maybeSingle();
+
+  if (findError) {
+    structuredLog('error', 'Failed to find recovery case for resolution', { 
+      eventId, 
+      eventType, 
+      userId, 
+      error: findError.message 
+    });
+    return;
+  }
+
+  if (!openCase) {
+    structuredLog('info', 'No open recovery case found for this invoice', { 
+      eventId, 
+      eventType, 
+      userId 
+    });
+    return;
+  }
+
+  // Update to recovered
+  const now = new Date().toISOString();
+  const { error: updateError } = await supabase
+    .from('recovery_cases')
+    .update({
+      status: 'recovered',
+      resolved_at: now,
+      updated_at: now,
+    })
+    .eq('id', openCase.id)
+    .eq('status', 'open'); // Double-check status to prevent race conditions
+
+  if (updateError) {
+    structuredLog('error', 'Failed to mark recovery case as recovered', { 
+      eventId, 
+      eventType, 
+      userId, 
+      error: updateError.message 
+    });
+    return;
+  }
+
+  structuredLog('info', 'Recovery case marked as recovered', { 
+    eventId, 
+    eventType, 
+    userId, 
+    outcome: `case_id=${openCase.id}` 
+  });
 }
 
 // Handler: invoice payment failed
@@ -533,7 +647,10 @@ async function handleInvoicePaymentFailed(
   eventId: string,
   eventType: string
 ): Promise<string | null> {
-  if (!invoice.customer) return null;
+  if (!invoice.customer) {
+    structuredLog('warn', 'Invoice has no customer, skipping', { eventId, eventType });
+    return null;
+  }
 
   const { userId } = await findOrCreateUserByCustomer(supabase, stripe, invoice.customer as string);
 
@@ -594,9 +711,112 @@ async function handleInvoicePaymentFailed(
       .eq('stripe_subscription_id', invoice.subscription);
   }
 
+  // ========== RECOVERY CASE CREATION ==========
+  // Only create recovery case if invoice is linked to a subscription
+  if (invoice.subscription) {
+    await createRecoveryCaseFromInvoice(supabase, userId, invoice, eventId, eventType);
+  } else {
+    structuredLog('info', 'Skipping recovery case - invoice not linked to subscription', { eventId, eventType, userId });
+  }
+
   structuredLog('info', 'Invoice payment failed recorded', { eventId, eventType, userId });
 
   return userId;
+}
+
+/**
+ * Create a recovery case from a failed invoice (idempotent)
+ * Will NOT create duplicate cases for the same invoice
+ */
+async function createRecoveryCaseFromInvoice(
+  supabase: AnySupabaseClient,
+  userId: string,
+  invoice: Stripe.Invoice,
+  eventId: string,
+  eventType: string
+): Promise<void> {
+  const invoiceRef = invoice.id;
+  const customerRef = invoice.customer as string;
+
+  // Check if a recovery case already exists for this invoice (any status)
+  const { data: existingCase, error: checkError } = await supabase
+    .from('recovery_cases')
+    .select('id, status')
+    .eq('invoice_reference', invoiceRef)
+    .maybeSingle();
+
+  if (checkError) {
+    structuredLog('error', 'Failed to check existing recovery case', { 
+      eventId, 
+      eventType, 
+      userId, 
+      error: checkError.message 
+    });
+    return;
+  }
+
+  if (existingCase) {
+    structuredLog('info', 'Recovery case already exists for invoice, skipping creation', { 
+      eventId, 
+      eventType, 
+      userId, 
+      outcome: `existing_case_id=${existingCase.id}, status=${existingCase.status}` 
+    });
+    return;
+  }
+
+  // Map Stripe failure to churn reason
+  const churnReason = mapStripeFailureToChurnReason(invoice);
+  
+  // Calculate deadline (now + 48 hours)
+  const now = new Date();
+  const deadlineAt = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+  // Create the recovery case
+  const { data: newCase, error: insertError } = await supabase
+    .from('recovery_cases')
+    .insert({
+      owner_user_id: userId,
+      invoice_reference: invoiceRef,
+      customer_reference: customerRef,
+      amount_at_risk: invoice.amount_due / 100, // Convert from cents to currency units
+      currency: invoice.currency?.toUpperCase() || 'USD',
+      status: 'open',
+      churn_reason: churnReason,
+      opened_at: now.toISOString(),
+      deadline_at: deadlineAt.toISOString(),
+      first_action_at: null,
+      resolved_at: null,
+    })
+    .select('id')
+    .single();
+
+  if (insertError) {
+    // Check for unique constraint violation (duplicate insert race condition)
+    if (insertError.code === '23505') {
+      structuredLog('info', 'Recovery case creation skipped (concurrent insert)', { 
+        eventId, 
+        eventType, 
+        userId 
+      });
+      return;
+    }
+    
+    structuredLog('error', 'Failed to create recovery case', { 
+      eventId, 
+      eventType, 
+      userId, 
+      error: insertError.message 
+    });
+    return;
+  }
+
+  structuredLog('info', 'Recovery case created successfully', { 
+    eventId, 
+    eventType, 
+    userId, 
+    outcome: `case_id=${newCase?.id}, churn_reason=${churnReason}, amount=${invoice.amount_due / 100} ${invoice.currency?.toUpperCase()}` 
+  });
 }
 
 // Handler: invoice payment action required
