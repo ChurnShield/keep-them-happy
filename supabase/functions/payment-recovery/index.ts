@@ -16,12 +16,31 @@ const corsHeaders = {
 // Rate limiting configuration
 const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
 const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute per user
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // Cleanup every 5 minutes
 
 // In-memory rate limiting map (keyed by user ID after auth)
 const userRateLimitMap = new Map<string, { count: number; resetTime: number }>();
+let lastCleanup = Date.now();
+
+// Cleanup expired entries to prevent memory leak
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  for (const [key, record] of userRateLimitMap.entries()) {
+    if (now > record.resetTime) {
+      userRateLimitMap.delete(key);
+    }
+  }
+  lastCleanup = now;
+}
 
 function isUserRateLimited(userId: string): boolean {
   const now = Date.now();
+  
+  // Periodic cleanup to prevent memory leak
+  if (now - lastCleanup > CLEANUP_INTERVAL_MS) {
+    cleanupExpiredEntries();
+  }
+  
   const record = userRateLimitMap.get(userId);
   
   if (!record || now > record.resetTime) {

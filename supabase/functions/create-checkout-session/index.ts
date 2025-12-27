@@ -33,8 +33,22 @@ const PLAN_CONFIG: Record<string, PlanConfig> = {
 const RATE_LIMIT_WINDOW_SECONDS = 60;
 const MAX_REQUESTS_PER_WINDOW = 5;
 
-// In-memory rate limiting as fallback
+// In-memory rate limiting with cleanup
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+// Cleanup expired entries every 5 minutes to prevent memory leak
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+let lastCleanup = Date.now();
+
+function cleanupExpiredEntries(): void {
+  const now = Date.now();
+  for (const [key, record] of rateLimitMap.entries()) {
+    if (now > record.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+  lastCleanup = now;
+}
 
 function getClientIP(req: Request): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
@@ -43,9 +57,15 @@ function getClientIP(req: Request): string {
          "unknown";
 }
 
-// Check rate limit using in-memory fallback
+// Check rate limit using in-memory fallback with cleanup
 function isRateLimitedInMemory(ip: string): boolean {
   const now = Date.now();
+  
+  // Periodic cleanup to prevent memory leak
+  if (now - lastCleanup > CLEANUP_INTERVAL_MS) {
+    cleanupExpiredEntries();
+  }
+  
   const record = rateLimitMap.get(ip);
   
   if (!record || now > record.resetTime) {
