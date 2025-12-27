@@ -143,7 +143,14 @@ export default function RecoveryInbox() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <p className="text-muted-foreground">No cases match your filters.</p>
+            <p className="text-muted-foreground">
+              No cases match your filters.
+              {searchQuery && statusFilter !== 'all' && (
+                <span className="block mt-2 text-sm">
+                  Try changing the status filter to "All" or clear your search.
+                </span>
+              )}
+            </p>
           </motion.div>
         )}
 
