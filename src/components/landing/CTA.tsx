@@ -31,7 +31,7 @@ export function CTA() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-background to-card text-foreground py-28 md:py-36 border-t border-white/10">
       {/* Gradient Glow Background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-teal-400/10 via-cyan-400/10 to-transparent blur-3xl opacity-40 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-accent/10 to-transparent blur-3xl opacity-40 pointer-events-none" />
 
       <div className="container mx-auto px-6 text-center relative z-10 max-w-3xl">
         <motion.div
@@ -43,7 +43,7 @@ export function CTA() {
           {/* Headline */}
           <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
             Ready to{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-cyan-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
               stop paying for churn?
             </span>
           </h2>
@@ -76,7 +76,7 @@ export function CTA() {
               <Button 
                 onClick={handleStartTrial}
                 disabled={isLoading}
-                className="w-full sm:w-auto bg-gradient-to-r from-teal-400 to-cyan-400 text-black font-semibold hover:opacity-90 transition shadow-md"
+                className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold hover:opacity-90 transition shadow-md"
               >
                 {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
               </Button>
@@ -85,7 +85,7 @@ export function CTA() {
             <Button
               variant="outline"
               onClick={handleHowItWorks}
-              className="w-full sm:w-auto border-teal-400/60 text-teal-300 hover:bg-teal-400/10 transition"
+              className="w-full sm:w-auto border-primary/60 text-primary hover:bg-primary/10 transition"
             >
               View How It Works
             </Button>
@@ -94,20 +94,20 @@ export function CTA() {
           {/* Trust points */}
           <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-muted-foreground text-sm">
             <li className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-teal-400" /> No credit card needed
+              <Check className="w-4 h-4 text-primary" /> No credit card needed
             </li>
             <li className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-teal-400" /> Cancel anytime
+              <Check className="w-4 h-4 text-primary" /> Cancel anytime
             </li>
             <li className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-teal-400" /> Zero-risk guarantee
+              <Check className="w-4 h-4 text-primary" /> Zero-risk guarantee
             </li>
           </ul>
         </motion.div>
       </div>
 
       {/* Subtle bottom divider glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[2px] bg-gradient-to-r from-transparent via-teal-400/60 to-transparent blur-sm animate-pulse-slow" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent blur-sm animate-pulse-slow" />
 
       <CheckoutFallbackDialog 
         open={showFallbackDialog} 
