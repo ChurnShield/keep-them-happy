@@ -118,20 +118,20 @@ export function Hero() {
           className="bg-white/5 rounded-2xl p-8 md:p-10 backdrop-blur-md border border-white/10 glow"
         >
           <p className="text-sm uppercase tracking-widest text-muted-foreground mb-6">
-            Trusted by leading SaaS teams — recovering millions in ARR
+            Simple, transparent pricing
           </p>
           <div className="grid grid-cols-3 gap-6 md:gap-10">
             <div>
               <p className="text-3xl md:text-4xl font-bold text-primary">$0</p>
-              <p className="text-sm text-muted-foreground mt-1">Cost if we save nothing</p>
+              <p className="text-sm text-muted-foreground mt-1">Upfront cost</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-primary">54%</p>
-              <p className="text-sm text-muted-foreground mt-1">Avg. churn reduction</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary">10 min</p>
+              <p className="text-sm text-muted-foreground mt-1">Setup time</p>
             </div>
             <div>
-              <p className="text-3xl md:text-4xl font-bold text-primary">100%</p>
-              <p className="text-sm text-muted-foreground mt-1">Aligned with your success</p>
+              <p className="text-3xl md:text-4xl font-bold text-primary">20%</p>
+              <p className="text-sm text-muted-foreground mt-1">Of saved revenue</p>
             </div>
           </div>
         </motion.div>
