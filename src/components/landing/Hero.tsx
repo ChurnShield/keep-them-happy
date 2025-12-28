@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, Shield, CreditCard, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
@@ -93,22 +93,29 @@ export function Hero() {
         </motion.div>
 
         {/* Trust Indicators */}
-        <motion.ul
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-          className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-muted-foreground text-sm mb-12"
+          className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12"
         >
-          <li className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-primary" /> No setup fees or lock-ins
-          </li>
-          <li className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-primary" /> Pay only for results
-          </li>
-          <li className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-primary" /> Zero-risk guarantee
-          </li>
-        </motion.ul>
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+            <CreditCard className="w-5 h-5 text-primary" />
+            <span className="text-sm text-muted-foreground text-center">No credit card required</span>
+          </div>
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+            <Clock className="w-5 h-5 text-primary" />
+            <span className="text-sm text-muted-foreground text-center">Cancel anytime</span>
+          </div>
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+            <Shield className="w-5 h-5 text-primary" />
+            <span className="text-sm text-muted-foreground text-center">Zero-risk guarantee</span>
+          </div>
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+            <Check className="w-5 h-5 text-primary" />
+            <span className="text-sm text-muted-foreground text-center">Pay only for results</span>
+          </div>
+        </motion.div>
 
         {/* Stats Card */}
         <motion.div
