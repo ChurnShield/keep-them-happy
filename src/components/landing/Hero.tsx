@@ -61,8 +61,8 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
           className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
         >
-          Most retention tools charge you for churn.{" "}
-          <span className="text-foreground font-medium">ChurnShield only earns when you do</span> — if we don't recover revenue, you don't pay a cent.
+          ChurnShield adds a smart cancel flow that saves 15–30% of churning users.{" "}
+          <span className="text-foreground font-medium">Takes 10 minutes to set up.</span> And you only pay when it actually works.
         </motion.p>
 
         {/* CTA Buttons */}
