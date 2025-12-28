@@ -36,8 +36,8 @@ export function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-primary mb-6 backdrop-blur-sm border border-white/10"
         >
-          <span className="font-medium">💡 Smarter pricing:</span>
-          <span>Pay only for revenue you actually keep</span>
+          <span className="font-medium">⚡ Enterprise-level retention tools cost $250+/mo.</span>
+          <span>We charge $0 upfront.</span>
         </motion.div>
 
         {/* Headline */}
