@@ -99,19 +99,19 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
           className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12"
         >
-          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/30 hover:scale-105 transition-all duration-300 cursor-default">
             <CreditCard className="w-5 h-5 text-primary" />
             <span className="text-sm text-muted-foreground text-center">No credit card required</span>
           </div>
-          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/30 hover:scale-105 transition-all duration-300 cursor-default">
             <Clock className="w-5 h-5 text-primary" />
             <span className="text-sm text-muted-foreground text-center">Cancel anytime</span>
           </div>
-          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/30 hover:scale-105 transition-all duration-300 cursor-default">
             <Shield className="w-5 h-5 text-primary" />
             <span className="text-sm text-muted-foreground text-center">Zero-risk guarantee</span>
           </div>
-          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10">
+          <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/30 hover:scale-105 transition-all duration-300 cursor-default">
             <Check className="w-5 h-5 text-primary" />
             <span className="text-sm text-muted-foreground text-center">Pay only for results</span>
           </div>
