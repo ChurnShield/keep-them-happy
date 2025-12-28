@@ -4,10 +4,19 @@ import { motion } from "framer-motion";
 
 export function Footer() {
   const handleNavClick = (href: string) => {
+    console.log("[Footer] Navigation click:", href);
     if (href.startsWith("#")) {
       const element = document.querySelector(href);
       element?.scrollIntoView({ behavior: "smooth" });
     }
+  };
+
+  const handleLinkClick = (linkName: string, destination: string) => {
+    console.log("[Footer] Link click:", { linkName, destination });
+  };
+
+  const handleExternalClick = (platform: string, url: string) => {
+    console.log("[Footer] External link click:", { platform, url });
   };
 
   return (
@@ -25,7 +34,7 @@ export function Footer() {
       >
         {/* Left: Logo + tagline */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left gap-3">
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/" onClick={() => handleLinkClick("Logo", "/")} className="flex items-center gap-2">
             <Shield className="w-6 h-6 text-teal-400" />
             <span className="text-foreground font-semibold text-lg tracking-tight">
               ChurnShield
@@ -63,7 +72,7 @@ export function Footer() {
           >
             How It Works
           </button>
-          <Link to="/auth" className="hover:text-teal-300 transition">
+          <Link to="/auth" onClick={() => handleLinkClick("Login", "/auth")} className="hover:text-teal-300 transition">
             Login
           </Link>
         </nav>
@@ -75,6 +84,7 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Twitter"
+            onClick={() => handleExternalClick("Twitter", "https://twitter.com")}
             className="hover:text-teal-300 transition"
           >
             <Twitter size={18} />
@@ -84,6 +94,7 @@ export function Footer() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label="GitHub"
+            onClick={() => handleExternalClick("GitHub", "https://github.com")}
             className="hover:text-teal-300 transition"
           >
             <Github size={18} />
@@ -91,6 +102,7 @@ export function Footer() {
           <a
             href="mailto:hello@churnshield.com"
             aria-label="Email"
+            onClick={() => handleExternalClick("Email", "mailto:hello@churnshield.com")}
             className="hover:text-teal-300 transition"
           >
             <Mail size={18} />
@@ -107,13 +119,13 @@ export function Footer() {
         className="border-t border-white/5 py-6 text-center text-xs text-muted-foreground/60 relative z-10"
       >
         <div className="flex flex-wrap justify-center items-center gap-4 mb-2">
-          <Link to="/privacy" className="hover:text-teal-300 transition">
+          <Link to="/privacy" onClick={() => handleLinkClick("Privacy Policy", "/privacy")} className="hover:text-teal-300 transition">
             Privacy Policy
           </Link>
-          <Link to="/terms" className="hover:text-teal-300 transition">
+          <Link to="/terms" onClick={() => handleLinkClick("Terms of Service", "/terms")} className="hover:text-teal-300 transition">
             Terms of Service
           </Link>
-          <Link to="/security" className="hover:text-teal-300 transition">
+          <Link to="/security" onClick={() => handleLinkClick("Security", "/security")} className="hover:text-teal-300 transition">
             Security
           </Link>
         </div>
