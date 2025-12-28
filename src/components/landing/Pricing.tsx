@@ -5,11 +5,11 @@ import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
 
 const benefits = [
-  "Pay only for saved revenue",
   "No monthly subscription",
+  "No setup fees",
   "Cancel anytime",
-  "Zero upfront cost",
-  "Full transparency dashboard",
+  "Full analytics dashboard",
+  "$0 if we save nothing",
 ];
 
 export function Pricing() {
@@ -66,9 +66,12 @@ export function Pricing() {
             customers.
           </p>
 
-          <div className="flex justify-center items-baseline gap-2 mb-10">
-            <span className="text-6xl font-bold text-primary">%</span>
-            <span className="text-muted-foreground text-lg">of saved revenue</span>
+          <div className="flex flex-col items-center mb-10">
+            <div className="flex justify-center items-baseline gap-2">
+              <span className="text-6xl font-bold text-primary">20%</span>
+              <span className="text-muted-foreground text-lg">of saved revenue</span>
+            </div>
+            <p className="text-muted-foreground mt-3">You keep 80%. We only earn when you do.</p>
           </div>
 
           {/* Benefits */}
