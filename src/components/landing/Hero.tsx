@@ -34,10 +34,10 @@ export function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-sm text-primary mb-6 backdrop-blur-sm border border-white/10"
+          className="inline-flex flex-col sm:flex-row items-center gap-1 sm:gap-2 rounded-2xl sm:rounded-full bg-white/10 px-4 py-2 sm:py-1.5 text-sm text-primary mb-6 backdrop-blur-sm border border-white/10"
         >
           <span className="font-medium">⚡ Enterprise-level retention tools cost $250+/mo.</span>
-          <span>We charge $0 upfront.</span>
+          <span className="text-muted-foreground sm:text-primary">We charge $0 upfront.</span>
         </motion.div>
 
         {/* Headline */}
