@@ -47,10 +47,11 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
           className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
         >
-          Pay only for the{" "}
+          Losing{" "}
           <span className="gradient-text">
-            customers you actually retain.
-          </span>
+            customers
+          </span>{" "}
+          at the cancel button?
         </motion.h1>
 
         {/* Subheadline */}
