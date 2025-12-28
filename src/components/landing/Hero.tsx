@@ -85,10 +85,10 @@ export function Hero() {
           <Button
             variant="outline"
             size="lg"
-            onClick={handleOpenRecovery}
+            onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
             className="w-full sm:w-auto border-primary/40 text-primary hover:bg-primary/10 transition"
           >
-            See Recovery Inbox
+            See How It Works
           </Button>
         </motion.div>
 
