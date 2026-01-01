@@ -18,6 +18,7 @@ const ChurnRisk = lazy(() => import("./pages/ChurnRisk"));
 const Calculator = lazy(() => import("./pages/Calculator"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const ConnectStripe = lazy(() => import("./pages/ConnectStripe"));
+const ConnectStripeCallback = lazy(() => import("./pages/ConnectStripeCallback"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Security = lazy(() => import("./pages/Security"));
@@ -37,6 +38,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const AdminRoute = lazy(() => import("./components/AdminRoute").then(m => ({ default: m.AdminRoute })));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute").then(m => ({ default: m.ProtectedRoute })));
 const SubscriptionGate = lazy(() => import("./components/SubscriptionGate").then(m => ({ default: m.SubscriptionGate })));
+const StripeConnectionGate = lazy(() => import("./components/StripeConnectionGate").then(m => ({ default: m.StripeConnectionGate })));
 
 const queryClient = new QueryClient();
 
@@ -72,9 +74,12 @@ const App = () => (
               {/* Connect Stripe - protected, requires auth + verification + subscription */}
               <Route path="/connect-stripe" element={
                 <ProtectedRoute>
-                  <SubscriptionGate feature="Stripe Connect">
-                    <ConnectStripe />
-                  </SubscriptionGate>
+                  <ConnectStripe />
+                </ProtectedRoute>
+              } />
+              <Route path="/connect-stripe/callback" element={
+                <ProtectedRoute>
+                  <ConnectStripeCallback />
                 </ProtectedRoute>
               } />
               <Route path="/verify-stripe" element={<Navigate to="/connect-stripe" replace />} />
@@ -103,25 +108,31 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              {/* Churn insights routes - require auth + verification + subscription */}
+              {/* Churn insights routes - require auth + verification + subscription + Stripe connection */}
               <Route path="/churn-risk" element={
                 <ProtectedRoute>
                   <SubscriptionGate feature="churn insights">
-                    <ChurnRisk />
+                    <StripeConnectionGate feature="churn insights">
+                      <ChurnRisk />
+                    </StripeConnectionGate>
                   </SubscriptionGate>
                 </ProtectedRoute>
               } />
               <Route path="/dashboard/at-risk" element={
                 <ProtectedRoute>
                   <SubscriptionGate feature="at-risk customer insights">
-                    <AtRiskCustomers />
+                    <StripeConnectionGate feature="at-risk customer insights">
+                      <AtRiskCustomers />
+                    </StripeConnectionGate>
                   </SubscriptionGate>
                 </ProtectedRoute>
               } />
               <Route path="/dashboard/customer/:userId" element={
                 <ProtectedRoute>
                   <SubscriptionGate feature="customer details">
-                    <CustomerDetail />
+                    <StripeConnectionGate feature="customer details">
+                      <CustomerDetail />
+                    </StripeConnectionGate>
                   </SubscriptionGate>
                 </ProtectedRoute>
               } />
