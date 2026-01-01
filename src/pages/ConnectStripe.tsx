@@ -9,12 +9,14 @@ import {
   AlertCircle, 
   CheckCircle2,
   Loader2,
-  CreditCard
+  CreditCard,
+  Link2
 } from "lucide-react";
 import { PageTransition } from "@/components/onboarding/PageTransition";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { useStripeConnection } from "@/hooks/useStripeConnection";
 import { toast } from "@/hooks/use-toast";
 
 const PLAN_ID = "starter";
@@ -24,7 +26,37 @@ const ConnectStripe = () => {
   const { user, loading: authLoading } = useAuth();
   const { hasActiveSubscription, status, loading: subLoading, isTrialing, trialDaysRemaining } = useSubscription();
   const { createCheckoutSession, isLoading: checkoutLoading } = useStripeCheckout();
+  const { isConnected, loading: connectionLoading, startStripeConnect } = useStripeConnection();
   const [isConnecting, setIsConnecting] = useState(false);
+
+  // Handle Stripe Connect OAuth flow
+  const handleConnectStripe = async () => {
+    setIsConnecting(true);
+    
+    const result = await startStripeConnect();
+    
+    if (result.error) {
+      toast({
+        title: "Connection Failed",
+        description: result.error,
+        variant: "destructive",
+      });
+      setIsConnecting(false);
+      return;
+    }
+    
+    if (result.url) {
+      // Redirect to Stripe OAuth
+      window.location.href = result.url;
+    } else {
+      toast({
+        title: "Connection Failed",
+        description: "Could not start Stripe connection. Please try again.",
+        variant: "destructive",
+      });
+      setIsConnecting(false);
+    }
+  };
 
   const handleStartTrial = () => {
     createCheckoutSession({
@@ -45,6 +77,17 @@ const ConnectStripe = () => {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
+
+  // Redirect if already connected
+  useEffect(() => {
+    if (!connectionLoading && isConnected) {
+      toast({
+        title: "Already Connected",
+        description: "Your Stripe account is already connected.",
+      });
+      navigate("/dashboard");
+    }
+  }, [isConnected, connectionLoading, navigate]);
 
   // Show subscription requirement message
   const renderSubscriptionRequired = () => (
@@ -196,15 +239,7 @@ const ConnectStripe = () => {
         <Button
           variant="hero"
           size="xl"
-          onClick={() => {
-            setIsConnecting(true);
-            // TODO: Implement Stripe OAuth connection
-            toast({
-              title: "Coming Soon",
-              description: "Stripe OAuth connection will be implemented next.",
-            });
-            setTimeout(() => setIsConnecting(false), 2000);
-          }}
+          onClick={handleConnectStripe}
           disabled={isConnecting}
           className="w-full group"
         >
@@ -237,7 +272,7 @@ const ConnectStripe = () => {
     </motion.div>
   );
 
-  const isLoading = authLoading || subLoading;
+  const isLoading = authLoading || subLoading || connectionLoading;
 
   return (
     <PageTransition>

@@ -20,3 +20,9 @@ verify_jwt = false
 
 [functions.recompute-churn-scores]
 verify_jwt = false
+
+[functions.stripe-connect-start]
+verify_jwt = true
+
+[functions.stripe-connect-callback]
+verify_jwt = false
