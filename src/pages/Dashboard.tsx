@@ -7,7 +7,9 @@ import {
   ShieldAlert,
   CheckCircle,
   Inbox,
-  Activity
+  Activity,
+  DollarSign,
+  TrendingUp
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useRecoveredRevenue } from '@/hooks/useRecoveredRevenue';
 import { CustomerList } from '@/components/customers/CustomerList';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -71,7 +74,12 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
   const { customers, loading, error, stats, refetch, getAtRiskCustomers } = useCustomers();
+  const { summary: recoveredRevenue } = useRecoveredRevenue();
   const [isAddingMock, setIsAddingMock] = useState(false);
+
+  const formatCurrency = (amount: number) => 
+    amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
   const handleAddMockData = async () => {
     if (!user) return;
     
@@ -138,6 +146,47 @@ export default function Dashboard() {
       subtitle="Monitor and prevent customer churn with real-time insights"
       showLogo
     >
+
+        {/* Recovered Revenue Section */}
+        {(recoveredRevenue.lifetimeRecovered > 0 || recoveredRevenue.lifetimeCount > 0) && (
+          <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-2 mb-6">
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Revenue Recovered
+                </CardTitle>
+                <DollarSign className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-primary">
+                  {formatCurrency(recoveredRevenue.lifetimeRecovered)}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Lifetime total
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-primary/30 bg-primary/5">
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  Cases Recovered
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-primary">
+                  {recoveredRevenue.lifetimeCount}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {recoveredRevenue.currentMonthCount > 0 
+                    ? `${recoveredRevenue.currentMonthCount} this month` 
+                    : 'Lifetime total'}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Overview Cards */}
         <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4 mb-8">
