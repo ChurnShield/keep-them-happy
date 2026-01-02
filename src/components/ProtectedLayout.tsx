@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsDropdown } from '@/components/SettingsDropdown';
+import { StripeConnectionIndicator } from '@/components/StripeConnectionIndicator';
 import {
   Breadcrumb,
   BreadcrumbItem as BreadcrumbItemUI,
@@ -80,7 +81,10 @@ export function ProtectedLayout({
               )}
             </div>
             
-            <SettingsDropdown />
+            <div className="flex items-center gap-3">
+              <StripeConnectionIndicator />
+              <SettingsDropdown />
+            </div>
           </div>
 
           {/* Breadcrumbs - only shown on detail pages */}
