@@ -44,14 +44,14 @@ export function CTA() {
           <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
             Ready to{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-              stop paying for churn?
+              see what you're losing to failed payments?
             </span>
           </h2>
 
           {/* Subheadline */}
           <p className="text-lg text-muted-foreground mb-10">
             Start your risk-free trial today and pay only when ChurnShield
-            actually retains your customers. Simple, transparent, and aligned
+            actually recovers revenue. Simple, transparent, and aligned
             with your success.
           </p>
 

@@ -60,7 +60,7 @@ export function Testimonials() {
               That's when I realized: indie founders like us need enterprise-level retention without enterprise-level pricing.
             </p>
             <p>
-              ChurnShield is what I wished existed. A simple cancel flow that captures feedback, makes smart save offers, and recovers failed payments. You only pay when it works.
+              ChurnShield is what I wished existed. A simple dashboard that shows you every failed payment, tells you exactly what to do, and proves what you've recovered. No complexity, no monthly fees - just visibility into revenue you were losing without knowing it.
             </p>
             <p>
               No VC funding. No sales calls. Just a tool built by a founder, for founders.

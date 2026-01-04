@@ -10,9 +10,9 @@ const features = [
   },
   {
     icon: <BarChart3 className="w-6 h-6 text-primary" />,
-    title: "Real-time churn insights",
+    title: "Recovery dashboard",
     description:
-      "Track recoveries and retention in real-time with simple, actionable dashboards designed for clarity.",
+      "See all at-risk payments in one place. Filter by failure type, amount, and time. Know exactly what's at stake and what's been recovered.",
   },
   {
     icon: <Zap className="w-6 h-6 text-primary" />,
