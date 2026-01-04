@@ -119,6 +119,9 @@ export function Footer() {
         className="border-t border-white/5 py-6 text-center text-xs text-muted-foreground/60 relative z-10"
       >
         <div className="flex flex-wrap justify-center items-center gap-4 mb-2">
+          <Link to="/faq" onClick={() => handleLinkClick("FAQ", "/faq")} className="hover:text-teal-300 transition">
+            FAQ
+          </Link>
           <Link to="/privacy" onClick={() => handleLinkClick("Privacy Policy", "/privacy")} className="hover:text-teal-300 transition">
             Privacy Policy
           </Link>

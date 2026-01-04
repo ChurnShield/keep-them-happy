@@ -22,6 +22,7 @@ const ConnectStripeCallback = lazy(() => import("./pages/ConnectStripeCallback")
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Security = lazy(() => import("./pages/Security"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 const AdminPaymentRecovery = lazy(() => import("./pages/AdminPaymentRecovery"));
 const AdminEmailTest = lazy(() => import("./pages/AdminEmailTest"));
 const AdminWebhookTests = lazy(() => import("./pages/AdminWebhookTests"));
@@ -67,6 +68,7 @@ const App = () => (
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/faq" element={<FAQ />} />
               <Route path="/calculator" element={<Calculator />} />
               <Route path="/success" element={<Success />} />
               <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
