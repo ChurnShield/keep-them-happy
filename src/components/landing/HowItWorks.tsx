@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plug, Brain, Bell, TrendingUp, ArrowRight } from "lucide-react";
+import { Plug, Eye, MessageSquareText, TrendingUp, ArrowRight } from "lucide-react";
 
 const steps = [
   {
@@ -12,26 +12,26 @@ const steps = [
   },
   {
     number: "02",
-    icon: <Brain className="w-6 h-6" />,
-    title: "We detect at-risk customers",
+    icon: <Eye className="w-6 h-6" />,
+    title: "See every failed payment as it happens",
     description:
-      "Our AI monitors payment failures, subscription changes, and behavioral signals to identify customers about to churn — before they're gone.",
-    highlight: "AI-powered detection",
+      "The moment a payment fails, it appears in your dashboard - categorized by reason (expired card, insufficient funds, bank decline). No more silent failures hiding in Stripe logs.",
+    highlight: "Instant visibility",
   },
   {
     number: "03",
-    icon: <Bell className="w-6 h-6" />,
-    title: "Automated recovery kicks in",
+    icon: <MessageSquareText className="w-6 h-6" />,
+    title: "Know exactly what to do",
     description:
-      "Smart email sequences, payment retry logic, and personalized outreach trigger automatically. You focus on building — we handle retention.",
-    highlight: "Hands-off recovery",
+      "Each at-risk payment comes with recommended actions and ready-to-send message templates. Reach out to customers before they churn - with the right message for their specific situation.",
+    highlight: "Actionable recovery",
   },
   {
     number: "04",
     icon: <TrendingUp className="w-6 h-6" />,
     title: "You only pay for results",
     description:
-      "No monthly fees. No hidden costs. We take a small percentage of the revenue we actually recover. If we save nothing, you pay nothing.",
+      "When a failed payment is recovered, we track it automatically. You see exactly what was saved - and you only pay 20% of recovered revenue. No saves, no bill.",
     highlight: "Performance-based",
   },
 ];
@@ -63,9 +63,7 @@ export function HowItWorks() {
             steps.
           </h2>
           <p className="text-muted-foreground text-lg">
-            No complicated onboarding. No technical overhead. ChurnShield works
-            in the background so you can focus on growth — not firefighting
-            cancellations.
+            Stripe handles retries. We handle everything else - visibility, tracking, actions, and proof.
           </p>
         </motion.div>
 

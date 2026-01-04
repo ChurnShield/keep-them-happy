@@ -36,7 +36,7 @@ export function Hero() {
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="inline-flex flex-col sm:flex-row items-center gap-1 sm:gap-2 rounded-2xl sm:rounded-full bg-white/10 px-4 py-2 sm:py-1.5 text-sm text-primary mb-6 backdrop-blur-sm border border-white/10"
         >
-          <span className="font-medium">⚡ Enterprise-level retention tools cost $250+/mo.</span>
+          <span className="font-medium">⚡ Every month, failed payments silently kill SaaS revenue.</span>
           <span className="text-muted-foreground sm:text-primary">We charge $0 upfront.</span>
         </motion.div>
 
@@ -47,11 +47,11 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
           className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
         >
-          Losing{" "}
+          Your{" "}
           <span className="gradient-text">
-            customers
+            failed payments
           </span>{" "}
-          at the cancel button?
+          are costing you customers. You just can't see it.
         </motion.h1>
 
         {/* Subheadline */}
@@ -61,7 +61,7 @@ export function Hero() {
           transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
           className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
         >
-          ChurnShield adds a smart cancel flow that saves 15–30% of churning users.{" "}
+          Stripe retries failed payments silently. You never see what's at risk, why it failed, or what you recovered. ChurnShield gives you full visibility - plus the tools to act and proof of what you saved.{" "}
           <span className="text-foreground font-medium">Takes 10 minutes to set up.</span> And you only pay when it actually works.
         </motion.p>
 
