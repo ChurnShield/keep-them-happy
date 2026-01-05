@@ -34,6 +34,7 @@ const CustomerDetail = lazy(() => import("./pages/CustomerDetail"));
 const RecoveryInbox = lazy(() => import("./pages/RecoveryInbox"));
 const RecoveryCaseDetail = lazy(() => import("./pages/RecoveryCaseDetail"));
 const Settings = lazy(() => import("./pages/Settings"));
+const CancelFlowBuilder = lazy(() => import("./pages/CancelFlowBuilder"));
 
 // Lazy load route components
 const AdminRoute = lazy(() => import("./components/AdminRoute").then(m => ({ default: m.AdminRoute })));
@@ -107,6 +108,13 @@ const App = () => (
               <Route path="/settings" element={
                 <ProtectedRoute>
                   <Settings />
+                </ProtectedRoute>
+              } />
+              <Route path="/cancel-flow" element={
+                <ProtectedRoute>
+                  <SubscriptionGate feature="cancel flow builder">
+                    <CancelFlowBuilder />
+                  </SubscriptionGate>
                 </ProtectedRoute>
               } />
               
