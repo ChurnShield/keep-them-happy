@@ -14,6 +14,120 @@ export type Database = {
   }
   public: {
     Tables: {
+      cancel_flow_config: {
+        Row: {
+          branding: Json | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          offer_settings: Json | null
+          profile_id: string
+          survey_options: Json | null
+          updated_at: string | null
+          widget_settings: Json | null
+        }
+        Insert: {
+          branding?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          offer_settings?: Json | null
+          profile_id: string
+          survey_options?: Json | null
+          updated_at?: string | null
+          widget_settings?: Json | null
+        }
+        Update: {
+          branding?: Json | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          offer_settings?: Json | null
+          profile_id?: string
+          survey_options?: Json | null
+          updated_at?: string | null
+          widget_settings?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cancel_flow_config_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cancel_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          custom_feedback: string | null
+          customer_id: string | null
+          exit_reason: string | null
+          id: string
+          offer_accepted: boolean | null
+          offer_type_presented: string | null
+          profile_id: string
+          session_token: string
+          started_at: string | null
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          custom_feedback?: string | null
+          customer_id?: string | null
+          exit_reason?: string | null
+          id?: string
+          offer_accepted?: boolean | null
+          offer_type_presented?: string | null
+          profile_id: string
+          session_token: string
+          started_at?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          custom_feedback?: string | null
+          customer_id?: string | null
+          exit_reason?: string | null
+          id?: string
+          offer_accepted?: boolean | null
+          offer_type_presented?: string | null
+          profile_id?: string
+          session_token?: string
+          started_at?: string | null
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cancel_sessions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cancel_sessions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cancel_sessions_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       churn_risk_events: {
         Row: {
           created_at: string
@@ -380,6 +494,83 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      saved_customers: {
+        Row: {
+          cancel_session_id: string
+          churnshield_fee_per_month: number | null
+          created_at: string | null
+          customer_id: string | null
+          discount_percentage: number | null
+          id: string
+          new_mrr: number
+          original_mrr: number
+          pause_months: number | null
+          profile_id: string
+          save_type: string
+          stripe_action_id: string | null
+          subscription_id: string | null
+        }
+        Insert: {
+          cancel_session_id: string
+          churnshield_fee_per_month?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          discount_percentage?: number | null
+          id?: string
+          new_mrr: number
+          original_mrr: number
+          pause_months?: number | null
+          profile_id: string
+          save_type: string
+          stripe_action_id?: string | null
+          subscription_id?: string | null
+        }
+        Update: {
+          cancel_session_id?: string
+          churnshield_fee_per_month?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          discount_percentage?: number | null
+          id?: string
+          new_mrr?: number
+          original_mrr?: number
+          pause_months?: number | null
+          profile_id?: string
+          save_type?: string
+          stripe_action_id?: string | null
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_customers_cancel_session_id_fkey"
+            columns: ["cancel_session_id"]
+            isOneToOne: false
+            referencedRelation: "cancel_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_customers_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_customers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_customers_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stripe_accounts: {
         Row: {

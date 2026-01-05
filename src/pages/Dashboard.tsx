@@ -9,7 +9,8 @@ import {
   Inbox,
   Activity,
   DollarSign,
-  TrendingUp
+  TrendingUp,
+  PanelRight
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -348,6 +349,13 @@ export default function Dashboard() {
               >
                 <Inbox className="h-4 w-4 mr-2" />
                 Recovery Inbox
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/cancel-flow')}
+              >
+                <PanelRight className="h-4 w-4 mr-2" />
+                Cancel Flow Builder
               </Button>
               <Button 
                 variant="outline" 
