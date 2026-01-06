@@ -35,6 +35,7 @@ const RecoveryInbox = lazy(() => import("./pages/RecoveryInbox"));
 const RecoveryCaseDetail = lazy(() => import("./pages/RecoveryCaseDetail"));
 const Settings = lazy(() => import("./pages/Settings"));
 const CancelFlowBuilder = lazy(() => import("./pages/CancelFlowBuilder"));
+const CancelWidget = lazy(() => import("./pages/CancelWidget"));
 
 // Lazy load route components
 const AdminRoute = lazy(() => import("./components/AdminRoute").then(m => ({ default: m.AdminRoute })));
@@ -73,6 +74,9 @@ const App = () => (
               <Route path="/calculator" element={<Calculator />} />
               <Route path="/success" element={<Success />} />
               <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+              
+              {/* Public cancel widget - accessible via session token */}
+              <Route path="/cancel/:token" element={<CancelWidget />} />
               
               {/* Connect Stripe - protected, requires auth + verification + subscription */}
               <Route path="/connect-stripe" element={
