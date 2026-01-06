@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Palette, Upload, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Branding } from '@/hooks/useCancelFlowConfig';
 
 interface BrandingEditorProps {
@@ -28,17 +29,20 @@ export function BrandingEditor({ branding, onUpdate }: BrandingEditorProps) {
 
   const handleFile = (file: File) => {
     if (file.size > 2 * 1024 * 1024) {
-      return; // Max 2MB
+      toast.error('File too large. Maximum size is 2MB.');
+      return;
     }
 
     const validTypes = ['image/png', 'image/jpeg', 'image/svg+xml'];
     if (!validTypes.includes(file.type)) {
+      toast.error('Invalid file type. Please upload PNG, JPG, or SVG.');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       onUpdate({ ...branding, logo_url: e.target?.result as string });
+      toast.success('Logo uploaded');
     };
     reader.readAsDataURL(file);
   };
@@ -82,7 +86,13 @@ export function BrandingEditor({ branding, onUpdate }: BrandingEditorProps) {
             </div>
             <Input
               value={branding.primary_color}
-              onChange={(e) => onUpdate({ ...branding, primary_color: e.target.value })}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow typing but only save valid hex colors
+                if (/^#[0-9A-Fa-f]{0,6}$/.test(value) || value === '') {
+                  onUpdate({ ...branding, primary_color: value || '#14B8A6' });
+                }
+              }}
               className="w-28 bg-background/50 font-mono text-sm"
               placeholder="#14B8A6"
             />

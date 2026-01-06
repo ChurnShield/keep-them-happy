@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { GripVertical, Plus, Trash2, MessageSquare } from 'lucide-react';
+import { toast } from 'sonner';
 import type { SurveyOptions } from '@/hooks/useCancelFlowConfig';
 
 const PREDEFINED_REASONS: Record<string, string> = {
@@ -46,9 +47,13 @@ export function SurveyOptionsEditor({ surveyOptions, onUpdate }: SurveyOptionsEd
   };
 
   const addCustomReason = () => {
-    if (!newReason.trim() || surveyOptions.custom_reasons.length >= 5) return;
+    if (!newReason.trim()) return;
+    if (surveyOptions.custom_reasons.length >= 5) {
+      toast.error('Maximum 5 custom reasons allowed');
+      return;
+    }
 
-    const reasonKey = `custom_${Date.now()}`;
+    const reasonKey = `custom_${surveyOptions.custom_reasons.length}`;
     onUpdate({
       ...surveyOptions,
       custom_reasons: [...surveyOptions.custom_reasons, newReason.trim()],
@@ -60,11 +65,20 @@ export function SurveyOptionsEditor({ surveyOptions, onUpdate }: SurveyOptionsEd
 
   const removeCustomReason = (index: number) => {
     const reasonKey = `custom_${index}`;
+    // Rebuild custom reasons and update all keys to be sequential
+    const newCustomReasons = surveyOptions.custom_reasons.filter((_, i) => i !== index);
+    
+    // Remove old custom keys and rebuild with new sequential indices
+    const nonCustomReasons = surveyOptions.reasons.filter(r => !r.startsWith('custom_'));
+    const nonCustomOrder = surveyOptions.display_order.filter(r => !r.startsWith('custom_'));
+    
+    const newCustomKeys = newCustomReasons.map((_, i) => `custom_${i}`);
+    
     onUpdate({
       ...surveyOptions,
-      custom_reasons: surveyOptions.custom_reasons.filter((_, i) => i !== index),
-      reasons: surveyOptions.reasons.filter(r => r !== reasonKey && !r.startsWith('custom_')),
-      display_order: surveyOptions.display_order.filter(r => r !== reasonKey && !r.startsWith('custom_')),
+      custom_reasons: newCustomReasons,
+      reasons: [...nonCustomReasons, ...newCustomKeys],
+      display_order: [...nonCustomOrder, ...newCustomKeys],
     });
   };
 
