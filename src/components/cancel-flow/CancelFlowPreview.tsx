@@ -54,7 +54,30 @@ export function CancelFlowPreview({ config }: CancelFlowPreviewProps) {
     return null;
   };
 
-  const selectedOffer = selectedReason ? getOfferForReason(selectedReason) : null;
+  // Get preview offer - use selected reason's offer, or show a sample offer
+  const getPreviewOffer = () => {
+    if (selectedReason) {
+      return getOfferForReason(selectedReason);
+    }
+    
+    // Find first configured offer from reason_mappings for preview
+    const mappings = offer_settings.reason_mappings || {};
+    const firstMappedOffer = Object.values(mappings).find(
+      (m: any) => m?.offer_type && m.offer_type !== 'none'
+    );
+    
+    if (firstMappedOffer) {
+      return firstMappedOffer;
+    }
+    
+    // Default to showing a sample discount offer for preview
+    return {
+      offer_type: 'discount' as const,
+    };
+  };
+
+  const selectedOffer = getPreviewOffer();
+  const isShowingSampleOffer = !selectedReason && previewStep === 'offer';
 
   const bgColor = branding.dark_mode ? '#0F172A' : '#FFFFFF';
   const cardBg = branding.dark_mode ? '#1E293B' : '#F8FAFC';
@@ -198,63 +221,50 @@ export function CancelFlowPreview({ config }: CancelFlowPreviewProps) {
               </>
             ) : (
               <>
-                {selectedOffer ? (
-                  <>
-                    <div 
-                      className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                      style={{ backgroundColor: `${branding.primary_color}20` }}
-                    >
-                      {selectedOffer.offer_type === 'discount' ? (
-                        <Percent className="h-8 w-8" style={{ color: branding.primary_color }} />
-                      ) : (
-                        <Pause className="h-8 w-8" style={{ color: branding.primary_color }} />
-                      )}
-                    </div>
-                    <h2 
-                      className="text-lg font-semibold text-center mb-2"
-                      style={{ color: textColor }}
-                    >
-                      {selectedOffer.offer_type === 'discount' 
-                        ? `Get ${offer_settings.discount_percentage}% off for ${offer_settings.discount_duration_months} months`
-                        : `Pause your subscription for ${offer_settings.pause_duration_months} month${offer_settings.pause_duration_months > 1 ? 's' : ''}`
-                      }
-                    </h2>
-                    <p 
-                      className="text-sm text-center mb-6"
-                      style={{ color: mutedColor }}
-                    >
-                      {selectedOffer.offer_type === 'discount'
-                        ? "We'd love to keep you as a customer. Here's a special offer just for you."
-                        : "Need a break? No problem. Your account and data will be here when you return."
-                      }
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h2 
-                      className="text-lg font-semibold text-center mb-2"
-                      style={{ color: textColor }}
-                    >
-                      Confirm cancellation
-                    </h2>
-                    <p 
-                      className="text-sm text-center mb-6"
-                      style={{ color: mutedColor }}
-                    >
-                      Are you sure you want to cancel? You'll lose access at the end of your billing period.
-                    </p>
-                  </>
+                {isShowingSampleOffer && (
+                  <div 
+                    className="text-xs text-center mb-4 px-2 py-1 rounded-full mx-auto w-fit"
+                    style={{ backgroundColor: `${branding.primary_color}20`, color: branding.primary_color }}
+                  >
+                    Sample Preview
+                  </div>
                 )}
+                <div 
+                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                  style={{ backgroundColor: `${branding.primary_color}20` }}
+                >
+                  {selectedOffer?.offer_type === 'discount' ? (
+                    <Percent className="h-8 w-8" style={{ color: branding.primary_color }} />
+                  ) : (
+                    <Pause className="h-8 w-8" style={{ color: branding.primary_color }} />
+                  )}
+                </div>
+                <h2 
+                  className="text-lg font-semibold text-center mb-2"
+                  style={{ color: textColor }}
+                >
+                  {selectedOffer?.offer_type === 'discount' 
+                    ? `Get ${offer_settings.discount_percentage}% off for ${offer_settings.discount_duration_months} months`
+                    : `Pause your subscription for ${offer_settings.pause_duration_months} month${offer_settings.pause_duration_months > 1 ? 's' : ''}`
+                  }
+                </h2>
+                <p 
+                  className="text-sm text-center mb-6"
+                  style={{ color: mutedColor }}
+                >
+                  {selectedOffer?.offer_type === 'discount'
+                    ? "We'd love to keep you as a customer. Here's a special offer just for you."
+                    : "Need a break? No problem. Your account and data will be here when you return."
+                  }
+                </p>
 
                 <div className="flex flex-col gap-3">
-                  {selectedOffer && (
-                    <button
-                      className="w-full px-4 py-3 rounded-lg text-sm font-medium text-white transition-colors"
-                      style={{ backgroundColor: branding.primary_color }}
-                    >
-                      {widget_settings.accept_button_text}
-                    </button>
-                  )}
+                  <button
+                    className="w-full px-4 py-3 rounded-lg text-sm font-medium text-white transition-colors"
+                    style={{ backgroundColor: branding.primary_color }}
+                  >
+                    {widget_settings.accept_button_text}
+                  </button>
                   <button
                     className="w-full px-4 py-2 rounded-lg text-sm transition-colors"
                     style={{ 
