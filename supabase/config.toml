@@ -26,3 +26,9 @@ verify_jwt = true
 
 [functions.stripe-connect-callback]
 verify_jwt = false
+
+[functions.cancel-session]
+verify_jwt = false
+
+[functions.widget-api]
+verify_jwt = false
