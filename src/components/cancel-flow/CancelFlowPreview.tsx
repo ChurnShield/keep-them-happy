@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Monitor, Smartphone, X, Percent, Pause } from 'lucide-react';
+import { Monitor, Smartphone, X, Percent, Pause, Check, ArrowLeft } from 'lucide-react';
 import type { CancelFlowConfig, SurveyOptions, OfferSettings, Branding, WidgetSettings } from '@/hooks/useCancelFlowConfig';
-
 const PREDEFINED_REASONS: Record<string, string> = {
   too_expensive: 'Too expensive',
   not_using_enough: 'Not using it enough',
@@ -27,6 +26,14 @@ export function CancelFlowPreview({ config }: CancelFlowPreviewProps) {
   const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [previewStep, setPreviewStep] = useState<'survey' | 'offer'>('survey');
   const [selectedReason, setSelectedReason] = useState<string>('');
+  const [offerPreviewState, setOfferPreviewState] = useState<'default' | 'success' | 'exit-survey'>('default');
+
+  // Reset offer preview state when switching tabs
+  useEffect(() => {
+    setOfferPreviewState('default');
+  }, [previewStep]);
+
+  const resetOfferPreview = () => setOfferPreviewState('default');
 
   if (!config) {
     return (
@@ -220,62 +227,141 @@ export function CancelFlowPreview({ config }: CancelFlowPreviewProps) {
                 </div>
               </>
             ) : (
-              <>
-                {isShowingSampleOffer && (
-                  <div 
-                    className="text-xs text-center mb-4 px-2 py-1 rounded-full mx-auto w-fit"
-                    style={{ backgroundColor: `${branding.primary_color}20`, color: branding.primary_color }}
-                  >
-                    Sample Preview
+              <div className="animate-fade-in">
+                {offerPreviewState === 'default' && (
+                  <>
+                    {isShowingSampleOffer && (
+                      <div 
+                        className="text-xs text-center mb-4 px-2 py-1 rounded-full mx-auto w-fit"
+                        style={{ backgroundColor: `${branding.primary_color}20`, color: branding.primary_color }}
+                      >
+                        Sample Preview
+                      </div>
+                    )}
+                    <div 
+                      className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                      style={{ backgroundColor: `${branding.primary_color}20` }}
+                    >
+                      {selectedOffer?.offer_type === 'discount' ? (
+                        <Percent className="h-8 w-8" style={{ color: branding.primary_color }} />
+                      ) : (
+                        <Pause className="h-8 w-8" style={{ color: branding.primary_color }} />
+                      )}
+                    </div>
+                    <h2 
+                      className="text-lg font-semibold text-center mb-2"
+                      style={{ color: textColor }}
+                    >
+                      {selectedOffer?.offer_type === 'discount' 
+                        ? `Get ${offer_settings.discount_percentage}% off for ${offer_settings.discount_duration_months} months`
+                        : `Pause your subscription for ${offer_settings.pause_duration_months} month${offer_settings.pause_duration_months > 1 ? 's' : ''}`
+                      }
+                    </h2>
+                    <p 
+                      className="text-sm text-center mb-6"
+                      style={{ color: mutedColor }}
+                    >
+                      {selectedOffer?.offer_type === 'discount'
+                        ? "We'd love to keep you as a customer. Here's a special offer just for you."
+                        : "Need a break? No problem. Your account and data will be here when you return."
+                      }
+                    </p>
+
+                    <div className="flex flex-col gap-3">
+                      <button
+                        onClick={() => setOfferPreviewState('success')}
+                        className="w-full px-4 py-3 rounded-lg text-sm font-medium text-white transition-colors hover:opacity-90"
+                        style={{ backgroundColor: branding.primary_color }}
+                      >
+                        {widget_settings.accept_button_text}
+                      </button>
+                      <button
+                        onClick={() => setOfferPreviewState('exit-survey')}
+                        className="w-full px-4 py-2 rounded-lg text-sm transition-colors hover:opacity-80"
+                        style={{ 
+                          color: mutedColor,
+                          backgroundColor: cardBg
+                        }}
+                      >
+                        {widget_settings.decline_button_text}
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {offerPreviewState === 'success' && (
+                  <div className="animate-fade-in text-center">
+                    <div 
+                      className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+                      style={{ backgroundColor: `${branding.primary_color}20` }}
+                    >
+                      <Check className="h-8 w-8" style={{ color: branding.primary_color }} />
+                    </div>
+                    <h2 
+                      className="text-lg font-semibold mb-2"
+                      style={{ color: textColor }}
+                    >
+                      You're all set!
+                    </h2>
+                    <p 
+                      className="text-sm mb-6"
+                      style={{ color: mutedColor }}
+                    >
+                      {selectedOffer?.offer_type === 'discount'
+                        ? `Your ${offer_settings.discount_percentage}% discount has been applied for ${offer_settings.discount_duration_months} months. Thank you for staying with us!`
+                        : `Your subscription is paused for ${offer_settings.pause_duration_months} month${offer_settings.pause_duration_months > 1 ? 's' : ''}. We'll send you a reminder before it resumes. See you soon!`
+                      }
+                    </p>
+                    <button
+                      onClick={resetOfferPreview}
+                      className="inline-flex items-center gap-1 text-sm font-medium transition-colors hover:opacity-80"
+                      style={{ color: branding.primary_color }}
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                      Reset Preview
+                    </button>
                   </div>
                 )}
-                <div 
-                  className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-                  style={{ backgroundColor: `${branding.primary_color}20` }}
-                >
-                  {selectedOffer?.offer_type === 'discount' ? (
-                    <Percent className="h-8 w-8" style={{ color: branding.primary_color }} />
-                  ) : (
-                    <Pause className="h-8 w-8" style={{ color: branding.primary_color }} />
-                  )}
-                </div>
-                <h2 
-                  className="text-lg font-semibold text-center mb-2"
-                  style={{ color: textColor }}
-                >
-                  {selectedOffer?.offer_type === 'discount' 
-                    ? `Get ${offer_settings.discount_percentage}% off for ${offer_settings.discount_duration_months} months`
-                    : `Pause your subscription for ${offer_settings.pause_duration_months} month${offer_settings.pause_duration_months > 1 ? 's' : ''}`
-                  }
-                </h2>
-                <p 
-                  className="text-sm text-center mb-6"
-                  style={{ color: mutedColor }}
-                >
-                  {selectedOffer?.offer_type === 'discount'
-                    ? "We'd love to keep you as a customer. Here's a special offer just for you."
-                    : "Need a break? No problem. Your account and data will be here when you return."
-                  }
-                </p>
 
-                <div className="flex flex-col gap-3">
-                  <button
-                    className="w-full px-4 py-3 rounded-lg text-sm font-medium text-white transition-colors"
-                    style={{ backgroundColor: branding.primary_color }}
-                  >
-                    {widget_settings.accept_button_text}
-                  </button>
-                  <button
-                    className="w-full px-4 py-2 rounded-lg text-sm transition-colors"
-                    style={{ 
-                      color: mutedColor,
-                      backgroundColor: cardBg
-                    }}
-                  >
-                    {widget_settings.decline_button_text}
-                  </button>
-                </div>
-              </>
+                {offerPreviewState === 'exit-survey' && (
+                  <div className="animate-fade-in text-center">
+                    <h2 
+                      className="text-lg font-semibold mb-2"
+                      style={{ color: textColor }}
+                    >
+                      Before you go...
+                    </h2>
+                    <p 
+                      className="text-sm mb-6"
+                      style={{ color: mutedColor }}
+                    >
+                      Help us improve by sharing why you're leaving
+                    </p>
+                    <div className="space-y-2 mb-6">
+                      {enabledReasons.slice(0, 5).map(reason => (
+                        <button
+                          key={reason}
+                          className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors hover:opacity-80"
+                          style={{ 
+                            color: textColor,
+                            backgroundColor: cardBg
+                          }}
+                        >
+                          {getReasonLabel(reason)}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={resetOfferPreview}
+                      className="inline-flex items-center gap-1 text-sm font-medium transition-colors hover:opacity-80"
+                      style={{ color: branding.primary_color }}
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                      Reset Preview
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
