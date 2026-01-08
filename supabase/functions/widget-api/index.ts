@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@14.21.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -476,12 +477,168 @@ async function handleOfferResponse(
   const session = sessionValidation.session!;
   const newStatus = accepted ? 'saved' : 'cancelled';
 
-  // Update session
+  // If offer was declined, just update the session and return
+  if (!accepted) {
+    const { error: updateError } = await supabase
+      .from('cancel_sessions')
+      .update({
+        offer_accepted: false,
+        status: 'cancelled',
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', session.id);
+
+    if (updateError) {
+      structuredLog('error', 'Failed to update session', { error: updateError.message });
+      return errorResponse(500, 'UPDATE_FAILED', 'Failed to record response');
+    }
+
+    structuredLog('info', 'Offer declined', { sessionId: session.id });
+
+    return successResponse({
+      success: true,
+      message: 'Your subscription has been cancelled.',
+    });
+  }
+
+  // Offer was accepted - need to apply the Stripe action
+  const { data: config } = await supabase
+    .from('cancel_flow_config')
+    .select('offer_settings')
+    .eq('profile_id', session.profile_id)
+    .single();
+
+  const offerSettings = config?.offer_settings || {};
+  const reasonMappings = offerSettings.reason_mappings || {};
+  const exitReason = session.exit_reason as string;
+  const mapping = reasonMappings[exitReason] || {};
+
+  // Determine offer details
+  const offerType = session.offer_type_presented || 'discount';
+  const discountPercentage = mapping.discount_percentage || offerSettings.discount_percentage || 20;
+  const discountDurationMonths = mapping.discount_duration_months || offerSettings.discount_duration_months || 3;
+  const pauseDurationMonths = mapping.pause_duration_months || offerSettings.pause_duration_months || 1;
+
+  // Get Stripe connection for this profile
+  const { data: stripeConnection } = await supabase
+    .from('stripe_connections')
+    .select('access_token, stripe_user_id')
+    .eq('session_id', session.profile_id)
+    .single();
+
+  let stripeActionId: string | null = null;
+  let originalMrr = 0;
+  let newMrr = 0;
+  let appliedDiscountPercentage: number | null = null;
+  let appliedPauseMonths: number | null = null;
+  let successMessage = 'Your subscription has been updated.';
+
+  // If we have Stripe connection and subscription, apply the actual action
+  if (stripeConnection?.access_token && session.subscription_id) {
+    try {
+      const stripe = new Stripe(stripeConnection.access_token, {
+        apiVersion: '2023-10-16',
+      });
+
+      // Get current subscription to calculate MRR
+      const subscription = await stripe.subscriptions.retrieve(session.subscription_id);
+
+      // Calculate original MRR (convert to dollars)
+      const monthlyAmount = subscription.items.data.reduce((sum: number, item: Stripe.SubscriptionItem) => {
+        const price = item.price;
+        let amount = price.unit_amount || 0;
+
+        // Convert to monthly if needed
+        if (price.recurring?.interval === 'year') {
+          amount = Math.round(amount / 12);
+        } else if (price.recurring?.interval === 'week') {
+          amount = Math.round(amount * 4.33);
+        }
+
+        return sum + (amount * (item.quantity || 1));
+      }, 0);
+
+      originalMrr = monthlyAmount / 100; // Convert cents to dollars
+
+      if (offerType === 'pause') {
+        // Pause the subscription
+        const resumeDate = new Date();
+        resumeDate.setMonth(resumeDate.getMonth() + pauseDurationMonths);
+
+        await stripe.subscriptions.update(session.subscription_id, {
+          pause_collection: {
+            behavior: 'void',
+            resumes_at: Math.floor(resumeDate.getTime() / 1000),
+          },
+        });
+
+        stripeActionId = `pause_${subscription.id}_${Date.now()}`;
+        appliedPauseMonths = pauseDurationMonths;
+        newMrr = 0; // During pause, MRR is 0
+        successMessage = `Your subscription has been paused for ${pauseDurationMonths} month${pauseDurationMonths !== 1 ? 's' : ''}. We'll see you soon!`;
+
+        structuredLog('info', 'Subscription paused via Stripe', {
+          subscriptionId: session.subscription_id,
+          pauseMonths: pauseDurationMonths,
+          resumeDate: resumeDate.toISOString(),
+        });
+
+      } else if (offerType === 'discount') {
+        // Create a coupon and apply it
+        const coupon = await stripe.coupons.create({
+          percent_off: discountPercentage,
+          duration: 'repeating',
+          duration_in_months: discountDurationMonths,
+          name: `ChurnShield Retention - ${discountPercentage}% off for ${discountDurationMonths} months`,
+        });
+
+        // Apply the coupon to the subscription
+        await stripe.subscriptions.update(session.subscription_id, {
+          coupon: coupon.id,
+        });
+
+        stripeActionId = coupon.id;
+        appliedDiscountPercentage = discountPercentage;
+        newMrr = originalMrr * (1 - discountPercentage / 100);
+        successMessage = `Great news! We've applied a ${discountPercentage}% discount to your subscription for the next ${discountDurationMonths} month${discountDurationMonths !== 1 ? 's' : ''}.`;
+
+        structuredLog('info', 'Discount applied via Stripe', {
+          subscriptionId: session.subscription_id,
+          couponId: coupon.id,
+          discountPercentage,
+          durationMonths: discountDurationMonths,
+        });
+      }
+
+    } catch (stripeError) {
+      const errorMessage = stripeError instanceof Error ? stripeError.message : 'Unknown Stripe error';
+      structuredLog('error', 'Stripe action failed', { error: errorMessage, subscriptionId: session.subscription_id });
+
+      return errorResponse(500, 'STRIPE_ERROR', 'We couldn\'t apply the offer right now. Please try again or contact support.');
+    }
+  } else {
+    // No Stripe connection - demo mode, just record the acceptance
+    structuredLog('warn', 'No Stripe connection for offer acceptance - demo mode', { sessionId: session.id });
+
+    // Use placeholder values for demo
+    originalMrr = 100;
+    if (offerType === 'discount') {
+      appliedDiscountPercentage = discountPercentage;
+      newMrr = originalMrr * (1 - discountPercentage / 100);
+      successMessage = `Your ${discountPercentage}% discount has been applied!`;
+    } else if (offerType === 'pause') {
+      appliedPauseMonths = pauseDurationMonths;
+      newMrr = 0;
+      successMessage = `Your subscription has been paused for ${pauseDurationMonths} month${pauseDurationMonths !== 1 ? 's' : ''}.`;
+    }
+  }
+
+  // Update session status
   const { error: updateError } = await supabase
     .from('cancel_sessions')
     .update({
-      offer_accepted: accepted,
-      status: newStatus,
+      offer_accepted: true,
+      status: 'saved',
       completed_at: new Date().toISOString(),
     })
     .eq('id', session.id);
@@ -491,66 +648,42 @@ async function handleOfferResponse(
     return errorResponse(500, 'UPDATE_FAILED', 'Failed to record response');
   }
 
-  // If accepted, create saved_customers record
-  if (accepted && session.offer_type_presented && session.offer_type_presented !== 'none') {
-    const { data: config } = await supabase
-      .from('cancel_flow_config')
-      .select('offer_settings')
-      .eq('profile_id', session.profile_id)
-      .single();
-
-    const offerSettings = config?.offer_settings || {};
-    const reasonMappings = offerSettings.reason_mappings || {};
-    const exitReason = session.exit_reason as string;
-    const mapping = reasonMappings[exitReason] || {};
-
-    // Calculate MRR values (placeholder - would get from subscription)
-    const originalMrr = 100; // Placeholder
-    let newMrr = originalMrr;
-    let discountPercentage = null;
-    let pauseMonths = null;
-
-    if (session.offer_type_presented === 'discount') {
-      discountPercentage = mapping.discount_percentage || offerSettings.discount_percentage || 20;
-      newMrr = originalMrr * (1 - discountPercentage / 100);
-    } else if (session.offer_type_presented === 'pause') {
-      pauseMonths = mapping.pause_duration_months || offerSettings.pause_duration_months || 1;
-      newMrr = 0;
-    }
-
-    await supabase
+  // Create saved_customers record
+  if (session.offer_type_presented && session.offer_type_presented !== 'none') {
+    const { error: savedError } = await supabase
       .from('saved_customers')
       .insert({
         profile_id: session.profile_id,
         cancel_session_id: session.id,
         customer_id: session.customer_id,
         subscription_id: session.subscription_id,
-        save_type: session.offer_type_presented,
+        save_type: offerType,
         original_mrr: originalMrr,
         new_mrr: newMrr,
-        discount_percentage: discountPercentage,
-        pause_months: pauseMonths,
+        discount_percentage: appliedDiscountPercentage,
+        pause_months: appliedPauseMonths,
+        stripe_action_id: stripeActionId,
       });
 
-    structuredLog('info', 'Customer saved', { 
-      sessionId: session.id, 
-      saveType: session.offer_type_presented 
+    if (savedError) {
+      structuredLog('error', 'Failed to create saved_customers record', { error: savedError.message });
+      // Don't fail the request - the Stripe action succeeded
+    }
+
+    structuredLog('info', 'Customer saved', {
+      sessionId: session.id,
+      saveType: offerType,
+      originalMrr,
+      newMrr,
+      stripeActionId,
     });
   }
 
-  const message = accepted 
-    ? 'Great! Your subscription has been updated.' 
-    : 'Your subscription has been cancelled.';
-
-  structuredLog('info', 'Offer response recorded', { 
-    sessionId: session.id, 
-    accepted, 
-    status: newStatus 
-  });
-
   return successResponse({
     success: true,
-    message,
+    message: successMessage,
+    save_type: offerType,
+    stripe_action_id: stripeActionId,
   });
 }
 
