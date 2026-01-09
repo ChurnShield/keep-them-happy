@@ -1,4 +1,4 @@
-import { Loader2, RotateCcw, Save, PanelRight } from 'lucide-react';
+import { Loader2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -9,9 +9,12 @@ import { OfferMappingEditor } from '@/components/cancel-flow/OfferMappingEditor'
 import { BrandingEditor } from '@/components/cancel-flow/BrandingEditor';
 import { WidgetSettingsEditor } from '@/components/cancel-flow/WidgetSettingsEditor';
 import { CancelFlowPreview } from '@/components/cancel-flow/CancelFlowPreview';
+import { TestLinkGenerator } from '@/components/cancel-flow/TestLinkGenerator';
+import { useProfile } from '@/hooks/useProfile';
 
 export default function CancelFlowBuilder() {
   const { config, loading, saving, updateConfig, resetToDefaults } = useCancelFlowConfig();
+  const { profile } = useProfile();
 
   if (loading) {
     return (
@@ -40,6 +43,7 @@ export default function CancelFlowBuilder() {
           </Label>
         </div>
         <div className="flex items-center gap-2">
+          <TestLinkGenerator profileId={profile?.id ?? null} />
           <Button
             variant="outline"
             size="sm"

@@ -107,6 +107,11 @@ Deno.serve(async (req) => {
       return await handleCreateSession(req, supabase);
     }
 
+    // POST /widget-api/test-session - Create test cancel session (for previewing)
+    if (req.method === 'POST' && req.headers.get('x-test-session') === 'true') {
+      return await handleCreateTestSession(req, supabase);
+    }
+
     // POST /widget-api/survey - Submit survey response
     if (req.method === 'POST' && endpoint === 'survey') {
       return await handleSurvey(req, supabase);
@@ -342,6 +347,70 @@ async function handleCreateSession(
     session_id: session.id,
     customer_name: customerName,
     subscription_details: subscriptionDetails,
+  });
+}
+
+// POST /widget-api (with x-test-session header) - Create test cancel session
+async function handleCreateTestSession(
+  req: Request,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
+): Promise<Response> {
+  const body = await req.json();
+  const { profile_id } = body;
+
+  if (!profile_id) {
+    return errorResponse(400, 'MISSING_PROFILE', 'Profile ID is required');
+  }
+
+  // Verify the profile exists and has a cancel_flow_config
+  const { data: config, error: configError } = await supabase
+    .from('cancel_flow_config')
+    .select('profile_id, is_active')
+    .eq('profile_id', profile_id)
+    .single();
+
+  if (configError || !config) {
+    return errorResponse(404, 'CONFIG_NOT_FOUND', 'No cancel flow configuration found for this profile');
+  }
+
+  // Generate unique session token
+  const sessionToken = generateSessionToken();
+
+  // Create test cancel session with null customer_id and subscription_id
+  const { data: session, error: sessionError } = await supabase
+    .from('cancel_sessions')
+    .insert({
+      profile_id: profile_id,
+      customer_id: null, // null indicates test session
+      subscription_id: null, // null indicates test session
+      session_token: sessionToken,
+      status: 'started',
+      started_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (sessionError) {
+    structuredLog('error', 'Failed to create test session', { error: sessionError.message });
+    return errorResponse(500, 'SESSION_CREATE_FAILED', 'Failed to create test session');
+  }
+
+  // Build the test URL
+  const appUrl = Deno.env.get('APP_URL') || 'https://rdstyfaveeokocztayri.lovableproject.com';
+  const testUrl = `${appUrl}/cancel/${sessionToken}`;
+
+  structuredLog('info', 'Test session created', { 
+    sessionId: session.id, 
+    profileId: profile_id,
+    testUrl,
+  });
+
+  return successResponse({
+    session_token: sessionToken,
+    session_id: session.id,
+    test_url: testUrl,
+    expires_in_minutes: 30,
   });
 }
 
