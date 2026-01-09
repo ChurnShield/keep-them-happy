@@ -135,9 +135,9 @@ export function CancelFlowPreview({ config }: CancelFlowPreviewProps) {
       </div>
 
       {/* Preview Frame */}
-      <div className="flex-1 flex items-center justify-center p-4 rounded-lg bg-muted/30 border border-border/50">
+      <div className="flex-1 flex items-center justify-center p-4 rounded-lg bg-muted/30 border border-border/50 overflow-auto">
         <div
-          className={`overflow-hidden rounded-lg shadow-2xl transition-all ${
+          className={`rounded-lg shadow-2xl transition-all flex-shrink-0 ${
             viewMode === 'mobile' ? 'w-[320px]' : 'w-full max-w-[480px]'
           }`}
           style={{ backgroundColor: bgColor }}
