@@ -210,7 +210,13 @@ export function CancelFlowPreview({ config }: CancelFlowPreviewProps) {
 
                 <div className="mt-6 flex gap-3">
                   <button
-                    className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+                    onClick={() => {
+                      if (selectedReason) {
+                        setPreviewStep('offer');
+                      }
+                    }}
+                    disabled={!selectedReason}
+                    className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     style={{ backgroundColor: branding.primary_color }}
                   >
                     Continue
@@ -341,10 +347,16 @@ export function CancelFlowPreview({ config }: CancelFlowPreviewProps) {
                       {enabledReasons.slice(0, 5).map(reason => (
                         <button
                           key={reason}
+                          onClick={() => {
+                            setSelectedReason(reason);
+                            setOfferPreviewState('default');
+                          }}
                           className="w-full text-left px-4 py-3 rounded-lg text-sm transition-colors hover:opacity-80"
                           style={{ 
                             color: textColor,
-                            backgroundColor: cardBg
+                            backgroundColor: selectedReason === reason ? `${branding.primary_color}20` : cardBg,
+                            borderWidth: 1,
+                            borderColor: selectedReason === reason ? branding.primary_color : 'transparent'
                           }}
                         >
                           {getReasonLabel(reason)}
