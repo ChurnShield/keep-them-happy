@@ -84,22 +84,15 @@ export default function CancelWidget() {
 
   async function fetchSession() {
     try {
-      const { data, error } = await supabase.functions.invoke('cancel-session', {
-        method: 'GET',
-        body: null,
-        headers: {},
-      });
+      // cancel-session uses path-based routing, so call it via full URL
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-session/${token}`;
 
-      // The edge function routing uses URL path, so we need to call it differently
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cancel-session/${token}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

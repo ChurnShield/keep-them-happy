@@ -398,8 +398,22 @@ async function handleCreateTestSession(
   }
 
   // Build the test URL
+  // Prefer the request origin (preview domain) so the link opens where it was generated.
+  const requestOrigin = (() => {
+    const origin = req.headers.get('origin');
+    if (origin) return origin;
+    const referer = req.headers.get('referer');
+    if (!referer) return null;
+    try {
+      return new URL(referer).origin;
+    } catch {
+      return null;
+    }
+  })();
+
   const appUrl = Deno.env.get('APP_URL') || 'https://rdstyfaveeokocztayri.lovableproject.com';
-  const testUrl = `${appUrl}/cancel/${sessionToken}`;
+  const baseUrl = requestOrigin ?? appUrl;
+  const testUrl = `${baseUrl}/cancel/${sessionToken}`;
 
   structuredLog('info', 'Test session created', { 
     sessionId: session.id, 
@@ -411,6 +425,7 @@ async function handleCreateTestSession(
     session_token: sessionToken,
     session_id: session.id,
     test_url: testUrl,
+    test_path: `/cancel/${sessionToken}`,
     expires_in_minutes: 30,
   });
 }
