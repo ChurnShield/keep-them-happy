@@ -40,7 +40,12 @@ export function TestLinkGenerator({ profileId }: TestLinkGeneratorProps) {
 
       if (error) throw error;
 
-      if (data?.test_url) {
+      if (data?.session_token) {
+        const url = `${window.location.origin}/cancel/${data.session_token}`;
+        setTestUrl(url);
+        setIsOpen(true);
+      } else if (data?.test_url) {
+        // Fallback (older responses)
         setTestUrl(data.test_url);
         setIsOpen(true);
       } else {
