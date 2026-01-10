@@ -97,6 +97,12 @@ Deno.serve(async (req) => {
     // Path format: /widget-api/{endpoint}
     const endpoint = pathParts[pathParts.length - 1];
 
+    // POST /widget-api (with x-test-session header) - Create test cancel session (for previewing)
+    // Check this FIRST before other POST handlers
+    if (req.method === 'POST' && req.headers.get('x-test-session') === 'true') {
+      return await handleCreateTestSession(req, supabase);
+    }
+
     // GET /widget-api/config - Get widget configuration
     if (req.method === 'GET' && endpoint === 'config') {
       return await handleGetConfig(url, supabase);
@@ -105,11 +111,6 @@ Deno.serve(async (req) => {
     // POST /widget-api/session - Create cancel session
     if (req.method === 'POST' && endpoint === 'session') {
       return await handleCreateSession(req, supabase);
-    }
-
-    // POST /widget-api/test-session - Create test cancel session (for previewing)
-    if (req.method === 'POST' && req.headers.get('x-test-session') === 'true') {
-      return await handleCreateTestSession(req, supabase);
     }
 
     // POST /widget-api/survey - Submit survey response
