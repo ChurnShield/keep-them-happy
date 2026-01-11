@@ -12,6 +12,17 @@ interface ErrorResponse {
   message: string;
 }
 
+interface StripeOfferResult {
+  success: boolean;
+  stripeActionId?: string;
+  originalMrr: number;
+  newMrr: number;
+  discountPercentage?: number;
+  pauseMonths?: number;
+  message: string;
+  error?: string;
+}
+
 function structuredLog(level: 'info' | 'warn' | 'error', message: string, context: Record<string, unknown> = {}) {
   const logEntry = {
     timestamp: new Date().toISOString(),
@@ -44,6 +55,16 @@ function generateSessionToken(): string {
   return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// Calculate ChurnShield fee (20% of saved revenue, max $500/month)
+function calculateChurnShieldFee(monthlySavedRevenue: number): number {
+  return Math.min(monthlySavedRevenue * 0.20, 500);
+}
+
+// Check if session is a test session (no customer/subscription)
+function isTestSession(session: Record<string, unknown>): boolean {
+  return !session.customer_id && !session.subscription_id;
+}
+
 // Simple in-memory rate limiting (resets on function cold start)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
@@ -68,6 +89,246 @@ function checkRateLimit(ip: string): boolean {
 
 // Session token expiry: 30 minutes
 const SESSION_EXPIRY_MS = 30 * 60 * 1000;
+
+// ============= STRIPE HELPER FUNCTIONS =============
+
+/**
+ * Apply a discount offer to a Stripe subscription
+ */
+async function applyDiscountOffer(
+  stripe: Stripe,
+  subscriptionId: string,
+  discountPercent: number,
+  durationMonths: number
+): Promise<StripeOfferResult> {
+  try {
+    // Get subscription to calculate MRR
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    // Calculate original MRR
+    const originalMrr = calculateSubscriptionMrr(subscription);
+    
+    // Create coupon
+    const coupon = await stripe.coupons.create({
+      percent_off: discountPercent,
+      duration: 'repeating',
+      duration_in_months: durationMonths,
+      name: `ChurnShield Retention - ${discountPercent}% off for ${durationMonths} months`,
+    });
+    
+    // Apply coupon to subscription
+    await stripe.subscriptions.update(subscriptionId, {
+      coupon: coupon.id,
+    });
+    
+    const newMrr = originalMrr * (1 - discountPercent / 100);
+    const savedMonthly = originalMrr - newMrr;
+    
+    structuredLog('info', 'Discount offer applied', {
+      subscriptionId,
+      couponId: coupon.id,
+      discountPercent,
+      durationMonths,
+      originalMrr,
+      newMrr,
+      savedMonthly,
+    });
+    
+    return {
+      success: true,
+      stripeActionId: coupon.id,
+      originalMrr,
+      newMrr,
+      discountPercentage: discountPercent,
+      message: `Great news! We've applied a ${discountPercent}% discount to your subscription for the next ${durationMonths} month${durationMonths !== 1 ? 's' : ''}.`,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    structuredLog('error', 'Failed to apply discount offer', { subscriptionId, error: errorMessage });
+    return {
+      success: false,
+      originalMrr: 0,
+      newMrr: 0,
+      message: 'Could not apply offer',
+      error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Apply a pause offer to a Stripe subscription
+ */
+async function applyPauseOffer(
+  stripe: Stripe,
+  subscriptionId: string,
+  pauseMonths: number
+): Promise<StripeOfferResult> {
+  try {
+    // Get subscription to calculate MRR
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    // Calculate original MRR
+    const originalMrr = calculateSubscriptionMrr(subscription);
+    
+    // Calculate resume date
+    const resumeDate = new Date();
+    resumeDate.setMonth(resumeDate.getMonth() + pauseMonths);
+    
+    // Pause the subscription
+    await stripe.subscriptions.update(subscriptionId, {
+      pause_collection: {
+        behavior: 'void',
+        resumes_at: Math.floor(resumeDate.getTime() / 1000),
+      },
+    });
+    
+    const actionId = `pause_${subscription.id}_${Date.now()}`;
+    
+    structuredLog('info', 'Pause offer applied', {
+      subscriptionId,
+      pauseMonths,
+      resumeDate: resumeDate.toISOString(),
+      originalMrr,
+    });
+    
+    return {
+      success: true,
+      stripeActionId: actionId,
+      originalMrr,
+      newMrr: 0, // During pause, MRR is 0
+      pauseMonths,
+      message: `Your subscription has been paused for ${pauseMonths} month${pauseMonths !== 1 ? 's' : ''}. We'll see you soon!`,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    structuredLog('error', 'Failed to apply pause offer', { subscriptionId, error: errorMessage });
+    return {
+      success: false,
+      originalMrr: 0,
+      newMrr: 0,
+      message: 'Could not apply offer',
+      error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Apply a downgrade offer to a Stripe subscription (placeholder for future)
+ */
+async function applyDowngradeOffer(
+  stripe: Stripe,
+  subscriptionId: string,
+  targetPriceId: string
+): Promise<StripeOfferResult> {
+  try {
+    // Get subscription
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const originalMrr = calculateSubscriptionMrr(subscription);
+    
+    // Get the subscription item ID
+    const subscriptionItemId = subscription.items.data[0]?.id;
+    if (!subscriptionItemId) {
+      throw new Error('No subscription item found');
+    }
+    
+    // Update subscription to new price
+    await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: subscriptionItemId,
+        price: targetPriceId,
+      }],
+      proration_behavior: 'create_prorations',
+    });
+    
+    // Get updated subscription to calculate new MRR
+    const updatedSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const newMrr = calculateSubscriptionMrr(updatedSubscription);
+    
+    structuredLog('info', 'Downgrade offer applied', {
+      subscriptionId,
+      targetPriceId,
+      originalMrr,
+      newMrr,
+    });
+    
+    return {
+      success: true,
+      stripeActionId: `downgrade_${subscriptionId}_${Date.now()}`,
+      originalMrr,
+      newMrr,
+      message: `Your subscription has been updated to a more affordable plan.`,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    structuredLog('error', 'Failed to apply downgrade offer', { subscriptionId, error: errorMessage });
+    return {
+      success: false,
+      originalMrr: 0,
+      newMrr: 0,
+      message: 'Could not apply offer',
+      error: errorMessage,
+    };
+  }
+}
+
+/**
+ * Calculate monthly recurring revenue from a Stripe subscription
+ */
+function calculateSubscriptionMrr(subscription: Stripe.Subscription): number {
+  const monthlyAmount = subscription.items.data.reduce((sum: number, item: Stripe.SubscriptionItem) => {
+    const price = item.price;
+    let amount = price.unit_amount || 0;
+    
+    // Convert to monthly if needed
+    if (price.recurring?.interval === 'year') {
+      amount = Math.round(amount / 12);
+    } else if (price.recurring?.interval === 'week') {
+      amount = Math.round(amount * 4.33);
+    }
+    
+    return sum + (amount * (item.quantity || 1));
+  }, 0);
+  
+  return monthlyAmount / 100; // Convert cents to dollars
+}
+
+/**
+ * Simulate offer application for test sessions
+ */
+function simulateOfferResult(
+  offerType: string,
+  discountPercent: number,
+  pauseMonths: number
+): StripeOfferResult {
+  const testMrr = 100; // Placeholder test MRR
+  
+  if (offerType === 'discount') {
+    return {
+      success: true,
+      stripeActionId: `test_discount_${Date.now()}`,
+      originalMrr: testMrr,
+      newMrr: testMrr * (1 - discountPercent / 100),
+      discountPercentage: discountPercent,
+      message: `[TEST] Your ${discountPercent}% discount has been applied!`,
+    };
+  } else if (offerType === 'pause') {
+    return {
+      success: true,
+      stripeActionId: `test_pause_${Date.now()}`,
+      originalMrr: testMrr,
+      newMrr: 0,
+      pauseMonths,
+      message: `[TEST] Your subscription has been paused for ${pauseMonths} month${pauseMonths !== 1 ? 's' : ''}.`,
+    };
+  }
+  
+  return {
+    success: true,
+    originalMrr: testMrr,
+    newMrr: testMrr,
+    message: '[TEST] No offer applied.',
+  };
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -560,7 +821,7 @@ async function handleOfferResponse(
   }
 
   const session = sessionValidation.session!;
-  const newStatus = accepted ? 'saved' : 'cancelled';
+  const isTest = isTestSession(session);
 
   // If offer was declined, just update the session and return
   if (!accepted) {
@@ -578,7 +839,7 @@ async function handleOfferResponse(
       return errorResponse(500, 'UPDATE_FAILED', 'Failed to record response');
     }
 
-    structuredLog('info', 'Offer declined', { sessionId: session.id });
+    structuredLog('info', 'Offer declined', { sessionId: session.id, isTest });
 
     return successResponse({
       success: true,
@@ -596,125 +857,82 @@ async function handleOfferResponse(
   const offerSettings = config?.offer_settings || {};
   const reasonMappings = offerSettings.reason_mappings || {};
   const exitReason = session.exit_reason as string;
-  const mapping = reasonMappings[exitReason] || {};
+  
+  // Parse the exit reason - it might be "other: custom text"
+  const baseReason = exitReason?.startsWith('other:') ? 'other' : exitReason;
+  const mapping = reasonMappings[baseReason] || {};
 
-  // Determine offer details
-  const offerType = session.offer_type_presented || 'discount';
+  // Determine offer details - cast to proper types
+  const offerType = (session.offer_type_presented as string) || 'discount';
   const discountPercentage = mapping.discount_percentage || offerSettings.discount_percentage || 20;
   const discountDurationMonths = mapping.discount_duration_months || offerSettings.discount_duration_months || 3;
   const pauseDurationMonths = mapping.pause_duration_months || offerSettings.pause_duration_months || 1;
+  const subscriptionId = session.subscription_id as string | null;
 
-  // Get Stripe connection for this profile
-  const { data: stripeConnection } = await supabase
-    .from('stripe_connections')
-    .select('access_token, stripe_user_id')
-    .eq('session_id', session.profile_id)
-    .single();
+  let offerResult: StripeOfferResult;
 
-  let stripeActionId: string | null = null;
-  let originalMrr = 0;
-  let newMrr = 0;
-  let appliedDiscountPercentage: number | null = null;
-  let appliedPauseMonths: number | null = null;
-  let successMessage = 'Your subscription has been updated.';
+  // Test mode: Skip Stripe API calls, return simulated success
+  if (isTest) {
+    structuredLog('info', 'Test session - simulating offer application', { 
+      sessionId: session.id, 
+      offerType,
+      discountPercentage,
+      pauseDurationMonths,
+    });
+    
+    offerResult = simulateOfferResult(offerType, discountPercentage, pauseDurationMonths);
+  } else {
+    // Production mode: Get Stripe connection and apply real action
+    const { data: stripeConnection } = await supabase
+      .from('stripe_connections')
+      .select('access_token, stripe_user_id')
+      .eq('session_id', session.profile_id)
+      .single();
 
-  // If we have Stripe connection and subscription, apply the actual action
-  if (stripeConnection?.access_token && session.subscription_id) {
-    try {
+    if (!stripeConnection?.access_token) {
+      structuredLog('warn', 'No Stripe connection found for offer acceptance', { 
+        sessionId: session.id,
+        profileId: session.profile_id 
+      });
+      
+      // Fallback to simulated result if no Stripe connection
+      offerResult = simulateOfferResult(offerType, discountPercentage, pauseDurationMonths);
+      offerResult.message = offerResult.message.replace('[TEST] ', '');
+    } else if (!subscriptionId) {
+      structuredLog('warn', 'No subscription ID for offer application', { sessionId: session.id });
+      
+      // No subscription to apply offer to
+      offerResult = {
+        success: true,
+        originalMrr: 0,
+        newMrr: 0,
+        message: 'Your request has been recorded.',
+      };
+    } else {
+      // Apply real Stripe action
       const stripe = new Stripe(stripeConnection.access_token, {
         apiVersion: '2023-10-16',
       });
 
-      // Get current subscription to calculate MRR
-      const subscription = await stripe.subscriptions.retrieve(session.subscription_id);
-
-      // Calculate original MRR (convert to dollars)
-      const monthlyAmount = subscription.items.data.reduce((sum: number, item: Stripe.SubscriptionItem) => {
-        const price = item.price;
-        let amount = price.unit_amount || 0;
-
-        // Convert to monthly if needed
-        if (price.recurring?.interval === 'year') {
-          amount = Math.round(amount / 12);
-        } else if (price.recurring?.interval === 'week') {
-          amount = Math.round(amount * 4.33);
-        }
-
-        return sum + (amount * (item.quantity || 1));
-      }, 0);
-
-      originalMrr = monthlyAmount / 100; // Convert cents to dollars
-
       if (offerType === 'pause') {
-        // Pause the subscription
-        const resumeDate = new Date();
-        resumeDate.setMonth(resumeDate.getMonth() + pauseDurationMonths);
-
-        await stripe.subscriptions.update(session.subscription_id, {
-          pause_collection: {
-            behavior: 'void',
-            resumes_at: Math.floor(resumeDate.getTime() / 1000),
-          },
-        });
-
-        stripeActionId = `pause_${subscription.id}_${Date.now()}`;
-        appliedPauseMonths = pauseDurationMonths;
-        newMrr = 0; // During pause, MRR is 0
-        successMessage = `Your subscription has been paused for ${pauseDurationMonths} month${pauseDurationMonths !== 1 ? 's' : ''}. We'll see you soon!`;
-
-        structuredLog('info', 'Subscription paused via Stripe', {
-          subscriptionId: session.subscription_id,
-          pauseMonths: pauseDurationMonths,
-          resumeDate: resumeDate.toISOString(),
-        });
-
+        offerResult = await applyPauseOffer(stripe, subscriptionId, pauseDurationMonths);
       } else if (offerType === 'discount') {
-        // Create a coupon and apply it
-        const coupon = await stripe.coupons.create({
-          percent_off: discountPercentage,
-          duration: 'repeating',
-          duration_in_months: discountDurationMonths,
-          name: `ChurnShield Retention - ${discountPercentage}% off for ${discountDurationMonths} months`,
-        });
-
-        // Apply the coupon to the subscription
-        await stripe.subscriptions.update(session.subscription_id, {
-          coupon: coupon.id,
-        });
-
-        stripeActionId = coupon.id;
-        appliedDiscountPercentage = discountPercentage;
-        newMrr = originalMrr * (1 - discountPercentage / 100);
-        successMessage = `Great news! We've applied a ${discountPercentage}% discount to your subscription for the next ${discountDurationMonths} month${discountDurationMonths !== 1 ? 's' : ''}.`;
-
-        structuredLog('info', 'Discount applied via Stripe', {
-          subscriptionId: session.subscription_id,
-          couponId: coupon.id,
-          discountPercentage,
-          durationMonths: discountDurationMonths,
-        });
+        offerResult = await applyDiscountOffer(stripe, subscriptionId, discountPercentage, discountDurationMonths);
+      } else if (offerType === 'downgrade' && body.target_price_id) {
+        offerResult = await applyDowngradeOffer(stripe, subscriptionId, body.target_price_id);
+      } else {
+        // Default to discount
+        offerResult = await applyDiscountOffer(stripe, subscriptionId, discountPercentage, discountDurationMonths);
       }
 
-    } catch (stripeError) {
-      const errorMessage = stripeError instanceof Error ? stripeError.message : 'Unknown Stripe error';
-      structuredLog('error', 'Stripe action failed', { error: errorMessage, subscriptionId: session.subscription_id });
-
-      return errorResponse(500, 'STRIPE_ERROR', 'We couldn\'t apply the offer right now. Please try again or contact support.');
-    }
-  } else {
-    // No Stripe connection - demo mode, just record the acceptance
-    structuredLog('warn', 'No Stripe connection for offer acceptance - demo mode', { sessionId: session.id });
-
-    // Use placeholder values for demo
-    originalMrr = 100;
-    if (offerType === 'discount') {
-      appliedDiscountPercentage = discountPercentage;
-      newMrr = originalMrr * (1 - discountPercentage / 100);
-      successMessage = `Your ${discountPercentage}% discount has been applied!`;
-    } else if (offerType === 'pause') {
-      appliedPauseMonths = pauseDurationMonths;
-      newMrr = 0;
-      successMessage = `Your subscription has been paused for ${pauseDurationMonths} month${pauseDurationMonths !== 1 ? 's' : ''}.`;
+      // If Stripe action failed, return error without creating records
+      if (!offerResult.success) {
+        structuredLog('error', 'Stripe action failed', { 
+          sessionId: session.id, 
+          error: offerResult.error 
+        });
+        return errorResponse(500, 'STRIPE_ERROR', 'We couldn\'t apply the offer right now. Please try again or contact support.');
+      }
     }
   }
 
@@ -735,6 +953,9 @@ async function handleOfferResponse(
 
   // Create saved_customers record
   if (session.offer_type_presented && session.offer_type_presented !== 'none') {
+    const monthlySaved = offerResult.originalMrr - offerResult.newMrr;
+    const churnshieldFee = calculateChurnShieldFee(monthlySaved);
+
     const { error: savedError } = await supabase
       .from('saved_customers')
       .insert({
@@ -743,11 +964,12 @@ async function handleOfferResponse(
         customer_id: session.customer_id,
         subscription_id: session.subscription_id,
         save_type: offerType,
-        original_mrr: originalMrr,
-        new_mrr: newMrr,
-        discount_percentage: appliedDiscountPercentage,
-        pause_months: appliedPauseMonths,
-        stripe_action_id: stripeActionId,
+        original_mrr: offerResult.originalMrr,
+        new_mrr: offerResult.newMrr,
+        discount_percentage: offerResult.discountPercentage || null,
+        pause_months: offerResult.pauseMonths || null,
+        stripe_action_id: offerResult.stripeActionId || null,
+        churnshield_fee_per_month: churnshieldFee,
       });
 
     if (savedError) {
@@ -758,17 +980,23 @@ async function handleOfferResponse(
     structuredLog('info', 'Customer saved', {
       sessionId: session.id,
       saveType: offerType,
-      originalMrr,
-      newMrr,
-      stripeActionId,
+      originalMrr: offerResult.originalMrr,
+      newMrr: offerResult.newMrr,
+      monthlySaved,
+      churnshieldFee,
+      stripeActionId: offerResult.stripeActionId,
+      isTest,
     });
   }
 
   return successResponse({
     success: true,
-    message: successMessage,
+    message: offerResult.message,
     save_type: offerType,
-    stripe_action_id: stripeActionId,
+    stripe_action_id: offerResult.stripeActionId,
+    original_mrr: offerResult.originalMrr,
+    new_mrr: offerResult.newMrr,
+    is_test: isTest,
   });
 }
 
