@@ -55,11 +55,20 @@ interface OfferDetails {
   duration_months: number;
 }
 
+interface TestModeData {
+  enabled: boolean;
+  customerName?: string;
+  customerEmail?: string;
+  planName?: string;
+  monthlyAmount?: number;
+}
+
 type WidgetStep = 'loading' | 'survey' | 'offer' | 'complete' | 'error';
 
 export default function CancelWidget() {
   const { token } = useParams<{ token: string }>();
   const [step, setStep] = useState<WidgetStep>('loading');
+  const [testMode, setTestMode] = useState<TestModeData>({ enabled: false });
   const [session, setSession] = useState<SessionData | null>(null);
   const [config, setConfig] = useState<ConfigData | null>(null);
   const [offer, setOffer] = useState<OfferDetails | null>(null);
@@ -77,6 +86,20 @@ export default function CancelWidget() {
   } as React.CSSProperties : {};
 
   useEffect(() => {
+    // Check for test mode URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const isTestMode = urlParams.get('test') === 'true';
+    
+    if (isTestMode) {
+      setTestMode({
+        enabled: true,
+        customerName: urlParams.get('name') || 'Test Customer',
+        customerEmail: urlParams.get('email') || 'test@example.com',
+        planName: urlParams.get('plan') || 'Pro Plan',
+        monthlyAmount: Number(urlParams.get('amount')) || 49,
+      });
+    }
+
     if (token) {
       fetchSession();
     }
@@ -222,13 +245,32 @@ export default function CancelWidget() {
 
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-4"
+      className="min-h-screen flex flex-col items-center justify-center p-4"
       style={{
         ...brandingStyles,
         backgroundColor: 'var(--widget-bg, #0f172a)',
         color: 'var(--widget-text, #f8fafc)',
       }}
     >
+      {/* Test Mode Banner */}
+      {testMode.enabled && (
+        <div 
+          className="w-full max-w-md mb-4 rounded-lg p-3 text-center"
+          style={{
+            backgroundColor: '#fef3c7',
+            border: '1px solid #f59e0b',
+          }}
+        >
+          <p className="text-amber-800 text-sm font-medium flex items-center justify-center gap-2">
+            <span>⚠️</span>
+            TEST MODE - No real changes will be made
+          </p>
+          <p className="text-amber-700 text-xs mt-1">
+            Customer: {testMode.customerName} • Plan: {testMode.planName} • ${testMode.monthlyAmount}/mo
+          </p>
+        </div>
+      )}
+
       <div 
         className="w-full max-w-md rounded-xl p-6 shadow-2xl"
         style={{

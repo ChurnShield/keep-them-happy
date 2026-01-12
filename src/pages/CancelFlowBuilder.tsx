@@ -11,7 +11,7 @@ import { OfferMappingEditor } from '@/components/cancel-flow/OfferMappingEditor'
 import { BrandingEditor } from '@/components/cancel-flow/BrandingEditor';
 import { WidgetSettingsEditor } from '@/components/cancel-flow/WidgetSettingsEditor';
 import { CancelFlowPreview } from '@/components/cancel-flow/CancelFlowPreview';
-import { TestLinkGenerator } from '@/components/cancel-flow/TestLinkGenerator';
+import { TestLinkGenerator, TestLinkButton } from '@/components/cancel-flow/TestLinkGenerator';
 import { WidgetEmbedCode } from '@/components/widget/WidgetEmbedCode';
 import { WidgetPreviewModal } from '@/components/widget/WidgetPreviewModal';
 import { useProfile } from '@/hooks/useProfile';
@@ -56,7 +56,7 @@ export default function CancelFlowBuilder() {
             <Eye className="h-4 w-4 mr-2" />
             Full Preview
           </Button>
-          <TestLinkGenerator profileId={profile?.id ?? null} />
+          <TestLinkButton profileId={profile?.id ?? null} />
           <Button
             variant="outline"
             size="sm"
@@ -134,9 +134,17 @@ export default function CancelFlowBuilder() {
         </TabsContent>
 
         <TabsContent value="embed">
-          {profile?.id && (
-            <WidgetEmbedCode profileId={profile.id} />
-          )}
+          <div className="space-y-6">
+            {/* Test Link Generator Card */}
+            {profile?.id && (
+              <TestLinkGenerator profileId={profile.id} />
+            )}
+            
+            {/* Widget Embed Code */}
+            {profile?.id && (
+              <WidgetEmbedCode profileId={profile.id} />
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
