@@ -36,6 +36,7 @@ const RecoveryCaseDetail = lazy(() => import("./pages/RecoveryCaseDetail"));
 const Settings = lazy(() => import("./pages/Settings"));
 const CancelFlowBuilder = lazy(() => import("./pages/CancelFlowBuilder"));
 const CancelWidget = lazy(() => import("./pages/CancelWidget"));
+const IntegrationGuide = lazy(() => import("./pages/IntegrationGuide"));
 
 // Lazy load route components
 const AdminRoute = lazy(() => import("./components/AdminRoute").then(m => ({ default: m.AdminRoute })));
@@ -119,6 +120,11 @@ const App = () => (
                   <SubscriptionGate feature="cancel flow builder">
                     <CancelFlowBuilder />
                   </SubscriptionGate>
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard/integration" element={
+                <ProtectedRoute>
+                  <IntegrationGuide />
                 </ProtectedRoute>
               } />
               
