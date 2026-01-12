@@ -10,6 +10,7 @@ import {
   Activity,
   DollarSign,
   TrendingUp,
+  BookOpen,
   PanelRight
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -356,6 +357,13 @@ export default function Dashboard() {
               >
                 <PanelRight className="h-4 w-4 mr-2" />
                 Cancel Flow Builder
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/dashboard/integration')}
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                Integration Guide
               </Button>
               <Button 
                 variant="outline" 
