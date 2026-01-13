@@ -145,11 +145,20 @@ export default function CancelFlowBuilder() {
             {config && (
               <AllowedDomainsEditor
                 allowedDomains={config.widget_settings.allowed_domains ?? []}
+                allowLocalhost={config.widget_settings.allow_localhost ?? true}
                 onUpdate={(domains) => 
                   updateConfig({
                     widget_settings: {
                       ...config.widget_settings,
                       allowed_domains: domains,
+                    },
+                  })
+                }
+                onLocalhostToggle={(allow) =>
+                  updateConfig({
+                    widget_settings: {
+                      ...config.widget_settings,
+                      allow_localhost: allow,
                     },
                   })
                 }

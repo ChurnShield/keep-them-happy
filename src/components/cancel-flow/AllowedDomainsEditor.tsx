@@ -1,21 +1,33 @@
 import { useState } from 'react';
-import { X, Plus, Globe, Shield, AlertTriangle } from 'lucide-react';
+import { X, Plus, Globe, Shield, AlertTriangle, Bug } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 interface AllowedDomainsEditorProps {
   allowedDomains: string[];
+  allowLocalhost?: boolean;
   onUpdate: (domains: string[]) => void;
+  onLocalhostToggle?: (allow: boolean) => void;
 }
 
 // Domain validation regex - matches domain without protocol
 const DOMAIN_REGEX = /^(?!:\/\/)([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
 
-export function AllowedDomainsEditor({ allowedDomains, onUpdate }: AllowedDomainsEditorProps) {
+// Dev domains that are automatically allowed when localhost is enabled
+const DEV_DOMAINS = ['localhost', '127.0.0.1', '0.0.0.0'];
+
+export function AllowedDomainsEditor({ 
+  allowedDomains, 
+  allowLocalhost = false,
+  onUpdate, 
+  onLocalhostToggle 
+}: AllowedDomainsEditorProps) {
   const [newDomain, setNewDomain] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -88,6 +100,49 @@ export function AllowedDomainsEditor({ allowedDomains, onUpdate }: AllowedDomain
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Development Mode Toggle */}
+        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+          <div className="flex items-center gap-3">
+            <Bug className="h-4 w-4 text-amber-500" />
+            <div>
+              <Label htmlFor="allow-localhost" className="font-medium cursor-pointer">
+                Allow Development Domains
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Enables localhost, 127.0.0.1, and *.lovable.app for testing
+              </p>
+            </div>
+          </div>
+          <Switch
+            id="allow-localhost"
+            checked={allowLocalhost}
+            onCheckedChange={onLocalhostToggle}
+          />
+        </div>
+
+        {/* Dev domains indicator */}
+        {allowLocalhost && (
+          <div className="flex flex-wrap gap-1.5">
+            {DEV_DOMAINS.map((domain) => (
+              <Badge
+                key={domain}
+                variant="outline"
+                className="text-xs text-amber-600 border-amber-500/30 bg-amber-500/10"
+              >
+                <Bug className="h-3 w-3 mr-1" />
+                {domain}
+              </Badge>
+            ))}
+            <Badge
+              variant="outline"
+              className="text-xs text-amber-600 border-amber-500/30 bg-amber-500/10"
+            >
+              <Bug className="h-3 w-3 mr-1" />
+              *.lovable.app
+            </Badge>
+          </div>
+        )}
+
         {/* Add Domain Input */}
         <div className="flex gap-2">
           <Input
@@ -133,21 +188,24 @@ export function AllowedDomainsEditor({ allowedDomains, onUpdate }: AllowedDomain
             ))}
           </div>
         ) : (
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              No domains added. Your widget will work on any website.
-              <span className="block mt-1 text-muted-foreground text-xs">
-                Add domains to restrict widget usage to specific websites only.
-              </span>
-            </AlertDescription>
-          </Alert>
+          !allowLocalhost && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                No domains added. Your widget will work on any website.
+                <span className="block mt-1 text-muted-foreground text-xs">
+                  Add domains to restrict widget usage to specific websites only.
+                </span>
+              </AlertDescription>
+            </Alert>
+          )
         )}
 
         {/* Security Note */}
-        {allowedDomains.length > 0 && (
+        {(allowedDomains.length > 0 || allowLocalhost) && (
           <p className="text-xs text-muted-foreground">
             Widget requests from unlisted domains will be rejected.
+            {allowLocalhost && ' Development domains are allowed for testing.'}
           </p>
         )}
       </CardContent>

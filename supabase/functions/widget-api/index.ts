@@ -92,16 +92,42 @@ const SESSION_EXPIRY_MS = 30 * 60 * 1000;
 
 // ============= DOMAIN VALIDATION =============
 
+// Dev domains that are automatically allowed when localhost mode is enabled
+const DEV_DOMAINS = ['localhost', '127.0.0.1', '0.0.0.0'];
+const DEV_DOMAIN_SUFFIXES = ['.lovable.app', '.lovableproject.com'];
+
+/**
+ * Check if a hostname is a development domain
+ */
+function isDevDomain(hostname: string): boolean {
+  const lowerHost = hostname.toLowerCase();
+  
+  // Check exact dev domains
+  if (DEV_DOMAINS.includes(lowerHost)) {
+    return true;
+  }
+  
+  // Check dev domain suffixes (e.g., *.lovable.app)
+  for (const suffix of DEV_DOMAIN_SUFFIXES) {
+    if (lowerHost.endsWith(suffix)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 /**
  * Validate if the request origin matches allowed domains
  * Returns true if no domains are configured (allow all) or if origin matches
  */
 function validateOriginDomain(
   req: Request,
-  allowedDomains: string[] | null | undefined
+  allowedDomains: string[] | null | undefined,
+  allowLocalhost: boolean = false
 ): { valid: boolean; origin: string | null } {
-  // If no domains configured, allow all
-  if (!allowedDomains || allowedDomains.length === 0) {
+  // If no domains configured and localhost not specifically enabled, allow all
+  if ((!allowedDomains || allowedDomains.length === 0) && !allowLocalhost) {
     return { valid: true, origin: null };
   }
 
@@ -119,6 +145,19 @@ function validateOriginDomain(
     const url = new URL(origin);
     const hostname = url.hostname.toLowerCase();
     
+    // Check if dev domains are allowed and this is a dev domain
+    if (allowLocalhost && isDevDomain(hostname)) {
+      structuredLog('info', 'Dev domain allowed', { hostname });
+      return { valid: true, origin: hostname };
+    }
+    
+    // If only localhost is enabled but no other domains, and it's not a dev domain
+    if ((!allowedDomains || allowedDomains.length === 0)) {
+      // No production domains configured, reject non-dev domains
+      structuredLog('warn', 'No production domains configured, rejecting non-dev domain', { hostname });
+      return { valid: false, origin: hostname };
+    }
+    
     // Check if hostname matches any allowed domain
     const isAllowed = allowedDomains.some((domain) => {
       const cleanDomain = domain.toLowerCase();
@@ -130,6 +169,7 @@ function validateOriginDomain(
       structuredLog('warn', 'Domain not allowed', { 
         hostname, 
         allowedDomains,
+        allowLocalhost,
         origin 
       });
     }
@@ -556,7 +596,8 @@ async function handleGetConfig(
   // Validate domain whitelist
   const widgetSettings = config.widget_settings || {};
   const allowedDomains = widgetSettings.allowed_domains || [];
-  const domainValidation = validateOriginDomain(req, allowedDomains);
+  const allowLocalhost = widgetSettings.allow_localhost ?? false;
+  const domainValidation = validateOriginDomain(req, allowedDomains, allowLocalhost);
   
   if (!domainValidation.valid) {
     return errorResponse(403, 'DOMAIN_NOT_ALLOWED', 'Widget is not authorized for this domain');
