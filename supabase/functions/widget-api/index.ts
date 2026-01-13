@@ -90,6 +90,57 @@ function checkRateLimit(ip: string): boolean {
 // Session token expiry: 30 minutes
 const SESSION_EXPIRY_MS = 30 * 60 * 1000;
 
+// ============= DOMAIN VALIDATION =============
+
+/**
+ * Validate if the request origin matches allowed domains
+ * Returns true if no domains are configured (allow all) or if origin matches
+ */
+function validateOriginDomain(
+  req: Request,
+  allowedDomains: string[] | null | undefined
+): { valid: boolean; origin: string | null } {
+  // If no domains configured, allow all
+  if (!allowedDomains || allowedDomains.length === 0) {
+    return { valid: true, origin: null };
+  }
+
+  // Get origin from headers (prefer Origin, fallback to Referer)
+  const origin = req.headers.get('origin') || req.headers.get('referer');
+  
+  if (!origin) {
+    // No origin header - could be server-side request, allow it
+    // In strict mode, you might want to block this
+    structuredLog('warn', 'No origin header in request', {});
+    return { valid: true, origin: null };
+  }
+
+  try {
+    const url = new URL(origin);
+    const hostname = url.hostname.toLowerCase();
+    
+    // Check if hostname matches any allowed domain
+    const isAllowed = allowedDomains.some((domain) => {
+      const cleanDomain = domain.toLowerCase();
+      // Exact match or subdomain match
+      return hostname === cleanDomain || hostname.endsWith(`.${cleanDomain}`);
+    });
+
+    if (!isAllowed) {
+      structuredLog('warn', 'Domain not allowed', { 
+        hostname, 
+        allowedDomains,
+        origin 
+      });
+    }
+
+    return { valid: isAllowed, origin: hostname };
+  } catch {
+    structuredLog('error', 'Failed to parse origin', { origin });
+    return { valid: false, origin };
+  }
+}
+
 // ============= STRIPE HELPER FUNCTIONS =============
 
 /**
@@ -366,7 +417,7 @@ Deno.serve(async (req) => {
 
     // GET /widget-api/config - Get widget configuration
     if (req.method === 'GET' && endpoint === 'config') {
-      return await handleGetConfig(url, supabase);
+      return await handleGetConfig(req, url, supabase);
     }
 
     // POST /widget-api/session - Create cancel session
@@ -472,6 +523,7 @@ async function validateSessionToken(
 
 // GET /widget-api/config
 async function handleGetConfig(
+  req: Request,
   url: URL,
   // deno-lint-ignore no-explicit-any
   supabase: any
@@ -501,6 +553,15 @@ async function handleGetConfig(
     return errorResponse(404, 'CONFIG_NOT_FOUND', 'Widget configuration not found');
   }
 
+  // Validate domain whitelist
+  const widgetSettings = config.widget_settings || {};
+  const allowedDomains = widgetSettings.allowed_domains || [];
+  const domainValidation = validateOriginDomain(req, allowedDomains);
+  
+  if (!domainValidation.valid) {
+    return errorResponse(403, 'DOMAIN_NOT_ALLOWED', 'Widget is not authorized for this domain');
+  }
+
   // If customer_id provided, verify it exists in Stripe connection
   // (Simplified - in production you'd check against stripe_customers table)
   let customerName = null;
@@ -525,7 +586,8 @@ async function handleGetConfig(
   structuredLog('info', 'Config fetched', { 
     profileId: tokenValidation.profileId, 
     customerId,
-    subscriptionId 
+    subscriptionId,
+    origin: domainValidation.origin 
   });
 
   return successResponse({

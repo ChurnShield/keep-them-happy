@@ -27,6 +27,7 @@ export interface WidgetSettings {
   display_mode: 'modal' | 'hosted';
   accept_button_text: string;
   decline_button_text: string;
+  allowed_domains: string[];
 }
 
 export interface CancelFlowConfig {
@@ -64,7 +65,8 @@ const DEFAULT_BRANDING: Branding = {
 const DEFAULT_WIDGET_SETTINGS: WidgetSettings = {
   display_mode: 'modal',
   accept_button_text: 'Accept Offer',
-  decline_button_text: 'Continue Cancellation'
+  decline_button_text: 'Continue Cancellation',
+  allowed_domains: [],
 };
 
 export function useCancelFlowConfig() {

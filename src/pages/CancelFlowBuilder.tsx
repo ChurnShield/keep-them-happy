@@ -10,6 +10,7 @@ import { SurveyOptionsEditor } from '@/components/cancel-flow/SurveyOptionsEdito
 import { OfferMappingEditor } from '@/components/cancel-flow/OfferMappingEditor';
 import { BrandingEditor } from '@/components/cancel-flow/BrandingEditor';
 import { WidgetSettingsEditor } from '@/components/cancel-flow/WidgetSettingsEditor';
+import { AllowedDomainsEditor } from '@/components/cancel-flow/AllowedDomainsEditor';
 import { CancelFlowPreview } from '@/components/cancel-flow/CancelFlowPreview';
 import { TestLinkGenerator, TestLinkButton } from '@/components/cancel-flow/TestLinkGenerator';
 import { WidgetEmbedCode } from '@/components/widget/WidgetEmbedCode';
@@ -138,6 +139,21 @@ export default function CancelFlowBuilder() {
             {/* Test Link Generator Card */}
             {profile?.id && (
               <TestLinkGenerator profileId={profile.id} />
+            )}
+            
+            {/* Allowed Domains Security */}
+            {config && (
+              <AllowedDomainsEditor
+                allowedDomains={config.widget_settings.allowed_domains ?? []}
+                onUpdate={(domains) => 
+                  updateConfig({
+                    widget_settings: {
+                      ...config.widget_settings,
+                      allowed_domains: domains,
+                    },
+                  })
+                }
+              />
             )}
             
             {/* Widget Embed Code */}
