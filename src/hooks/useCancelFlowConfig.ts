@@ -28,6 +28,7 @@ export interface WidgetSettings {
   accept_button_text: string;
   decline_button_text: string;
   allowed_domains: string[];
+  allow_localhost: boolean;
 }
 
 export interface CancelFlowConfig {
@@ -67,6 +68,7 @@ const DEFAULT_WIDGET_SETTINGS: WidgetSettings = {
   accept_button_text: 'Accept Offer',
   decline_button_text: 'Continue Cancellation',
   allowed_domains: [],
+  allow_localhost: true,
 };
 
 export function useCancelFlowConfig() {
