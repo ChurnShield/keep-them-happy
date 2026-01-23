@@ -1,11 +1,8 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { PageTransition } from "@/components/onboarding/PageTransition";
-import { ProgressIndicator } from "@/components/onboarding/ProgressIndicator";
-import { AlertTriangle, Check, Zap } from "lucide-react";
-import { LegalLinks } from "@/components/LegalLinks";
-
+import { AlertTriangle, Check, Zap, LayoutDashboard } from "lucide-react";
+import { DashboardLayout } from "@/components/DashboardLayout";
 const ChurnRisk = () => {
   const navigate = useNavigate();
 
@@ -22,29 +19,35 @@ const ChurnRisk = () => {
   ];
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-destructive/5" />
-        <div className="absolute top-1/4 -left-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-32 w-64 h-64 bg-destructive/10 rounded-full blur-3xl" />
-
-        <div className="relative z-10 container max-w-2xl mx-auto px-6 py-12">
-          <ProgressIndicator currentStep={2} />
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-center mb-8"
-          >
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
-              We've identified your first churn risk.
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Based on how SaaS companies like yours lose revenue.
-            </p>
-          </motion.div>
+    <DashboardLayout
+      title="Churn Risk Insights"
+      subtitle="Understanding common churn patterns"
+      headerContent={
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => navigate('/dashboard')}
+          className="gap-2"
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          Go to Dashboard
+        </Button>
+      }
+    >
+      <div className="max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+            We've identified your first churn risk.
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Based on how SaaS companies like yours lose revenue.
+          </p>
+        </motion.div>
 
           {/* Risk Alert Card */}
           <motion.div
@@ -119,29 +122,35 @@ const ChurnRisk = () => {
             </p>
           </motion.div>
 
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="text-center space-y-4"
-          >
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="text-center space-y-4"
+        >
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               size="lg"
+              onClick={() => navigate("/dashboard")}
+              className="gap-2 text-base px-8"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Go to Dashboard
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
               onClick={() => navigate("/calculator")}
               className="gap-2 text-base px-8"
             >
               <Zap className="w-4 h-4" />
-              See what ChurnShield would recover for you
+              Calculate potential savings
             </Button>
-            <p className="text-muted-foreground text-sm">
-              No integrations required yet.
-            </p>
-            <LegalLinks className="mt-4" />
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
       </div>
-    </PageTransition>
+    </DashboardLayout>
   );
 };
 

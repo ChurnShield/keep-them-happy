@@ -25,8 +25,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { label: 'Cancel Flow', href: '/cancel-flow', icon: PanelRight },
-  { label: 'Recovery Inbox', href: '/recovery-inbox', icon: Inbox, requiresStripe: true },
-  { label: 'Customers', href: '/at-risk-customers', icon: Users, requiresStripe: true },
+  { label: 'Recovery Inbox', href: '/recovery', icon: Inbox, requiresStripe: true },
+  { label: 'Customers', href: '/dashboard/at-risk', icon: Users, requiresStripe: true },
   { label: 'Connect Stripe', href: '/connect-stripe', icon: Link2 },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
