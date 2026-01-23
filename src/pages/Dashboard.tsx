@@ -6,12 +6,9 @@ import {
   Loader2,
   ShieldAlert,
   CheckCircle,
-  Inbox,
-  Activity,
   DollarSign,
   TrendingUp,
-  BookOpen,
-  PanelRight
+  BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,7 +21,7 @@ import { CustomerList } from '@/components/customers/CustomerList';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
-import { ProtectedLayout } from '@/components/ProtectedLayout';
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 // Mock customer data generator
 const generateMockCustomers = (userId: string) => [
@@ -32,7 +29,7 @@ const generateMockCustomers = (userId: string) => [
     user_id: userId,
     name: 'Acme Corporation',
     email: 'billing@acme.com',
-    last_active_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), // 20 days ago
+    last_active_at: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
     subscription_status: 'active',
     plan_amount: 9900,
   },
@@ -40,7 +37,7 @@ const generateMockCustomers = (userId: string) => [
     user_id: userId,
     name: 'TechStart Inc',
     email: 'admin@techstart.io',
-    last_active_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    last_active_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     subscription_status: 'past_due',
     plan_amount: 4900,
   },
@@ -48,16 +45,16 @@ const generateMockCustomers = (userId: string) => [
     user_id: userId,
     name: 'Global Solutions',
     email: 'accounts@globalsol.com',
-    last_active_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), // 45 days ago
+    last_active_at: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
     subscription_status: 'canceled',
     plan_amount: 19900,
-    canceled_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+    canceled_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     user_id: userId,
     name: 'Healthy Business',
     email: 'team@healthybiz.co',
-    last_active_at: new Date().toISOString(), // Today
+    last_active_at: new Date().toISOString(),
     subscription_status: 'active',
     plan_amount: 9900,
   },
@@ -65,7 +62,7 @@ const generateMockCustomers = (userId: string) => [
     user_id: userId,
     name: 'Startup Labs',
     email: 'founder@startuplabs.dev',
-    last_active_at: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(), // 18 days ago
+    last_active_at: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(),
     subscription_status: 'past_due',
     plan_amount: 4900,
   },
@@ -143,245 +140,204 @@ export default function Dashboard() {
   const atRiskCustomers = getAtRiskCustomers();
 
   return (
-    <ProtectedLayout
+    <DashboardLayout
       title="Churn Dashboard"
       subtitle="Monitor and prevent customer churn with real-time insights"
-      showLogo
+      headerContent={
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => navigate('/dashboard/integration')}
+        >
+          <BookOpen className="h-4 w-4 mr-2" />
+          Integration Guide
+        </Button>
+      }
     >
-
-        {/* Recovered Revenue Section */}
-        {(recoveredRevenue.lifetimeRecovered > 0 || recoveredRevenue.lifetimeCount > 0) && (
-          <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-2 mb-6">
-            <Card className="border-primary/30 bg-primary/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Revenue Recovered
-                </CardTitle>
-                <DollarSign className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-primary">
-                  {formatCurrency(recoveredRevenue.lifetimeRecovered)}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Lifetime total
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-primary/30 bg-primary/5">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Cases Recovered
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-primary" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-primary">
-                  {recoveredRevenue.lifetimeCount}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {recoveredRevenue.currentMonthCount > 0 
-                    ? `${recoveredRevenue.currentMonthCount} this month` 
-                    : 'Lifetime total'}
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Overview Cards */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4 mb-8">
-          {/* Total Customers */}
-          <Card>
+      {/* Recovered Revenue Section */}
+      {(recoveredRevenue.lifetimeRecovered > 0 || recoveredRevenue.lifetimeCount > 0) && (
+        <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-2 mb-6">
+          <Card className="border-primary/30 bg-primary/5">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Customers
+                Revenue Recovered
               </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{stats.total}</div>
+              <div className="text-3xl font-bold text-primary">
+                {formatCurrency(recoveredRevenue.lifetimeRecovered)}
+              </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Being monitored
+                Lifetime total
               </p>
             </CardContent>
           </Card>
 
-          {/* At-Risk Count */}
-          <Card className={stats.atRisk > 0 ? 'border-orange-500/50' : ''}>
+          <Card className="border-primary/30 bg-primary/5">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                At-Risk
+                Cases Recovered
               </CardTitle>
-              <AlertTriangle className={`h-4 w-4 ${stats.atRisk > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
+              <TrendingUp className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className={`text-3xl font-bold ${stats.atRisk > 0 ? 'text-orange-500' : ''}`}>
-                {stats.atRisk}
+              <div className="text-3xl font-bold text-primary">
+                {recoveredRevenue.lifetimeCount}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Need attention
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* High Risk */}
-          <Card className={stats.highRisk > 0 ? 'border-red-500/50' : ''}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                High Risk
-              </CardTitle>
-              <ShieldAlert className={`h-4 w-4 ${stats.highRisk > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-3xl font-bold ${stats.highRisk > 0 ? 'text-red-500' : ''}`}>
-                {stats.highRisk}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Critical priority
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Healthy */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Healthy
-              </CardTitle>
-              <CheckCircle className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-500">
-                {stats.total - stats.atRisk}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                No risk signals
+                {recoveredRevenue.currentMonthCount > 0 
+                  ? `${recoveredRevenue.currentMonthCount} this month` 
+                  : 'Lifetime total'}
               </p>
             </CardContent>
           </Card>
         </div>
+      )}
 
-        {/* Customers Section */}
-        <Tabs defaultValue="at-risk" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <TabsList>
-              <TabsTrigger value="at-risk" className="gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                At Risk
-                {stats.atRisk > 0 && (
-                  <Badge variant="destructive" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
-                    {stats.atRisk}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="all" className="gap-2">
-                <Users className="h-4 w-4" />
-                All Customers
-              </TabsTrigger>
-            </TabsList>
+      {/* Overview Cards */}
+      <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4 mb-8">
+        {/* Total Customers */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Customers
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Being monitored
+            </p>
+          </CardContent>
+        </Card>
 
-            {customers.length > 0 && (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleAddMockData}
-                disabled={isAddingMock}
-              >
-                {isAddingMock ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Adding...
-                  </>
-                ) : (
-                  'Add More Mock Data'
-                )}
-              </Button>
-            )}
-          </div>
+        {/* At-Risk Count */}
+        <Card className={stats.atRisk > 0 ? 'border-orange-500/50' : ''}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              At-Risk
+            </CardTitle>
+            <AlertTriangle className={`h-4 w-4 ${stats.atRisk > 0 ? 'text-orange-500' : 'text-muted-foreground'}`} />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-3xl font-bold ${stats.atRisk > 0 ? 'text-orange-500' : ''}`}>
+              {stats.atRisk}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Need attention
+            </p>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="at-risk" className="mt-6">
-            {atRiskCustomers.length === 0 && stats.total > 0 ? (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500/50" />
-                  <h3 className="text-lg font-semibold mb-2">All Clear!</h3>
-                  <p className="text-muted-foreground">
-                    None of your customers are showing churn risk signals.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <CustomerList 
-                customers={atRiskCustomers} 
-                loading={loading} 
-                error={error}
-                onAddMockData={handleAddMockData}
-                isAddingMock={isAddingMock}
-              />
-            )}
-          </TabsContent>
+        {/* High Risk */}
+        <Card className={stats.highRisk > 0 ? 'border-red-500/50' : ''}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              High Risk
+            </CardTitle>
+            <ShieldAlert className={`h-4 w-4 ${stats.highRisk > 0 ? 'text-red-500' : 'text-muted-foreground'}`} />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-3xl font-bold ${stats.highRisk > 0 ? 'text-red-500' : ''}`}>
+              {stats.highRisk}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Critical priority
+            </p>
+          </CardContent>
+        </Card>
 
-          <TabsContent value="all" className="mt-6">
+        {/* Healthy */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Healthy
+            </CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-500">
+              {stats.total - stats.atRisk}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              No risk signals
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Customers Section */}
+      <Tabs defaultValue="at-risk" className="space-y-6">
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="at-risk" className="gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              At Risk
+              {stats.atRisk > 0 && (
+                <Badge variant="destructive" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
+                  {stats.atRisk}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="all" className="gap-2">
+              <Users className="h-4 w-4" />
+              All Customers
+            </TabsTrigger>
+          </TabsList>
+
+          {customers.length > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleAddMockData}
+              disabled={isAddingMock}
+            >
+              {isAddingMock ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                'Add More Mock Data'
+              )}
+            </Button>
+          )}
+        </div>
+
+        <TabsContent value="at-risk" className="mt-6">
+          {atRiskCustomers.length === 0 && stats.total > 0 ? (
+            <Card>
+              <CardContent className="text-center py-12">
+                <CheckCircle className="h-16 w-16 mx-auto mb-4 text-green-500/50" />
+                <h3 className="text-lg font-semibold mb-2">All Clear!</h3>
+                <p className="text-muted-foreground">
+                  None of your customers are showing churn risk signals.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
             <CustomerList 
-              customers={customers} 
+              customers={atRiskCustomers} 
               loading={loading} 
               error={error}
               onAddMockData={handleAddMockData}
               isAddingMock={isAddingMock}
             />
-          </TabsContent>
-        </Tabs>
+          )}
+        </TabsContent>
 
-        {/* Quick Actions */}
-        {stats.total > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>
-                Navigate to detailed views
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-3">
-              <Button 
-                variant="default"
-                onClick={() => navigate('/recovery')}
-              >
-                <Inbox className="h-4 w-4 mr-2" />
-                Recovery Inbox
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/cancel-flow')}
-              >
-                <PanelRight className="h-4 w-4 mr-2" />
-                Cancel Flow Builder
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/dashboard/integration')}
-              >
-                <BookOpen className="h-4 w-4 mr-2" />
-                Integration Guide
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/connect-stripe')}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Manage Stripe Connection
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/churn-risk')}
-              >
-                <Activity className="h-4 w-4 mr-2" />
-                Advanced Churn Analysis
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-    </ProtectedLayout>
+        <TabsContent value="all" className="mt-6">
+          <CustomerList 
+            customers={customers} 
+            loading={loading} 
+            error={error}
+            onAddMockData={handleAddMockData}
+            isAddingMock={isAddingMock}
+          />
+        </TabsContent>
+      </Tabs>
+    </DashboardLayout>
   );
 }

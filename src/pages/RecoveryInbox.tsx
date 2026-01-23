@@ -11,7 +11,7 @@ import { RecoveryToolbar } from '@/components/recovery/RecoveryToolbar';
 import { RecoveryStats } from '@/components/recovery/RecoveryStats';
 import { RecoveryEmptyState } from '@/components/recovery/RecoveryEmptyState';
 import { CreateTestCaseDialog } from '@/components/recovery/CreateTestCaseDialog';
-import { ProtectedLayout } from '@/components/ProtectedLayout';
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 function LoadingSkeleton() {
   return (
@@ -93,10 +93,9 @@ export default function RecoveryInbox() {
   };
 
   return (
-    <ProtectedLayout
+    <DashboardLayout
       title="Recovery Inbox"
       subtitle="Monitor and act on revenue recovery opportunities."
-      showLogo
       headerContent={<CreateTestCaseDialog onCreate={handleCreateCase} />}
     >
 
@@ -175,6 +174,6 @@ export default function RecoveryInbox() {
             ))}
           </div>
         )}
-    </ProtectedLayout>
+    </DashboardLayout>
   );
 }
