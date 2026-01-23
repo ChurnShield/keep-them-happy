@@ -72,6 +72,8 @@ export type Database = {
           session_token: string
           started_at: string | null
           status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           subscription_id: string | null
         }
         Insert: {
@@ -87,6 +89,8 @@ export type Database = {
           session_token: string
           started_at?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_id?: string | null
         }
         Update: {
@@ -102,6 +106,8 @@ export type Database = {
           session_token?: string
           started_at?: string | null
           status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_id?: string | null
         }
         Relationships: [
