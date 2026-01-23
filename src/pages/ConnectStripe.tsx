@@ -3,16 +3,14 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
-  Shield, 
   ArrowLeft, 
   ExternalLink, 
   AlertCircle, 
   CheckCircle2,
   Loader2,
   CreditCard,
-  Link2
 } from "lucide-react";
-import { PageTransition } from "@/components/onboarding/PageTransition";
+import { DashboardLayout } from "@/components/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useStripeCheckout } from "@/hooks/useStripeCheckout";
@@ -147,23 +145,8 @@ const ConnectStripe = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-lg w-full"
+      className="max-w-lg w-full mx-auto"
     >
-      {/* Logo */}
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.1 }}
-        className="flex items-center justify-center gap-2 mb-8"
-      >
-        <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-          <Shield className="w-5 h-5 text-primary" />
-        </div>
-        <span className="text-xl font-bold">
-          <span className="text-foreground">Churn</span>
-          <span className="text-primary">Shield</span>
-        </span>
-      </motion.div>
 
       {/* Subscription status badge */}
       {isTrialing && trialDaysRemaining !== null && (
@@ -275,34 +258,9 @@ const ConnectStripe = () => {
   const isLoading = authLoading || subLoading || connectionLoading;
 
   return (
-    <PageTransition>
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 hero-glow pointer-events-none" />
-        <div
-          className="absolute inset-0 opacity-[0.02] pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
-
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 py-12">
-          {/* Back button */}
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="absolute top-6 left-6"
-          >
-            <Button
-              variant="ghost"
-              onClick={() => navigate(-1)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-          </motion.div>
-
+    <DashboardLayout title="Connect Stripe" subtitle="Link your Stripe account to enable churn monitoring">
+      <div className="p-6 md:p-8">
+        <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
           {isLoading ? (
             <div className="flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -314,7 +272,7 @@ const ConnectStripe = () => {
           )}
         </div>
       </div>
-    </PageTransition>
+    </DashboardLayout>
   );
 };
 
