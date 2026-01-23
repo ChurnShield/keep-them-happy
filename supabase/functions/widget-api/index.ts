@@ -60,9 +60,9 @@ function calculateChurnShieldFee(monthlySavedRevenue: number): number {
   return Math.min(monthlySavedRevenue * 0.20, 500);
 }
 
-// Check if session is a test session (no customer/subscription)
+// Check if session is a test session (no customer_id/subscription_id AND no stripe_subscription_id)
 function isTestSession(session: Record<string, unknown>): boolean {
-  return !session.customer_id && !session.subscription_id;
+  return !session.customer_id && !session.subscription_id && !session.stripe_subscription_id;
 }
 
 // Simple in-memory rate limiting (resets on function cold start)
@@ -184,6 +184,58 @@ function validateOriginDomain(
 // ============= STRIPE HELPER FUNCTIONS =============
 
 /**
+ * Get Stripe connection for a profile by looking up the user_id through profiles table
+ */
+async function getStripeConnectionForProfile(
+  profileId: string,
+  // deno-lint-ignore no-explicit-any
+  supabase: any
+): Promise<{ accessToken: string; stripeUserId: string } | null> {
+  // First, get the user_id from the profiles table
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('id', profileId)
+    .single();
+
+  if (profileError || !profile?.user_id) {
+    structuredLog('warn', 'Could not find profile for Stripe lookup', { 
+      profileId, 
+      error: profileError?.message 
+    });
+    return null;
+  }
+
+  // Now get the stripe connection using the user_id
+  // The stripe_connections table stores user_id in the session_id column
+  const { data: connection, error: connectionError } = await supabase
+    .from('stripe_connections')
+    .select('access_token, stripe_user_id')
+    .eq('session_id', profile.user_id)
+    .single();
+
+  if (connectionError || !connection?.access_token) {
+    structuredLog('warn', 'No Stripe connection found', { 
+      profileId, 
+      userId: profile.user_id,
+      error: connectionError?.message 
+    });
+    return null;
+  }
+
+  structuredLog('info', 'Stripe connection found', { 
+    profileId, 
+    userId: profile.user_id,
+    stripeUserId: connection.stripe_user_id 
+  });
+
+  return {
+    accessToken: connection.access_token,
+    stripeUserId: connection.stripe_user_id,
+  };
+}
+
+/**
  * Apply a discount offer to a Stripe subscription
  */
 async function applyDiscountOffer(
@@ -193,6 +245,8 @@ async function applyDiscountOffer(
   durationMonths: number
 ): Promise<StripeOfferResult> {
   try {
+    structuredLog('info', 'Applying discount offer', { subscriptionId, discountPercent, durationMonths });
+    
     // Get subscription to calculate MRR
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     
@@ -215,7 +269,7 @@ async function applyDiscountOffer(
     const newMrr = originalMrr * (1 - discountPercent / 100);
     const savedMonthly = originalMrr - newMrr;
     
-    structuredLog('info', 'Discount offer applied', {
+    structuredLog('info', 'Discount offer applied successfully', {
       subscriptionId,
       couponId: coupon.id,
       discountPercent,
@@ -255,6 +309,8 @@ async function applyPauseOffer(
   pauseMonths: number
 ): Promise<StripeOfferResult> {
   try {
+    structuredLog('info', 'Applying pause offer', { subscriptionId, pauseMonths });
+    
     // Get subscription to calculate MRR
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     
@@ -275,7 +331,7 @@ async function applyPauseOffer(
     
     const actionId = `pause_${subscription.id}_${Date.now()}`;
     
-    structuredLog('info', 'Pause offer applied', {
+    structuredLog('info', 'Pause offer applied successfully', {
       subscriptionId,
       pauseMonths,
       resumeDate: resumeDate.toISOString(),
@@ -312,6 +368,8 @@ async function applyDowngradeOffer(
   targetPriceId: string
 ): Promise<StripeOfferResult> {
   try {
+    structuredLog('info', 'Applying downgrade offer', { subscriptionId, targetPriceId });
+    
     // Get subscription
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const originalMrr = calculateSubscriptionMrr(subscription);
@@ -335,7 +393,7 @@ async function applyDowngradeOffer(
     const updatedSubscription = await stripe.subscriptions.retrieve(subscriptionId);
     const newMrr = calculateSubscriptionMrr(updatedSubscription);
     
-    structuredLog('info', 'Downgrade offer applied', {
+    structuredLog('info', 'Downgrade offer applied successfully', {
       subscriptionId,
       targetPriceId,
       originalMrr,
@@ -640,14 +698,15 @@ async function handleGetConfig(
   });
 }
 
-// POST /widget-api/session
+// POST /widget-api/session - Create cancel session
+// Now accepts stripe_subscription_id directly for real Stripe integration
 async function handleCreateSession(
   req: Request,
   // deno-lint-ignore no-explicit-any
   supabase: any
 ): Promise<Response> {
   const body = await req.json();
-  const { token, customer_id, subscription_id } = body;
+  const { token, customer_id, subscription_id, stripe_subscription_id, stripe_customer_id } = body;
 
   if (!token) {
     return errorResponse(400, 'MISSING_TOKEN', 'Widget token is required');
@@ -662,13 +721,15 @@ async function handleCreateSession(
   // Generate unique session token
   const sessionToken = generateSessionToken();
 
-  // Create cancel session
+  // Create cancel session - include stripe_subscription_id for real Stripe operations
   const { data: session, error: sessionError } = await supabase
     .from('cancel_sessions')
     .insert({
       profile_id: tokenValidation.profileId,
       customer_id: customer_id || null,
       subscription_id: subscription_id || null,
+      stripe_subscription_id: stripe_subscription_id || null, // Real Stripe sub_xxx ID
+      stripe_customer_id: stripe_customer_id || null, // Real Stripe cus_xxx ID
       session_token: sessionToken,
       status: 'started',
       started_at: new Date().toISOString(),
@@ -704,7 +765,9 @@ async function handleCreateSession(
   structuredLog('info', 'Session created', { 
     sessionId: session.id, 
     profileId: tokenValidation.profileId,
-    customerId: customer_id 
+    customerId: customer_id,
+    stripeSubscriptionId: stripe_subscription_id,
+    stripeCustomerId: stripe_customer_id,
   });
 
   return successResponse({
@@ -749,6 +812,8 @@ async function handleCreateTestSession(
       profile_id: profile_id,
       customer_id: null, // null indicates test session
       subscription_id: null, // null indicates test session
+      stripe_subscription_id: null, // null indicates test session
+      stripe_customer_id: null,
       session_token: sessionToken,
       status: 'started',
       started_at: new Date().toISOString(),
@@ -970,7 +1035,9 @@ async function handleOfferResponse(
   const discountPercentage = mapping.discount_percentage || offerSettings.discount_percentage || 20;
   const discountDurationMonths = mapping.discount_duration_months || offerSettings.discount_duration_months || 3;
   const pauseDurationMonths = mapping.pause_duration_months || offerSettings.pause_duration_months || 1;
-  const subscriptionId = session.subscription_id as string | null;
+  
+  // Get the Stripe subscription ID - prefer stripe_subscription_id field
+  const stripeSubscriptionId = session.stripe_subscription_id as string | null;
 
   let offerResult: StripeOfferResult;
 
@@ -986,46 +1053,52 @@ async function handleOfferResponse(
     offerResult = simulateOfferResult(offerType, discountPercentage, pauseDurationMonths);
   } else {
     // Production mode: Get Stripe connection and apply real action
-    const { data: stripeConnection } = await supabase
-      .from('stripe_connections')
-      .select('access_token, stripe_user_id')
-      .eq('session_id', session.profile_id)
-      .single();
+    // FIX: Use the correct lookup through profiles table to get user_id
+    const stripeConnection = await getStripeConnectionForProfile(session.profile_id as string, supabase);
 
-    if (!stripeConnection?.access_token) {
-      structuredLog('warn', 'No Stripe connection found for offer acceptance', { 
+    if (!stripeConnection) {
+      structuredLog('error', 'No Stripe connection found for offer acceptance', { 
         sessionId: session.id,
         profileId: session.profile_id 
       });
       
-      // Fallback to simulated result if no Stripe connection
-      offerResult = simulateOfferResult(offerType, discountPercentage, pauseDurationMonths);
-      offerResult.message = offerResult.message.replace('[TEST] ', '');
-    } else if (!subscriptionId) {
-      structuredLog('warn', 'No subscription ID for offer application', { sessionId: session.id });
+      // Return an actual error instead of silently falling back to simulation
+      return errorResponse(400, 'STRIPE_NOT_CONNECTED', 
+        'Stripe is not connected. Please connect your Stripe account to apply real offers.');
+    }
+    
+    if (!stripeSubscriptionId) {
+      structuredLog('warn', 'No Stripe subscription ID for offer application', { sessionId: session.id });
       
       // No subscription to apply offer to
       offerResult = {
         success: true,
         originalMrr: 0,
         newMrr: 0,
-        message: 'Your request has been recorded.',
+        message: 'Your request has been recorded. A team member will follow up shortly.',
       };
     } else {
-      // Apply real Stripe action
-      const stripe = new Stripe(stripeConnection.access_token, {
+      // Apply real Stripe action using the connected account's access token
+      const stripe = new Stripe(stripeConnection.accessToken, {
         apiVersion: '2023-10-16',
       });
 
+      structuredLog('info', 'Applying real Stripe action', {
+        sessionId: session.id,
+        stripeSubscriptionId,
+        offerType,
+        stripeUserId: stripeConnection.stripeUserId,
+      });
+
       if (offerType === 'pause') {
-        offerResult = await applyPauseOffer(stripe, subscriptionId, pauseDurationMonths);
+        offerResult = await applyPauseOffer(stripe, stripeSubscriptionId, pauseDurationMonths);
       } else if (offerType === 'discount') {
-        offerResult = await applyDiscountOffer(stripe, subscriptionId, discountPercentage, discountDurationMonths);
+        offerResult = await applyDiscountOffer(stripe, stripeSubscriptionId, discountPercentage, discountDurationMonths);
       } else if (offerType === 'downgrade' && body.target_price_id) {
-        offerResult = await applyDowngradeOffer(stripe, subscriptionId, body.target_price_id);
+        offerResult = await applyDowngradeOffer(stripe, stripeSubscriptionId, body.target_price_id);
       } else {
         // Default to discount
-        offerResult = await applyDiscountOffer(stripe, subscriptionId, discountPercentage, discountDurationMonths);
+        offerResult = await applyDiscountOffer(stripe, stripeSubscriptionId, discountPercentage, discountDurationMonths);
       }
 
       // If Stripe action failed, return error without creating records
@@ -1034,7 +1107,8 @@ async function handleOfferResponse(
           sessionId: session.id, 
           error: offerResult.error 
         });
-        return errorResponse(500, 'STRIPE_ERROR', 'We couldn\'t apply the offer right now. Please try again or contact support.');
+        return errorResponse(500, 'STRIPE_ERROR', 
+          `We couldn't apply the offer: ${offerResult.error || 'Unknown error'}. Please try again or contact support.`);
       }
     }
   }
