@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProtectedLayout } from '@/components/ProtectedLayout';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { useCancelFlowConfig } from '@/hooks/useCancelFlowConfig';
 import { SurveyOptionsEditor } from '@/components/cancel-flow/SurveyOptionsEditor';
 import { OfferMappingEditor } from '@/components/cancel-flow/OfferMappingEditor';
@@ -31,10 +31,9 @@ export default function CancelFlowBuilder() {
   }
 
   return (
-    <ProtectedLayout
+    <DashboardLayout
       title="Cancel Flow Builder"
       subtitle="Design your voluntary churn prevention experience"
-      showLogo
     >
       {/* Header Actions */}
       <div className="flex items-center justify-between mb-6">
@@ -184,6 +183,6 @@ export default function CancelFlowBuilder() {
           widget_settings: config.widget_settings,
         } : null}
       />
-    </ProtectedLayout>
+    </DashboardLayout>
   );
 }

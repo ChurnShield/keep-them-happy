@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ProtectedLayout } from '@/components/ProtectedLayout';
+import { DashboardLayout } from '@/components/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,20 +107,18 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <ProtectedLayout title="Settings" backTo="/dashboard" showLogo>
+      <DashboardLayout title="Settings" subtitle="Manage your account">
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </ProtectedLayout>
+      </DashboardLayout>
     );
   }
 
   return (
-    <ProtectedLayout 
+    <DashboardLayout 
       title="Account Settings" 
       subtitle="Manage your profile and preferences"
-      backTo="/dashboard"
-      showLogo
     >
       <div className="space-y-6 max-w-2xl">
         {/* Profile Section */}
@@ -361,6 +359,6 @@ export default function Settings() {
           </CardContent>
         </Card>
       </div>
-    </ProtectedLayout>
+    </DashboardLayout>
   );
 }

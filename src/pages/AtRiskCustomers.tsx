@@ -20,7 +20,7 @@ import {
 import { useAtRiskCustomers, getScoreColor } from '@/hooks/useChurnDashboard';
 import { useSubscription } from '@/hooks/useSubscription';
 import { formatDistanceToNow } from 'date-fns';
-import { ProtectedLayout } from '@/components/ProtectedLayout';
+import { DashboardLayout } from '@/components/DashboardLayout';
 
 export default function AtRiskCustomers() {
   const navigate = useNavigate();
@@ -78,11 +78,9 @@ export default function AtRiskCustomers() {
   }
 
   return (
-    <ProtectedLayout
+    <DashboardLayout
       title="At-Risk Customers"
       subtitle="Customers with churn risk score of 50 or higher"
-      backTo="/dashboard"
-      backLabel="Back to Dashboard"
     >
 
         {/* Stats */}
@@ -189,6 +187,6 @@ export default function AtRiskCustomers() {
             </CardContent>
           </Card>
         )}
-    </ProtectedLayout>
+    </DashboardLayout>
   );
 }
