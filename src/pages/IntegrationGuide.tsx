@@ -68,19 +68,22 @@ export default function IntegrationGuide() {
   const widgetToken = profile?.id || 'your-widget-token';
   const maskedToken = widgetToken.slice(0, 8) + '••••••••' + widgetToken.slice(-4);
 
-  // Code examples
-  const nodeExample = `const response = await fetch('${appUrl}/api/widget/session', {
+  // API base URL for edge functions
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://rdstyfaveeokocztayri.supabase.co';
+  
+  // Code examples with real endpoint
+  const nodeExample = `// Create a cancel session when user clicks "Cancel Subscription"
+const response = await fetch('${supabaseUrl}/functions/v1/widget-api/session', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer ${widgetToken}',
     'Content-Type': 'application/json'
   },
   body: JSON.stringify({
-    customer_id: 'cus_123abc',
-    email: 'customer@example.com',
-    subscription_id: 'sub_456def',
-    plan_name: 'Pro Plan',
-    amount: 4900 // in cents
+    token: '${widgetToken}',                    // Your ChurnShield profile ID
+    stripe_customer_id: 'cus_123abc',           // Stripe customer ID
+    stripe_subscription_id: 'sub_456def',       // REQUIRED: Stripe subscription ID
+    customer_id: 'your-internal-customer-id',   // Optional: Your internal ID
+    subscription_id: 'your-internal-sub-id'     // Optional: Your internal ID
   })
 });
 
@@ -92,17 +95,16 @@ window.location.href = \`${appUrl}/cancel/\${session_token}\`;`;
   const pythonExample = `import requests
 
 response = requests.post(
-    '${appUrl}/api/widget/session',
+    '${supabaseUrl}/functions/v1/widget-api/session',
     headers={
-        'Authorization': 'Bearer ${widgetToken}',
         'Content-Type': 'application/json'
     },
     json={
-        'customer_id': 'cus_123abc',
-        'email': 'customer@example.com',
-        'subscription_id': 'sub_456def',
-        'plan_name': 'Pro Plan',
-        'amount': 4900  # in cents
+        'token': '${widgetToken}',                    # Your ChurnShield profile ID
+        'stripe_customer_id': 'cus_123abc',           # Stripe customer ID
+        'stripe_subscription_id': 'sub_456def',       # REQUIRED: Stripe subscription ID
+        'customer_id': 'your-internal-customer-id',   # Optional: Your internal ID
+        'subscription_id': 'your-internal-sub-id'     # Optional: Your internal ID
     }
 )
 
@@ -112,15 +114,14 @@ session_token = data['session_token']
 # Return redirect URL to frontend
 redirect_url = f'${appUrl}/cancel/{session_token}'`;
 
-  const curlExample = `curl -X POST '${appUrl}/api/widget/session' \\
-  -H 'Authorization: Bearer ${widgetToken}' \\
+  const curlExample = `curl -X POST '${supabaseUrl}/functions/v1/widget-api/session' \\
   -H 'Content-Type: application/json' \\
   -d '{
-    "customer_id": "cus_123abc",
-    "email": "customer@example.com",
-    "subscription_id": "sub_456def",
-    "plan_name": "Pro Plan",
-    "amount": 4900
+    "token": "${widgetToken}",
+    "stripe_customer_id": "cus_123abc",
+    "stripe_subscription_id": "sub_456def",
+    "customer_id": "your-internal-id",
+    "subscription_id": "your-internal-sub-id"
   }'`;
 
   const redirectCode = `// After creating a session on your backend
@@ -139,16 +140,16 @@ window.location.href = \`${appUrl}/cancel/\${sessionToken}\`;`;
       console.log('Subscription cancelled:', data);
     },
     onSave: function(data) {
-      console.log('Customer saved:', data);
+      console.log('Customer saved with offer:', data);
     }
   });
 </script>
 
-<!-- Trigger the widget -->
+<!-- Trigger the widget with real Stripe IDs -->
 <button onclick="ChurnShield.open({ 
-  customerId: 'cus_123', 
+  subscriptionId: 'sub_xyz789',     // REQUIRED: Real Stripe subscription ID
+  customerId: 'cus_abc123',         // Stripe customer ID
   email: 'customer@example.com',
-  subscriptionId: 'sub_456',
   planName: 'Pro Plan',
   amount: 4900
 })">

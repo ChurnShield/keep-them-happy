@@ -1,22 +1,27 @@
 /**
  * ChurnShield Embeddable Cancel Flow Widget
- * Version: 1.0.0
+ * Version: 1.1.0
  * 
  * Usage:
  * <script src="https://your-domain.com/widget.js"></script>
  * <script>
  *   ChurnShield.init({
- *     token: 'your-profile-id',
- *     customerId: 'cus_xxx',        // Stripe customer ID
- *     subscriptionId: 'sub_xxx',    // Stripe subscription ID
- *     onSave: function() { },       // Callback when customer is saved
- *     onCancel: function() { },     // Callback when cancelled
- *     onClose: function() { }       // Callback when widget closes
+ *     token: 'your-profile-id',          // Required: Your ChurnShield profile ID
+ *     customerId: 'cus_xxx',              // Stripe customer ID (for display/lookup)
+ *     subscriptionId: 'sub_xxx',          // Stripe subscription ID (REQUIRED for real offers)
+ *     stripeSubscriptionId: 'sub_xxx',    // Alias for subscriptionId (for clarity)
+ *     stripeCustomerId: 'cus_xxx',        // Alias for customerId (for clarity)
+ *     onSave: function(result) { },       // Callback when customer is saved (offer accepted)
+ *     onCancel: function() { },           // Callback when subscription is cancelled
+ *     onClose: function() { }             // Callback when widget closes
  *   });
  *   
  *   // Open the widget:
  *   ChurnShield.open();
  * </script>
+ * 
+ * IMPORTANT: For real Stripe actions (applying discounts/pauses), you MUST provide 
+ * the subscriptionId (or stripeSubscriptionId) in the format 'sub_xxx'.
  */
 
 (function(window, document) {
@@ -145,7 +150,10 @@
     return apiCall('session', 'POST', {
       token: state.options.token,
       customer_id: state.options.customerId,
-      subscription_id: state.options.subscriptionId
+      subscription_id: state.options.subscriptionId,
+      // Real Stripe IDs for actual Stripe operations
+      stripe_subscription_id: state.options.stripeSubscriptionId || state.options.subscriptionId,
+      stripe_customer_id: state.options.stripeCustomerId || state.options.customerId
     });
   }
 
