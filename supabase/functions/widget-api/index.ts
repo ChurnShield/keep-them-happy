@@ -747,15 +747,15 @@ async function handleCreateSession(
   // Generate unique session token
   const sessionToken = generateSessionToken();
 
-  // Create cancel session - include stripe_subscription_id for real Stripe operations
+  // Create cancel session - UUID columns get null, Stripe IDs go to TEXT columns
   const { data: session, error: sessionError } = await supabase
     .from('cancel_sessions')
     .insert({
       profile_id: tokenValidation.profileId,
-      customer_id: customer_id || null,
-      subscription_id: subscription_id || null,
-      stripe_subscription_id: stripe_subscription_id || null, // Real Stripe sub_xxx ID
-      stripe_customer_id: stripe_customer_id || null, // Real Stripe cus_xxx ID
+      customer_id: null, // UUID column - always null for widget sessions
+      subscription_id: null, // UUID column - always null for widget sessions
+      stripe_subscription_id: stripe_subscription_id || subscription_id || null, // TEXT column for Stripe sub_xxx
+      stripe_customer_id: stripe_customer_id || customer_id || null, // TEXT column for Stripe cus_xxx
       session_token: sessionToken,
       status: 'started',
       started_at: new Date().toISOString(),
