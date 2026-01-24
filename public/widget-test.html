@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChurnShield Widget Test</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 24px;
+    }
+    p {
+      color: #666;
+      margin: 0 0 20px 0;
+    }
+    label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+    input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+    button {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    }
+    .status {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      font-size: 14px;
+      color: #166534;
+    }
+    .status.error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+    .note {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      color: #92400e;
+    }
+    code {
+      background: #f3f4f6;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🛡️ ChurnShield Widget Test</h1>
+    <p>Test the embeddable cancel flow widget with real Stripe data</p>
+    
+    <label for="customerId">Stripe Customer ID</label>
+    <input type="text" id="customerId" placeholder="cus_xxxxxxxxxxxxx" value="cus_SRRjhFxZzEMZ5c">
+    
+    <label for="subscriptionId">Stripe Subscription ID</label>
+    <input type="text" id="subscriptionId" placeholder="sub_xxxxxxxxxxxxx" value="sub_1St7bzFIUhkPZE5zthceyK8c">
+    
+    <button id="cancelBtn">Cancel My Subscription</button>
+    
+    <div id="status" class="status" style="display: none;"></div>
+  </div>
+  
+  <div class="card note">
+    <strong>⚠️ Important:</strong> Make sure "Allow development domains" is enabled in your 
+    <a href="/dashboard/cancel-flow">Cancel Flow Builder</a> → Embed Widget tab for localhost testing.
+  </div>
+
+  <!-- Load the ChurnShield widget -->
+  <script src="/widget.js"></script>
+  
+  <script>
+    const statusEl = document.getElementById('status');
+    
+    function showStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.className = 'status' + (isError ? ' error' : '');
+      statusEl.style.display = 'block';
+    }
+    
+    // Initialize ChurnShield with your profile token
+    ChurnShield.init({
+      // Your ChurnShield profile ID (widget token)
+      token: '43a3cad2-42a6-4a79-9391-ae03a293bcb4',
+      
+      // These will be read from the form inputs
+      customerId: document.getElementById('customerId').value,
+      subscriptionId: document.getElementById('subscriptionId').value,
+      
+      // Callbacks
+      onSave: function() {
+        showStatus('✅ Customer SAVED! Offer was accepted and applied to Stripe.');
+        console.log('onSave callback fired');
+      },
+      onCancel: function() {
+        showStatus('❌ Customer cancelled their subscription.', true);
+        console.log('onCancel callback fired');
+      },
+      onClose: function() {
+        console.log('Widget closed');
+      }
+    });
+    
+    // Handle the cancel button click
+    document.getElementById('cancelBtn').addEventListener('click', function() {
+      // Re-init with current form values before opening
+      const customerId = document.getElementById('customerId').value;
+      const subscriptionId = document.getElementById('subscriptionId').value;
+      
+      if (!customerId || !subscriptionId) {
+        showStatus('Please enter both Customer ID and Subscription ID', true);
+        return;
+      }
+      
+      // Re-initialize with updated values
+      ChurnShield.init({
+        token: '43a3cad2-42a6-4a79-9391-ae03a293bcb4',
+        customerId: customerId,
+        subscriptionId: subscriptionId,
+        onSave: function() {
+          showStatus('✅ Customer SAVED! Offer was accepted and applied to Stripe.');
+        },
+        onCancel: function() {
+          showStatus('❌ Customer cancelled their subscription.', true);
+        },
+        onClose: function() {
+          console.log('Widget closed');
+        }
+      });
+      
+      // Open the widget
+      ChurnShield.open();
+    });
+  </script>
+</body>
+</html>
