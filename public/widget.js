@@ -42,17 +42,8 @@
     error: null
   };
 
-  // API base URL - determined from script src or fallback
-  var API_BASE_URL = (function() {
-    var scripts = document.getElementsByTagName('script');
-    for (var i = 0; i < scripts.length; i++) {
-      if (scripts[i].src && scripts[i].src.indexOf('widget.js') !== -1) {
-        var url = new URL(scripts[i].src);
-        return url.origin;
-      }
-    }
-    return window.location.origin;
-  })();
+  // API base URL - Supabase Edge Functions endpoint
+  var API_BASE_URL = 'https://rdstyfaveeokocztayri.supabase.co';
 
   // Elements
   var overlay = null;
