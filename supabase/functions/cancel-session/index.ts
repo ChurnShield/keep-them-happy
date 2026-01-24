@@ -137,6 +137,7 @@ function calculateSubscriptionMrr(subscription: Stripe.Subscription): number {
 }
 
 // Apply a discount offer to a Stripe subscription
+// Handles both standard billing (subscription-level coupon) and flexible billing (item-level discounts)
 async function applyDiscountOffer(
   stripe: Stripe,
   subscriptionId: string,
@@ -144,7 +145,7 @@ async function applyDiscountOffer(
   durationMonths: number
 ): Promise<StripeOfferResult> {
   try {
-    // Get the subscription first to calculate MRR
+    // Get the subscription first to calculate MRR and check billing mode
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     const originalMrr = calculateSubscriptionMrr(subscription);
 
@@ -156,10 +157,34 @@ async function applyDiscountOffer(
       name: `ChurnShield ${discountPercent}% off for ${durationMonths} months`,
     });
 
-    // Apply the coupon to the subscription
-    await stripe.subscriptions.update(subscriptionId, {
-      coupon: coupon.id,
-    });
+    // Check if this is a flexible billing subscription
+    // deno-lint-ignore no-explicit-any
+    const billingMode = (subscription as any).billing_mode;
+    const isFlexibleBilling = billingMode?.type === 'flexible';
+
+    if (isFlexibleBilling) {
+      // For flexible billing, apply discount at item level
+      structuredLog('info', 'Applying discount at item level for flexible billing', {
+        subscriptionId,
+        billingMode,
+      });
+
+      // Apply discount to all subscription items
+      const itemUpdates = subscription.items.data.map((item: Stripe.SubscriptionItem) => ({
+        id: item.id,
+        discounts: [{ coupon: coupon.id }],
+      }));
+
+      await stripe.subscriptions.update(subscriptionId, {
+        items: itemUpdates,
+        proration_behavior: 'none',
+      });
+    } else {
+      // For standard billing, apply coupon at subscription level
+      await stripe.subscriptions.update(subscriptionId, {
+        coupon: coupon.id,
+      });
+    }
 
     const newMrr = originalMrr * (1 - discountPercent / 100);
 
@@ -170,6 +195,7 @@ async function applyDiscountOffer(
       durationMonths,
       originalMrr,
       newMrr,
+      isFlexibleBilling,
     });
 
     return {
