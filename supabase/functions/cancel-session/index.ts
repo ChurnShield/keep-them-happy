@@ -724,11 +724,8 @@ async function handleOfferResponse(
       }
     }
 
-    // Calculate ChurnShield fee
-    const monthlySaved = offerResult.originalMrr - offerResult.newMrr;
-    const churnshieldFee = calculateChurnShieldFee(monthlySaved);
-
     // Insert saved_customers record with real values
+    // Note: churnshield_fee_per_month is a generated column calculated from (original_mrr - new_mrr) * 0.20
     const { error: insertError } = await supabase
       .from('saved_customers')
       .insert({
@@ -742,7 +739,6 @@ async function handleOfferResponse(
         discount_percentage: offerResult.discountPercentage || null,
         pause_months: offerResult.pauseMonths || null,
         stripe_action_id: offerResult.stripeActionId || null,
-        churnshield_fee_per_month: churnshieldFee,
       });
 
     if (insertError) {
@@ -754,7 +750,6 @@ async function handleOfferResponse(
       save_type: session.offer_type_presented,
       original_mrr: offerResult.originalMrr,
       new_mrr: offerResult.newMrr,
-      churnshield_fee: churnshieldFee,
       is_test: isTest,
     });
 
