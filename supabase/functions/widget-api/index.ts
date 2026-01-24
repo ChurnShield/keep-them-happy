@@ -986,6 +986,7 @@ async function handleSurvey(
   });
 
   return successResponse({
+    offer: matchedOffer, // Key expected by widget.js
     matched_offer: matchedOffer,
     offer_details: matchedOffer,
   });
