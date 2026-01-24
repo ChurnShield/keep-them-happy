@@ -154,7 +154,7 @@ async function applyDiscountOffer(
       percent_off: discountPercent,
       duration: 'repeating',
       duration_in_months: durationMonths,
-      name: `ChurnShield ${discountPercent}% off for ${durationMonths} months`,
+      name: `CS ${discountPercent}% off ${durationMonths}mo`,
     });
 
     // Check if this is a flexible billing subscription
