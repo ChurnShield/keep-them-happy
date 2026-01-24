@@ -53,76 +53,54 @@ function isTestSession(session: Record<string, unknown>): boolean {
   return !session.customer_id && !session.subscription_id && !session.stripe_subscription_id && !session.stripe_customer_id;
 }
 
-// Get Stripe connection for a profile via profiles -> user_id -> oauth_states -> stripe_connections
+// Get Stripe connection for a profile by looking up the user_id through profiles table
 async function getStripeConnectionForProfile(
   profileId: string,
   // deno-lint-ignore no-explicit-any
   supabase: any
 ): Promise<{ accessToken: string; stripeUserId: string } | null> {
-  try {
-    // Get user_id from profile
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('id', profileId)
-      .single();
+  // First, get the user_id from the profiles table
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('id', profileId)
+    .single();
 
-    if (profileError || !profile) {
-      structuredLog('error', 'Profile not found for Stripe connection lookup', { profileId });
-      return null;
-    }
-
-    // Get the oauth state for this user to find their session_id
-    const { data: oauthState, error: oauthError } = await supabase
-      .from('oauth_states')
-      .select('state')
-      .eq('user_id', profile.user_id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (oauthError || !oauthState) {
-      structuredLog('warn', 'No OAuth state found for user', { userId: profile.user_id });
-      // Try to find stripe_connection directly by looking for any connection
-      // This is a fallback - in production you'd want a proper session lookup
-      const { data: connection, error: connError } = await supabase
-        .from('stripe_connections')
-        .select('access_token, stripe_user_id')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (connError || !connection) {
-        structuredLog('warn', 'No Stripe connection found', { userId: profile.user_id });
-        return null;
-      }
-
-      return {
-        accessToken: connection.access_token,
-        stripeUserId: connection.stripe_user_id,
-      };
-    }
-
-    // Get stripe connection using the session_id (state)
-    const { data: connection, error: connError } = await supabase
-      .from('stripe_connections')
-      .select('access_token, stripe_user_id')
-      .eq('session_id', oauthState.state)
-      .single();
-
-    if (connError || !connection) {
-      structuredLog('warn', 'Stripe connection not found for session', { sessionId: oauthState.state });
-      return null;
-    }
-
-    return {
-      accessToken: connection.access_token,
-      stripeUserId: connection.stripe_user_id,
-    };
-  } catch (error) {
-    structuredLog('error', 'Error getting Stripe connection', { error: String(error) });
+  if (profileError || !profile?.user_id) {
+    structuredLog('warn', 'Could not find profile for Stripe lookup', { 
+      profileId, 
+      error: profileError?.message 
+    });
     return null;
   }
+
+  // Now get the stripe connection using the user_id
+  // The stripe_connections table stores user_id in the session_id column
+  const { data: connection, error: connectionError } = await supabase
+    .from('stripe_connections')
+    .select('access_token, stripe_user_id')
+    .eq('session_id', profile.user_id)
+    .single();
+
+  if (connectionError || !connection?.access_token) {
+    structuredLog('warn', 'No Stripe connection found', { 
+      profileId, 
+      userId: profile.user_id,
+      error: connectionError?.message 
+    });
+    return null;
+  }
+
+  structuredLog('info', 'Stripe connection found', { 
+    profileId, 
+    userId: profile.user_id,
+    stripeUserId: connection.stripe_user_id 
+  });
+
+  return {
+    accessToken: connection.access_token,
+    stripeUserId: connection.stripe_user_id,
+  };
 }
 
 // Calculate MRR from a Stripe subscription
