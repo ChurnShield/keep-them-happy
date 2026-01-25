@@ -35,10 +35,10 @@ export function Testimonials() {
           className="mb-12"
         >
           <span className="inline-block text-primary text-sm font-semibold uppercase tracking-widest mb-4">
-            Why I Built This
+            Why I Built ChurnShield
           </span>
           <h2 className="text-3xl md:text-4xl font-bold">
-            From frustrated founder to building the solution
+            Your success is my success
           </h2>
         </motion.div>
 
@@ -54,22 +54,28 @@ export function Testimonials() {
           
           <div className="space-y-6 text-muted-foreground leading-relaxed text-lg">
             <p>
-              I run a small SaaS business. Every month, I watched customers cancel — and had no idea why. The tools that could help cost $250/month or more.
+              I was researching churn reduction tools for a SaaS project and found the usual suspects — Churnkey, Raaft, and others. They all wanted £300-500/month upfront, whether they saved a single customer or not.
             </p>
             <p>
-              That's when I realized: indie founders like us need enterprise-level retention without enterprise-level pricing.
+              That felt backwards.
             </p>
             <p>
-              ChurnShield is what I wished existed. A simple dashboard that shows you every failed payment, tells you exactly what to do, and proves what you've recovered. No complexity, no monthly fees - just visibility into revenue you were losing without knowing it.
+              Why should you pay hundreds of pounds monthly for a tool that might not work? And if it does work, why shouldn't the pricing reflect that?
             </p>
             <p>
-              No VC funding. No sales calls. Just a tool built by a founder, for founders.
+              So I built ChurnShield myself. I tested it with real Stripe subscriptions, real cancel flows, and real retention offers. It works.
+            </p>
+            <p>
+              The difference: <strong className="text-foreground">you only pay when it actually saves a customer.</strong> 20% of saved revenue, capped at £500/month. If ChurnShield saves nobody, you pay nothing.
+            </p>
+            <p>
+              Your success is my success. That's how it should be.
             </p>
           </div>
 
           {/* Signature */}
           <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-foreground font-semibold">— Andy, Founder of ChurnShield</p>
+            <p className="text-foreground font-semibold">— Andy, Founder</p>
           </div>
         </motion.div>
 
@@ -79,7 +85,7 @@ export function Testimonials() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
-          className="mt-10"
+          className="mt-10 flex flex-col items-center gap-3"
         >
           <Button
             onClick={handleStartTrial}
@@ -87,8 +93,11 @@ export function Testimonials() {
             size="lg"
             className="bg-gradient-to-r from-primary to-[hsl(187_85%_53%)] text-primary-foreground font-semibold hover:opacity-90 transition shadow-lg"
           >
-            {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
+            {isLoading ? "Loading..." : "Start Free Trial"}
           </Button>
+          <p className="text-sm text-muted-foreground">
+            See if it works for you — pay nothing until it does
+          </p>
         </motion.div>
       </div>
 
