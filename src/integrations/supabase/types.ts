@@ -335,6 +335,7 @@ export type Database = {
           company_name: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           email_notifications: boolean | null
           id: string
           timezone: string | null
@@ -347,6 +348,7 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           email_notifications?: boolean | null
           id?: string
           timezone?: string | null
@@ -359,6 +361,7 @@ export type Database = {
           company_name?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           email_notifications?: boolean | null
           id?: string
           timezone?: string | null
