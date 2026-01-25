@@ -17,7 +17,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useRecoveredRevenue } from '@/hooks/useRecoveredRevenue';
+import { useRevenueAnalytics } from '@/hooks/useRevenueAnalytics';
 import { CustomerList } from '@/components/customers/CustomerList';
+import { RevenueAnalyticsCards } from '@/components/analytics/RevenueAnalyticsCards';
+import { SavedCustomersTable } from '@/components/analytics/SavedCustomersTable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -74,7 +77,15 @@ export default function Dashboard() {
   const { hasActiveSubscription, loading: subLoading } = useSubscription();
   const { customers, loading, error, stats, refetch, getAtRiskCustomers } = useCustomers();
   const { summary: recoveredRevenue } = useRecoveredRevenue();
+  const { records: analyticsRecords, summary: analyticsSummary, loading: analyticsLoading, error: analyticsError } = useRevenueAnalytics();
   const [isAddingMock, setIsAddingMock] = useState(false);
+
+  // Calculate this month's saves
+  const now = new Date();
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthSavesCount = analyticsRecords.filter(r => 
+    r.stripe_action_id !== null && new Date(r.created_at) >= monthStart
+  ).length;
 
   const formatCurrency = (amount: number) => 
     amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
@@ -154,7 +165,36 @@ export default function Dashboard() {
         </Button>
       }
     >
-      {/* Recovered Revenue Section */}
+      {/* Revenue Analytics Section */}
+      {(analyticsSummary.totalSaved > 0 || analyticsSummary.totalRecords > 0) && (
+        <div className="space-y-6 mb-8">
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Revenue Impact</h2>
+            {analyticsError ? (
+              <Card className="border-destructive/50 bg-destructive/10">
+                <CardContent className="py-4 text-destructive text-sm">
+                  {analyticsError}
+                </CardContent>
+              </Card>
+            ) : (
+              <RevenueAnalyticsCards
+                totalSaved={analyticsSummary.totalSaved}
+                totalFees={analyticsSummary.totalFees}
+                totalSavesCount={analyticsSummary.totalRecords}
+                monthSavesCount={monthSavesCount}
+                loading={analyticsLoading}
+              />
+            )}
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Saved Customers</h2>
+            <SavedCustomersTable records={analyticsRecords} loading={analyticsLoading} />
+          </div>
+        </div>
+      )}
+
+      {/* Recovered Revenue Section (Payment Recovery) */}
       {(recoveredRevenue.lifetimeRecovered > 0 || recoveredRevenue.lifetimeCount > 0) && (
         <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-2 mb-6">
           <Card className="border-primary/30 bg-primary/5">
