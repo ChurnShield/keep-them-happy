@@ -114,7 +114,7 @@ export function Pricing() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-sm text-muted-foreground/60 mt-10"
         >
-          No credit card required • 14-day free trial • Cancel anytime
+          No credit card required • 7-day free trial • Cancel anytime
         </motion.p>
       </div>
 

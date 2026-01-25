@@ -95,7 +95,7 @@ export function CTA() {
               <Check className="w-4 h-4 text-primary" /> No credit card needed
             </li>
             <li className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-primary" /> 14-day free trial
+              <Check className="w-4 h-4 text-primary" /> 7-day free trial
             </li>
             <li className="flex items-center gap-1">
               <Check className="w-4 h-4 text-primary" /> Pay only for results
