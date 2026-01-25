@@ -44,15 +44,13 @@ export function CTA() {
           <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
             Ready to{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">
-              see what you're losing to failed payments?
+              turn cancellations into saves?
             </span>
           </h2>
 
           {/* Subheadline */}
           <p className="text-lg text-muted-foreground mb-10">
-            Start your risk-free trial today and pay only when ChurnShield
-            actually recovers revenue. Simple, transparent, and aligned
-            with your success.
+            Start your free trial today. See your first saved customer within days — and only pay when it actually works.
           </p>
 
           {/* CTA Buttons */}
@@ -78,7 +76,7 @@ export function CTA() {
                 disabled={isLoading}
                 className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold hover:opacity-90 transition shadow-md"
               >
-                {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
+                {isLoading ? "Loading..." : "Start Free Trial"}
               </Button>
             </motion.div>
 
@@ -87,7 +85,7 @@ export function CTA() {
               onClick={handleHowItWorks}
               className="w-full sm:w-auto border-primary/60 text-primary hover:bg-primary/10 transition"
             >
-              View How It Works
+              See How It Works
             </Button>
           </div>
 
@@ -97,10 +95,10 @@ export function CTA() {
               <Check className="w-4 h-4 text-primary" /> No credit card needed
             </li>
             <li className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-primary" /> Cancel anytime
+              <Check className="w-4 h-4 text-primary" /> 14-day free trial
             </li>
             <li className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-primary" /> Zero-risk guarantee
+              <Check className="w-4 h-4 text-primary" /> Pay only for results
             </li>
           </ul>
         </motion.div>

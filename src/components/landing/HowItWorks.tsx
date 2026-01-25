@@ -1,38 +1,38 @@
 import { motion } from "framer-motion";
-import { Plug, Eye, MessageSquareText, TrendingUp, ArrowRight } from "lucide-react";
+import { Plug, Palette, Code, TrendingUp, ArrowRight } from "lucide-react";
 
 const steps = [
   {
     number: "01",
     icon: <Plug className="w-6 h-6" />,
-    title: "Connect Stripe in seconds",
+    title: "Connect Stripe",
     description:
-      "One-click integration with your Stripe account. No code, no engineers, no complex setup. You'll be live in under 2 minutes.",
-    highlight: "2-minute setup",
+      "One-click OAuth connection to your Stripe account. ChurnShield automatically syncs your subscriptions and customer data. Live in under 10 minutes.",
+    highlight: "Quick setup",
   },
   {
     number: "02",
-    icon: <Eye className="w-6 h-6" />,
-    title: "See every failed payment as it happens",
+    icon: <Palette className="w-6 h-6" />,
+    title: "Build Your Cancel Flow",
     description:
-      "The moment a payment fails, it appears in your dashboard - categorized by reason (expired card, insufficient funds, bank decline). No more silent failures hiding in Stripe logs.",
-    highlight: "Instant visibility",
+      "Use our visual builder to create exit survey questions and map retention offers to each reason. 'Too expensive?' → Show a discount. 'Need a break?' → Offer a pause.",
+    highlight: "Visual builder",
   },
   {
     number: "03",
-    icon: <MessageSquareText className="w-6 h-6" />,
-    title: "Know exactly what to do",
+    icon: <Code className="w-6 h-6" />,
+    title: "Embed the Widget",
     description:
-      "Each at-risk payment comes with recommended actions and ready-to-send message templates. Reach out to customers before they churn - with the right message for their specific situation.",
-    highlight: "Actionable recovery",
+      "Add one line of code to your cancel page. When customers click cancel, they see your branded retention flow instead of an instant goodbye.",
+    highlight: "One line of code",
   },
   {
     number: "04",
     icon: <TrendingUp className="w-6 h-6" />,
-    title: "You only pay for results",
+    title: "Watch the Saves Roll In",
     description:
-      "When a failed payment is recovered, we track it automatically. You see exactly what was saved - and you only pay 20% of recovered revenue. No saves, no bill.",
-    highlight: "Performance-based",
+      "Every time a customer accepts an offer and stays, you see it in your dashboard and get an email alert. You keep 80% of saved revenue — we take 20%.",
+    highlight: "Track every save",
   },
 ];
 
@@ -58,12 +58,12 @@ export function HowItWorks() {
             How It Works
           </span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            From churn risk to{" "}
-            <span className="gradient-text">recovered revenue</span> in 4 simple
+            From cancel click to{" "}
+            <span className="gradient-text">saved customer</span> in 4 simple
             steps.
           </h2>
           <p className="text-muted-foreground text-lg">
-            Stripe handles retries. We handle everything else - visibility, tracking, actions, and proof.
+            No code changes to your app. No complex integrations. Just connect, configure, and start saving.
           </p>
         </motion.div>
 
@@ -122,12 +122,12 @@ export function HowItWorks() {
           className="text-center mt-16"
         >
           <p className="text-muted-foreground">
-            Ready to stop losing revenue to preventable churn?{" "}
+            Ready to turn cancellations into saves?{" "}
             <a
               href="#pricing"
               className="text-primary hover:underline font-medium"
             >
-              See our zero-risk pricing →
+              See our performance-based pricing →
             </a>
           </p>
         </motion.div>

@@ -7,9 +7,10 @@ import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
 const benefits = [
   "No monthly subscription",
   "No setup fees",
-  "Cancel anytime",
+  "Capped at £500/month maximum",
   "Full analytics dashboard",
-  "$0 if we save nothing",
+  "Email notifications on every save",
+  "£0 if we save nobody",
 ];
 
 export function Pricing() {
@@ -42,13 +43,12 @@ export function Pricing() {
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="gradient-text">
-              Simple, fair pricing —
+              Simple, fair pricing
             </span>{" "}
-            you only pay for results.
+            — you only pay for saves.
           </h2>
           <p className="text-muted-foreground text-lg">
-            No subscriptions. No hidden fees. Just performance-based billing
-            tied directly to your retained revenue.
+            No monthly fees. No setup costs. Just 20% of the revenue you would have lost.
           </p>
         </motion.div>
 
@@ -60,10 +60,9 @@ export function Pricing() {
           transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
           className="relative max-w-lg mx-auto bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md p-10 md:p-12 shadow-xl hover:border-primary/30 transition-all duration-300 glow"
         >
-          <h3 className="text-2xl font-semibold mb-2 text-foreground">Success-Aligned Plan</h3>
+          <h3 className="text-2xl font-semibold mb-2 text-foreground">Performance Plan</h3>
           <p className="text-muted-foreground mb-8">
-            You're charged only on recovered revenue — $0 if we don't save you
-            customers.
+            You're charged only when ChurnShield saves a customer who tried to cancel.
           </p>
 
           <div className="flex flex-col items-center mb-10">
@@ -71,7 +70,7 @@ export function Pricing() {
               <span className="text-6xl font-bold text-primary">20%</span>
               <span className="text-muted-foreground text-lg">of saved revenue</span>
             </div>
-            <p className="text-muted-foreground mt-3">You keep 80%. We only earn when you do.</p>
+            <p className="text-muted-foreground mt-3">You keep 80%. We earn only when you do.</p>
           </div>
 
           {/* Benefits */}
@@ -102,7 +101,7 @@ export function Pricing() {
               size="lg"
               className="w-full bg-gradient-to-r from-primary to-[hsl(187_85%_53%)] text-primary-foreground font-semibold hover:opacity-90 transition shadow-lg"
             >
-              {isLoading ? "Loading..." : "Start My Risk-Free Trial"}
+              {isLoading ? "Loading..." : "Start Free Trial"}
             </Button>
           </motion.div>
         </motion.div>
@@ -115,7 +114,7 @@ export function Pricing() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-sm text-muted-foreground/60 mt-10"
         >
-          No credit card required • Cancel anytime • Backed by real results
+          No credit card required • 14-day free trial • Cancel anytime
         </motion.p>
       </div>
 
