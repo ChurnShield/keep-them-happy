@@ -1,30 +1,30 @@
-import { CheckCircle, BarChart3, ShieldCheck, Zap } from "lucide-react";
+import { ClipboardList, Gift, BarChart3, PoundSterling } from "lucide-react";
 import { motion } from "framer-motion";
 
 const features = [
   {
-    icon: <ShieldCheck className="w-6 h-6 text-primary" />,
-    title: "Performance-based pricing",
+    icon: <ClipboardList className="w-6 h-6 text-primary" />,
+    title: "Smart Exit Surveys",
     description:
-      "Pay only when we retain your customers — if we don't recover revenue, you don't pay. Your success is our success.",
+      "When a customer clicks cancel, they see a quick survey asking why. You learn exactly what's driving churn — too expensive, not using it, missing features, or something else.",
+  },
+  {
+    icon: <Gift className="w-6 h-6 text-primary" />,
+    title: "Personalized Retention Offers",
+    description:
+      "Based on their answer, ChurnShield automatically shows the right offer — a discount for price-sensitive customers, a pause for those who need a break, or a feature highlight for the confused.",
   },
   {
     icon: <BarChart3 className="w-6 h-6 text-primary" />,
-    title: "Recovery dashboard",
+    title: "Real-Time Analytics Dashboard",
     description:
-      "See all at-risk payments in one place. Filter by failure type, amount, and time. Know exactly what's at stake and what's been recovered.",
+      "See every save as it happens. Track which reasons drive churn, which offers work best, and exactly how much revenue you've retained.",
   },
   {
-    icon: <Zap className="w-6 h-6 text-primary" />,
-    title: "Instant Stripe integration",
+    icon: <PoundSterling className="w-6 h-6 text-primary" />,
+    title: "Performance-Based Pricing",
     description:
-      "Connect Stripe in seconds — no complex setup, no engineers needed. Start seeing recovery data immediately.",
-  },
-  {
-    icon: <CheckCircle className="w-6 h-6 text-primary" />,
-    title: "Zero-risk guarantee",
-    description:
-      "No subscriptions, no hidden fees. If we don't deliver results, you owe nothing — ever.",
+      "Pay 20% of saved revenue, capped at £500/month. If ChurnShield saves nobody, you pay nothing. Your success is our success.",
   },
 ];
 
@@ -48,12 +48,11 @@ export function Features() {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Everything you need to{" "}
             <span className="gradient-text">
-              recover lost revenue.
+              save customers who try to cancel.
             </span>
           </h2>
           <p className="text-muted-foreground text-lg">
-            ChurnShield works silently behind the scenes to retain customers,
-            recover at-risk revenue, and align your growth with real results.
+            ChurnShield intercepts cancellations, learns why customers leave, and presents the right offer to make them stay.
           </p>
         </motion.div>
 
