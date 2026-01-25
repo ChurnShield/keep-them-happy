@@ -21,7 +21,7 @@ interface SavedCustomerRecord {
   discount_percentage: number | null;
   pause_months: number | null;
   exit_reason: string | null;
-  stripe_action_id?: string | null;
+  stripe_action_id: string | null;
 }
 
 interface SavedCustomersTableProps {
@@ -31,7 +31,7 @@ interface SavedCustomersTableProps {
 
 export function SavedCustomersTable({ records, loading = false }: SavedCustomersTableProps) {
   const formatCurrency = (amount: number) => 
-    amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+    amount.toLocaleString('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 2 });
 
   if (loading) {
     return (
@@ -107,7 +107,7 @@ export function SavedCustomersTable({ records, loading = false }: SavedCustomers
               return (
                 <TableRow key={save.id}>
                   <TableCell className="text-muted-foreground">
-                    {new Date(save.created_at).toLocaleDateString('en-US', {
+                    {new Date(save.created_at).toLocaleDateString('en-GB', {
                       day: 'numeric',
                       month: 'short',
                       year: 'numeric',

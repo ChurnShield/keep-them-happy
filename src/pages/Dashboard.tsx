@@ -165,38 +165,35 @@ export default function Dashboard() {
         </Button>
       }
     >
-      {/* Revenue Analytics Section */}
-      {(analyticsSummary.totalSaved > 0 || analyticsSummary.totalRecords > 0) && (
-        <div className="space-y-6 mb-8">
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Revenue Impact</h2>
-            {analyticsError ? (
-              <Card className="border-destructive/50 bg-destructive/10">
-                <CardContent className="py-4 text-destructive text-sm">
-                  {analyticsError}
-                </CardContent>
-              </Card>
-            ) : (
-              <RevenueAnalyticsCards
-                totalSaved={analyticsSummary.totalSaved}
-                totalFees={analyticsSummary.totalFees}
-                totalSavesCount={analyticsSummary.totalRecords}
-                monthSavesCount={monthSavesCount}
-                loading={analyticsLoading}
-              />
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Saved Customers</h2>
-            <SavedCustomersTable records={analyticsRecords} loading={analyticsLoading} />
-          </div>
+      {/* Revenue Analytics Section - Always show */}
+      <div className="space-y-6 mb-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Revenue Impact</h2>
+          {analyticsError ? (
+            <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
+              {analyticsError}
+            </div>
+          ) : (
+            <RevenueAnalyticsCards
+              totalSaved={analyticsSummary.totalSaved}
+              totalFees={analyticsSummary.totalFees}
+              totalSavesCount={analyticsSummary.totalRecords}
+              monthSavesCount={monthSavesCount}
+              loading={analyticsLoading}
+            />
+          )}
         </div>
-      )}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Saved Customers</h2>
+          <SavedCustomersTable records={analyticsRecords} loading={analyticsLoading} />
+        </div>
+      </div>
 
-      {/* Recovered Revenue Section (Payment Recovery) */}
+      {/* Payment Recovery Section */}
       {(recoveredRevenue.lifetimeRecovered > 0 || recoveredRevenue.lifetimeCount > 0) && (
-        <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-2 mb-6">
+        <>
+          <h2 className="text-xl font-semibold mb-4">Payment Recovery</h2>
+          <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-2 mb-6">
           <Card className="border-primary/30 bg-primary/5">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -233,6 +230,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        </>
       )}
 
       {/* Overview Cards */}

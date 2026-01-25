@@ -29,7 +29,7 @@ export function RevenueAnalyticsCards({
   }
 
   const formatCurrency = (amount: number) => 
-    amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+    amount.toLocaleString('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 2 });
 
   if (loading) {
     return (
