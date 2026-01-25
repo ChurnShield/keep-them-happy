@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.widget-api]
 verify_jwt = false
+
+[functions.test-save-notification]
+verify_jwt = false
