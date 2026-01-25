@@ -65,6 +65,175 @@ function isTestSession(session: Record<string, unknown>): boolean {
   return !session.customer_id && !session.subscription_id && !session.stripe_subscription_id;
 }
 
+// Send email notification when a customer is saved
+// deno-lint-ignore no-explicit-any
+async function sendSaveNotification(
+  supabaseClient: any,
+  profileId: string,
+  saveDetails: {
+    saveType: string;
+    originalMrr: number;
+    newMrr: number;
+    exitReason: string | null;
+    discountPercentage?: number | null;
+    pauseMonths?: number | null;
+  }
+): Promise<void> {
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+  if (!RESEND_API_KEY) {
+    structuredLog('error', 'RESEND_API_KEY not configured - skipping notification', {});
+    return;
+  }
+
+  // Get profile email and notification preferences
+  const { data: profile, error: profileError } = await supabaseClient
+    .from('profiles')
+    .select('email, company_name, email_notifications')
+    .eq('id', profileId)
+    .single();
+
+  if (profileError || !profile?.email) {
+    structuredLog('error', 'Could not fetch profile for notification', { error: profileError?.message });
+    return;
+  }
+
+  // Respect notification preferences
+  if (profile.email_notifications === false) {
+    structuredLog('info', 'Email notifications disabled for profile', { profileId });
+    return;
+  }
+
+  const savedAmount = saveDetails.saveType === 'pause' 
+    ? saveDetails.originalMrr 
+    : (saveDetails.originalMrr - saveDetails.newMrr);
+
+  const formatCurrency = (amount: number) => 
+    new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
+
+  const reasonFormatted = (saveDetails.exitReason || 'Not specified')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, l => l.toUpperCase());
+
+  const offerText = saveDetails.saveType === 'pause'
+    ? `${saveDetails.pauseMonths || 1} month pause`
+    : `${saveDetails.discountPercentage || 25}% discount`;
+
+  const appUrl = Deno.env.get('APP_URL') || 'https://churnshield.app';
+
+  const emailHtml = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #0f172a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0f172a; padding: 40px 20px;">
+          <tr>
+            <td align="center">
+              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #1e293b; border-radius: 16px; overflow: hidden;">
+                <!-- Header -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); padding: 32px; text-align: center;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🎉 Customer Saved!</h1>
+                  </td>
+                </tr>
+                <!-- Content -->
+                <tr>
+                  <td style="padding: 40px 32px;">
+                    <p style="margin: 0 0 24px 0; color: #94a3b8; font-size: 16px; line-height: 1.6;">
+                      Great news! ChurnShield just prevented a cancellation${profile.company_name ? ` for ${profile.company_name}` : ''}.
+                    </p>
+                    <!-- Revenue Saved Box -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0f172a; border-radius: 12px; margin-bottom: 24px;">
+                      <tr>
+                        <td style="padding: 24px; text-align: center;">
+                          <p style="margin: 0 0 8px 0; color: #14b8a6; font-size: 36px; font-weight: 700;">
+                            ${formatCurrency(savedAmount)}
+                          </p>
+                          <p style="margin: 0; color: #64748b; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+                            Monthly revenue saved
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+                    <!-- Details -->
+                    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+                      ${saveDetails.saveType === 'discount' ? `
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #334155;">
+                          <span style="color: #64748b; font-size: 14px;">Reason given:</span>
+                          <span style="color: #f1f5f9; font-size: 14px; float: right;">${reasonFormatted}</span>
+                        </td>
+                      </tr>
+                      ` : ''}
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #334155;">
+                          <span style="color: #64748b; font-size: 14px;">Offer accepted:</span>
+                          <span style="color: #f1f5f9; font-size: 14px; float: right;">${offerText}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #334155;">
+                          <span style="color: #64748b; font-size: 14px;">Original MRR:</span>
+                          <span style="color: #f1f5f9; font-size: 14px; float: right;">${formatCurrency(saveDetails.originalMrr)}</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 12px 0;">
+                          <span style="color: #64748b; font-size: 14px;">New MRR:</span>
+                          <span style="color: #f1f5f9; font-size: 14px; float: right;">${formatCurrency(saveDetails.newMrr)}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 24px 32px 32px; text-align: center;">
+                    <a href="${appUrl}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                      View Dashboard
+                    </a>
+                    <p style="margin: 24px 0 0 0; color: #475569; font-size: 12px;">
+                      Sent by ChurnShield
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'ChurnShield <onboarding@resend.dev>',
+        to: [profile.email],
+        subject: `🎉 Customer saved! ${formatCurrency(savedAmount)}/mo retained`,
+        html: emailHtml,
+      }),
+    });
+
+    const result = await response.json();
+    
+    if (!response.ok) {
+      structuredLog('error', 'Resend API error', { result });
+    } else {
+      structuredLog('info', 'Save notification email sent', { messageId: result.id, to: profile.email });
+    }
+  } catch (error) {
+    structuredLog('error', 'Failed to send save notification', { error: String(error) });
+  }
+}
+
 // Simple in-memory rate limiting (resets on function cold start)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
@@ -1191,6 +1360,18 @@ async function handleOfferResponse(
       stripeActionId: offerResult.stripeActionId,
       isTest,
     });
+
+    // Send email notification (non-blocking, skip for test sessions)
+    if (!isTest) {
+      sendSaveNotification(supabase, session.profile_id as string, {
+        saveType: offerType,
+        originalMrr: offerResult.originalMrr,
+        newMrr: offerResult.newMrr,
+        exitReason: session.exit_reason as string | null,
+        discountPercentage: offerResult.discountPercentage,
+        pauseMonths: offerResult.pauseMonths,
+      }).catch(err => structuredLog('error', 'Notification error (non-blocking)', { error: String(err) }));
+    }
   }
 
   return successResponse({
