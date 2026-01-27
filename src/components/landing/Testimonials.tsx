@@ -1,21 +1,10 @@
 import { Quote } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useStripeCheckout } from "@/hooks/useStripeCheckout";
-import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
-
-const PLAN_ID = "starter";
+import { useNavigate } from "react-router-dom";
 
 export function Testimonials() {
-  const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
-
-  const handleStartTrial = () => {
-    createCheckoutSession({
-      planId: PLAN_ID,
-      successUrl: `${window.location.origin}/success?checkout=success`,
-      cancelUrl: `${window.location.origin}/`,
-    });
-  };
+  const navigate = useNavigate();
 
   return (
     <section
@@ -88,24 +77,17 @@ export function Testimonials() {
           className="mt-10 flex flex-col items-center gap-3"
         >
           <Button
-            onClick={handleStartTrial}
-            disabled={isLoading}
+            onClick={() => navigate('/auth')}
             size="lg"
             className="bg-gradient-to-r from-primary to-[hsl(187_85%_53%)] text-primary-foreground font-semibold hover:opacity-90 transition shadow-lg"
           >
-            {isLoading ? "Loading..." : "Start Free Trial"}
+            Get Started Free
           </Button>
           <p className="text-sm text-muted-foreground">
-            See if it works for you — pay nothing until it does
+            Start saving customers today
           </p>
         </motion.div>
       </div>
-
-      <CheckoutFallbackDialog 
-        open={showFallbackDialog} 
-        onOpenChange={closeFallbackDialog}
-        checkoutUrl={fallbackUrl || ''} 
-      />
     </section>
   );
 }

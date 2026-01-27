@@ -1,23 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
-import { useStripeCheckout } from "@/hooks/useStripeCheckout";
-import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
 import { useNavigate } from "react-router-dom";
-
-const PLAN_ID = "starter";
 
 export function CTA() {
   const navigate = useNavigate();
-  const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
-
-  const handleStartTrial = () => {
-    createCheckoutSession({
-      planId: PLAN_ID,
-      successUrl: `${window.location.origin}/success?checkout=success`,
-      cancelUrl: `${window.location.origin}/`,
-    });
-  };
 
   const handleHowItWorks = () => {
     const element = document.querySelector("#how-it-works");
@@ -72,11 +59,10 @@ export function CTA() {
               className="w-full sm:w-auto rounded-lg"
             >
               <Button 
-                onClick={handleStartTrial}
-                disabled={isLoading}
+                onClick={() => navigate('/auth')}
                 className="w-full sm:w-auto bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold hover:opacity-90 transition shadow-md"
               >
-                {isLoading ? "Loading..." : "Start Free Trial"}
+                Get Started Free
               </Button>
             </motion.div>
 
@@ -95,7 +81,7 @@ export function CTA() {
               <Check className="w-4 h-4 text-primary" /> No credit card needed
             </li>
             <li className="flex items-center gap-1">
-              <Check className="w-4 h-4 text-primary" /> 7-day free trial
+              <Check className="w-4 h-4 text-primary" /> Free forever
             </li>
             <li className="flex items-center gap-1">
               <Check className="w-4 h-4 text-primary" /> Pay only for results
@@ -107,11 +93,6 @@ export function CTA() {
       {/* Subtle bottom divider glow */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent blur-sm animate-pulse-slow" />
 
-      <CheckoutFallbackDialog 
-        open={showFallbackDialog} 
-        onOpenChange={closeFallbackDialog}
-        checkoutUrl={fallbackUrl || ''} 
-      />
     </section>
   );
 }

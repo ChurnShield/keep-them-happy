@@ -1,21 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Check, CreditCard, Clock, Shield } from "lucide-react";
+import { Check, CreditCard, Clock } from "lucide-react";
 import { motion } from "framer-motion";
-import { useStripeCheckout } from "@/hooks/useStripeCheckout";
-import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
-
-const PLAN_ID = "starter";
+import { useNavigate } from "react-router-dom";
 
 export function Hero() {
-  const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
-
-  const handleStartTrial = () => {
-    createCheckoutSession({
-      planId: PLAN_ID,
-      successUrl: `${window.location.origin}/success?checkout=success`,
-      cancelUrl: `${window.location.origin}/`,
-    });
-  };
+  const navigate = useNavigate();
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-background to-card text-foreground py-20 md:py-28 pt-32 md:pt-36">
@@ -64,12 +53,11 @@ export function Hero() {
         >
           <div className="w-full sm:w-auto rounded-lg animate-glow-pulse">
             <Button 
-              onClick={handleStartTrial}
-              disabled={isLoading}
+              onClick={() => navigate('/auth')}
               size="lg"
               className="w-full sm:w-auto bg-gradient-to-r from-primary to-[hsl(187_85%_53%)] text-primary-foreground font-semibold hover:opacity-90 transition shadow-lg"
             >
-              {isLoading ? "Loading..." : "Start Free Trial"}
+              Get Started Free
             </Button>
           </div>
           <Button
@@ -130,11 +118,6 @@ export function Hero() {
         </motion.div>
       </div>
 
-      <CheckoutFallbackDialog 
-        open={showFallbackDialog} 
-        onOpenChange={closeFallbackDialog}
-        checkoutUrl={fallbackUrl || ''} 
-      />
     </section>
   );
 }
