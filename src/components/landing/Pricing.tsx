@@ -1,8 +1,7 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useStripeCheckout } from "@/hooks/useStripeCheckout";
-import { CheckoutFallbackDialog } from "@/components/CheckoutFallbackDialog";
+import { useNavigate } from "react-router-dom";
 
 const benefits = [
   "No monthly subscription",
@@ -14,15 +13,7 @@ const benefits = [
 ];
 
 export function Pricing() {
-  const { createCheckoutSession, isLoading, fallbackUrl, showFallbackDialog, closeFallbackDialog } = useStripeCheckout();
-
-  const handleStartTrial = () => {
-    createCheckoutSession({
-      planId: "starter",
-      successUrl: `${window.location.origin}/success?checkout=success`,
-      cancelUrl: `${window.location.origin}/#pricing`,
-    });
-  };
+  const navigate = useNavigate();
 
   return (
     <section
@@ -96,12 +87,11 @@ export function Pricing() {
             className="rounded-lg"
           >
             <Button 
-              onClick={handleStartTrial}
-              disabled={isLoading}
+              onClick={() => navigate('/auth')}
               size="lg"
               className="w-full bg-gradient-to-r from-primary to-[hsl(187_85%_53%)] text-primary-foreground font-semibold hover:opacity-90 transition shadow-lg"
             >
-              {isLoading ? "Loading..." : "Start Free Trial"}
+              Get Started Free
             </Button>
           </motion.div>
         </motion.div>
@@ -114,15 +104,9 @@ export function Pricing() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-sm text-muted-foreground/60 mt-10"
         >
-          No credit card required • 7-day free trial • Cancel anytime
+          No credit card required • Free forever • Pay only for results
         </motion.p>
       </div>
-
-      <CheckoutFallbackDialog 
-        open={showFallbackDialog} 
-        onOpenChange={closeFallbackDialog}
-        checkoutUrl={fallbackUrl || ''} 
-      />
     </section>
   );
 }
