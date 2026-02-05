@@ -55,9 +55,62 @@ function generateSessionToken(): string {
   return Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Calculate ChurnShield fee (20% of saved revenue, max $500/month)
+// Monthly fee cap constant (£500/month per client)
+const MONTHLY_FEE_CAP = 500;
+
+// Calculate ChurnShield fee (20% of saved revenue, max $500 per save)
 function calculateChurnShieldFee(monthlySavedRevenue: number): number {
-  return Math.min(monthlySavedRevenue * 0.20, 500);
+  return Math.min(monthlySavedRevenue * 0.20, MONTHLY_FEE_CAP);
+}
+
+// Calculate capped ChurnShield fee considering aggregate monthly limit
+// This ensures total fees for a client don't exceed £500/month
+function calculateCappedFee(
+  monthlySavedRevenue: number, 
+  totalFeesThisMonth: number
+): number {
+  const rawFee = monthlySavedRevenue * 0.20;
+  const maxAllowedFee = Math.max(0, MONTHLY_FEE_CAP - totalFeesThisMonth);
+  // Cap at both per-save limit (500) and remaining monthly allowance
+  return Math.min(rawFee, MONTHLY_FEE_CAP, maxAllowedFee);
+}
+
+// Get total ChurnShield fees accrued for a profile in the current calendar month (UTC)
+// deno-lint-ignore no-explicit-any
+async function getMonthlyFeesForProfile(
+  supabaseClient: any, 
+  profileId: string
+): Promise<number> {
+  // Get start of current month in UTC
+  const now = new Date();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+  const monthStartIso = monthStart.toISOString();
+  
+  const { data, error } = await supabaseClient
+    .from('saved_customers')
+    .select('churnshield_fee_per_month')
+    .eq('profile_id', profileId)
+    .gte('created_at', monthStartIso);
+  
+  if (error) {
+    structuredLog('error', 'Failed to fetch monthly fees', { error: error.message, profileId });
+    return 0; // Fail open - don't block saves due to query errors
+  }
+  
+  const totalFees = (data || []).reduce(
+    (sum: number, row: { churnshield_fee_per_month: number | null }) => 
+      sum + (Number(row.churnshield_fee_per_month) || 0), 
+    0
+  );
+  
+  structuredLog('info', 'Monthly fees calculated', { 
+    profileId, 
+    totalFeesThisMonth: totalFees,
+    remainingCap: Math.max(0, MONTHLY_FEE_CAP - totalFees),
+    monthStart: monthStartIso 
+  });
+  
+  return totalFees;
 }
 
 // Check if session is a test session (no customer_id/subscription_id AND no stripe_subscription_id)
@@ -1324,10 +1377,26 @@ async function handleOfferResponse(
     return errorResponse(500, 'UPDATE_FAILED', 'Failed to record response');
   }
 
-  // Create saved_customers record
+  // Create saved_customers record with aggregate-capped fee
   if (session.offer_type_presented && session.offer_type_presented !== 'none') {
     const monthlySaved = offerResult.originalMrr - offerResult.newMrr;
-    const churnshieldFee = calculateChurnShieldFee(monthlySaved);
+    
+    // Get total fees already charged this month to enforce aggregate cap
+    const totalFeesThisMonth = await getMonthlyFeesForProfile(supabase, session.profile_id as string);
+    const churnshieldFee = calculateCappedFee(monthlySaved, totalFeesThisMonth);
+    
+    // Log cap enforcement details
+    const rawFee = monthlySaved * 0.20;
+    const wasCapped = churnshieldFee < rawFee;
+    if (wasCapped) {
+      structuredLog('info', 'Fee capped due to monthly limit', {
+        sessionId: session.id,
+        rawFee,
+        cappedFee: churnshieldFee,
+        totalFeesThisMonth,
+        remainingCap: MONTHLY_FEE_CAP - totalFeesThisMonth,
+      });
+    }
 
     const { error: savedError } = await supabase
       .from('saved_customers')
@@ -1357,6 +1426,8 @@ async function handleOfferResponse(
       newMrr: offerResult.newMrr,
       monthlySaved,
       churnshieldFee,
+      wasCapped,
+      totalFeesThisMonth,
       stripeActionId: offerResult.stripeActionId,
       isTest,
     });
