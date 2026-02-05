@@ -178,7 +178,7 @@ export default function Auth() {
       case 'login': 
         return isFromProtectedRoute ? 'Sign in to continue' : 'Sign in to access your account';
       case 'signup': 
-        return isFromProtectedRoute ? 'Create an account to start your free trial.' : 'Sign up to get started';
+        return isFromProtectedRoute ? 'Create an account to get started.' : 'Sign up to get started';
       case 'forgot': 
         return "Enter your email and we'll send you a reset link";
       case 'reset': 

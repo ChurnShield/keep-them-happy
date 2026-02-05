@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Link as LinkIcon, ArrowRight, Loader2 } from 'lucide-react';
+import { CheckCircle, Link as LinkIcon, ArrowRight, Loader2, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -91,15 +91,15 @@ const Success = () => {
         
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-foreground">
-            Welcome to ChurnShield!
+            You're All Set!
           </h1>
           <p className="text-muted-foreground">
-            Your 7-day free trial has started. No charges until your trial ends.
+            Connect your Stripe account to start protecting your revenue. You'll only be charged when we save a customer for you.
           </p>
         </div>
 
         <div className="bg-muted/50 rounded-lg p-4 text-left space-y-3">
-          <h3 className="font-semibold text-foreground">What's next?</h3>
+          <h3 className="font-semibold text-foreground">How ChurnShield works:</h3>
           <ul className="text-sm text-muted-foreground space-y-2">
             <li className="flex items-start gap-2">
               <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${hasStripeConnected ? 'bg-green-500/20' : 'bg-primary/20'}`}>
@@ -115,13 +115,13 @@ const Success = () => {
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-xs text-primary font-bold">2</span>
               </div>
-              <span>Configure churn risk alerts</span>
+              <span>Set up your cancel flow to intercept churning customers</span>
             </li>
             <li className="flex items-start gap-2">
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-xs text-primary font-bold">3</span>
               </div>
-              <span>Set up automated recovery campaigns</span>
+              <span>Pay only 20% of saved revenue (capped at $500/month)</span>
             </li>
           </ul>
         </div>
@@ -162,7 +162,7 @@ const Success = () => {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Cancel anytime from your account settings. No questions asked.
+          No monthly fees. No setup costs. You only pay when we save customers for you.
         </p>
       </div>
     </div>

@@ -37,7 +37,7 @@ export function CTA() {
 
           {/* Subheadline */}
           <p className="text-lg text-muted-foreground mb-10">
-            Start your free trial today. See your first saved customer within days — and only pay when it actually works.
+            Get started in minutes. See your first saved customer within days — and only pay when it actually works.
           </p>
 
           {/* CTA Buttons */}

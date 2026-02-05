@@ -8,22 +8,15 @@ import {
   AlertCircle, 
   CheckCircle2,
   Loader2,
-  CreditCard,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useStripeCheckout } from "@/hooks/useStripeCheckout";
 import { useStripeConnection } from "@/hooks/useStripeConnection";
 import { toast } from "@/hooks/use-toast";
-
-const PLAN_ID = "starter";
 
 const ConnectStripe = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const { hasActiveSubscription, status, loading: subLoading, isTrialing, trialDaysRemaining } = useSubscription();
-  const { createCheckoutSession, isLoading: checkoutLoading } = useStripeCheckout();
   const { isConnected, loading: connectionLoading, startStripeConnect } = useStripeConnection();
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -56,14 +49,6 @@ const ConnectStripe = () => {
     }
   };
 
-  const handleStartTrial = () => {
-    createCheckoutSession({
-      planId: PLAN_ID,
-      successUrl: `${window.location.origin}/success?checkout=success`,
-      cancelUrl: `${window.location.origin}/connect-stripe`,
-    });
-  };
-
   // Redirect if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
@@ -87,59 +72,6 @@ const ConnectStripe = () => {
     }
   }, [isConnected, connectionLoading, navigate]);
 
-  // Show subscription requirement message
-  const renderSubscriptionRequired = () => (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="bg-card border border-border rounded-2xl p-8 max-w-md w-full text-center"
-    >
-      <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
-        <AlertCircle className="w-8 h-8 text-destructive" />
-      </div>
-      
-      <h2 className="text-2xl font-bold text-foreground mb-4">
-        Subscription Required
-      </h2>
-      
-      <p className="text-muted-foreground mb-6">
-        Please start your free trial before connecting your Stripe account. 
-        This ensures we can properly link your data to your ChurnShield subscription.
-      </p>
-
-      <div className="space-y-3">
-        <Button
-          variant="hero"
-          size="lg"
-          onClick={handleStartTrial}
-          disabled={checkoutLoading}
-          className="w-full"
-        >
-          {checkoutLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Loading...
-            </>
-          ) : (
-            <>
-              <CreditCard className="w-4 h-4 mr-2" />
-              Start Free Trial
-            </>
-          )}
-        </Button>
-        
-        <Button
-          variant="ghost"
-          onClick={() => navigate("/")}
-          className="w-full"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
-        </Button>
-      </div>
-    </motion.div>
-  );
-
   // Show the connect stripe form for users with active subscription
   const renderConnectForm = () => (
     <motion.div
@@ -148,20 +80,18 @@ const ConnectStripe = () => {
       className="max-w-lg w-full mx-auto"
     >
 
-      {/* Subscription status badge */}
-      {isTrialing && trialDaysRemaining !== null && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex justify-center mb-6"
-        >
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
-            <CheckCircle2 className="w-4 h-4" />
-            Trial Active - {trialDaysRemaining} days remaining
-          </div>
-        </motion.div>
-      )}
+      {/* Performance-based pricing badge */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.2 }}
+        className="flex justify-center mb-6"
+      >
+        <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary">
+          <CheckCircle2 className="w-4 h-4" />
+          Free to use — pay only when we save customers
+        </div>
+      </motion.div>
 
       <motion.h1
         initial={{ opacity: 0, y: 10 }}
@@ -255,7 +185,7 @@ const ConnectStripe = () => {
     </motion.div>
   );
 
-  const isLoading = authLoading || subLoading || connectionLoading;
+  const isLoading = authLoading || connectionLoading;
 
   return (
     <DashboardLayout title="Connect Stripe" subtitle="Link your Stripe account to enable churn monitoring">
@@ -265,8 +195,6 @@ const ConnectStripe = () => {
             <div className="flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : !hasActiveSubscription ? (
-            renderSubscriptionRequired()
           ) : (
             renderConnectForm()
           )}

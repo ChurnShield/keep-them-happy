@@ -1,254 +1,39 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Zod schema for checkout session request
-const CheckoutRequestSchema = z.object({
-  planId: z.string().min(1, "Plan ID is required").max(50, "Plan ID too long"),
-  email: z.string().email("Invalid email format").max(255, "Email too long").optional(),
-  successUrl: z.string().url("Invalid success URL").max(2000, "URL too long").optional(),
-  cancelUrl: z.string().url("Invalid cancel URL").max(2000, "URL too long").optional(),
-});
-
-type PlanConfig = {
-  name: string;
-  currency: string;
-  unitAmount: number;
-  mode: 'subscription' | 'payment';
-};
-
-const PLAN_CONFIG: Record<string, PlanConfig> = {
-  starter: { name: 'Starter', currency: 'gbp', unitAmount: 4900, mode: 'subscription' },
-  growth: { name: 'Growth', currency: 'gbp', unitAmount: 14900, mode: 'subscription' },
-  scale: { name: 'Scale', currency: 'gbp', unitAmount: 34900, mode: 'subscription' },
-  churnshield: { name: 'Starter', currency: 'gbp', unitAmount: 4900, mode: 'subscription' },
-};
-
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW_SECONDS = 60;
-const MAX_REQUESTS_PER_WINDOW = 5;
-
-// In-memory rate limiting with cleanup
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-// Cleanup expired entries every 5 minutes to prevent memory leak
-const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
-let lastCleanup = Date.now();
-
-function cleanupExpiredEntries(): void {
-  const now = Date.now();
-  for (const [key, record] of rateLimitMap.entries()) {
-    if (now > record.resetTime) {
-      rateLimitMap.delete(key);
-    }
-  }
-  lastCleanup = now;
-}
-
-function getClientIP(req: Request): string {
-  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || 
-         req.headers.get("cf-connecting-ip") || 
-         req.headers.get("x-real-ip") ||
-         "unknown";
-}
-
-// Check rate limit using in-memory fallback with cleanup
-function isRateLimitedInMemory(ip: string): boolean {
-  const now = Date.now();
-  
-  // Periodic cleanup to prevent memory leak
-  if (now - lastCleanup > CLEANUP_INTERVAL_MS) {
-    cleanupExpiredEntries();
-  }
-  
-  const record = rateLimitMap.get(ip);
-  
-  if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + (RATE_LIMIT_WINDOW_SECONDS * 1000) });
-    return false;
-  }
-  
-  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
-    return true;
-  }
-  
-  record.count++;
-  return false;
-}
-
-async function stripeRequest(endpoint: string, apiKey: string, method = 'GET', body?: Record<string, unknown>) {
-  const headers: Record<string, string> = {
-    'Authorization': `Bearer ${apiKey}`,
-    'Content-Type': 'application/x-www-form-urlencoded',
-  };
-
-  const options: RequestInit = { method, headers };
-  
-  if (body && method !== 'GET') {
-    options.body = new URLSearchParams(flattenObject(body)).toString();
-  }
-
-  const res = await fetch(`https://api.stripe.com/v1${endpoint}`, options);
-  const data = await res.json();
-  
-  if (!res.ok) {
-    console.error('Stripe API error:', data);
-    throw new Error(data.error?.message || 'Stripe API error');
-  }
-  
-  return data;
-}
-
-function flattenObject(obj: Record<string, unknown>, prefix = ''): Record<string, string> {
-  const result: Record<string, string> = {};
-  
-  for (const [key, value] of Object.entries(obj)) {
-    const newKey = prefix ? `${prefix}[${key}]` : key;
-    
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      Object.assign(result, flattenObject(value as Record<string, unknown>, newKey));
-    } else if (value !== undefined && value !== null) {
-      result[newKey] = String(value);
-    }
-  }
-  
-  return result;
-}
+/**
+ * DEPRECATED: This edge function previously handled subscription checkout sessions.
+ * 
+ * ChurnShield now operates on a performance-based pricing model:
+ * - No monthly subscription fees
+ * - No tiered plans (Starter/Growth/Scale)
+ * - No trials
+ * - Clients pay 20% of saved revenue only when we prevent churn
+ * - Maximum fee capped at $500/month per client
+ * 
+ * This function is kept as a stub to prevent breaking any existing integrations.
+ * It will return an error indicating the new pricing model.
+ */
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    // Rate limiting check
-    const clientIP = getClientIP(req);
-    
-    if (isRateLimitedInMemory(clientIP)) {
-      console.warn(`Rate limited checkout request from IP: ${clientIP}`);
-      return new Response(JSON.stringify({ error: 'Too many requests. Please try again later.' }), {
-        status: 429,
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Retry-After': String(RATE_LIMIT_WINDOW_SECONDS)
-        },
-      });
-    }
-
-    const STRIPE_SECRET_KEY = (Deno.env.get('STRIPE_SECRET_KEY') ?? '').trim();
-    const APP_URL = Deno.env.get('APP_URL');
-
-    if (!STRIPE_SECRET_KEY || (!STRIPE_SECRET_KEY.startsWith('sk_test_') && !STRIPE_SECRET_KEY.startsWith('sk_live_'))) {
-      console.error('Invalid or missing STRIPE_SECRET_KEY');
-      return new Response(JSON.stringify({ error: 'Server configuration error' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const rawBody = await req.json();
-    
-    // Validate input with Zod schema
-    const parseResult = CheckoutRequestSchema.safeParse(rawBody);
-    if (!parseResult.success) {
-      const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
-      console.error('Validation failed:', errors);
-      return new Response(JSON.stringify({ error: `Validation failed: ${errors}` }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { planId, email, successUrl, cancelUrl } = parseResult.data;
-    const normalizedPlanId = planId.toLowerCase();
-    const config = PLAN_CONFIG[normalizedPlanId];
-    
-    if (!config) {
-      return new Response(JSON.stringify({ error: 'Invalid plan ID. Valid options: starter, growth, scale' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    console.log(`Creating checkout for plan: ${normalizedPlanId}, IP: ${clientIP}`);
-
-    // Create product
-    const product = await stripeRequest('/products', STRIPE_SECRET_KEY, 'POST', {
-      name: `ChurnShield ${config.name}`,
-      metadata: { plan_id: normalizedPlanId },
-    });
-    console.log('Product created:', product.id);
-
-    // Create price with monthly recurring
-    const priceParams: Record<string, unknown> = {
-      product: product.id,
-      currency: config.currency,
-      unit_amount: config.unitAmount,
-      recurring: { interval: 'month' },
-    };
-    const price = await stripeRequest('/prices', STRIPE_SECRET_KEY, 'POST', priceParams);
-    console.log('Price created:', price.id);
-
-    const baseUrl = APP_URL || 'https://preview--churnshield-saas.lovable.app';
-
-    // Create customer (required for Stripe Accounts V2 testmode)
-    const customerParams: Record<string, unknown> = {
-      metadata: { plan_id: normalizedPlanId },
-    };
-    if (email) {
-      customerParams.email = email;
-    }
-    const customer = await stripeRequest('/customers', STRIPE_SECRET_KEY, 'POST', customerParams);
-    console.log('Customer created:', customer.id);
-
-    // Trial configuration - DYNAMIC, relative to checkout time
-    // Using trial_period_days ensures trial starts from subscription creation
-    // NO hard-coded trial_end timestamp, NO billing_cycle_anchor
-    const trialPeriodDays = 7;
-
-    // Build checkout session params
-    const sessionParams: Record<string, unknown> = {
-      mode: 'subscription',
-      customer: customer.id,
-      'payment_method_types[0]': 'card',
-      'line_items[0][price]': price.id,
-      'line_items[0][quantity]': 1,
-      success_url: successUrl || `${baseUrl}/success`,
-      cancel_url: cancelUrl || `${baseUrl}/`,
-      allow_promotion_codes: true,
-      'subscription_data[trial_period_days]': trialPeriodDays,
-    };
-
-    // Log checkout session parameters for verification
-    const now = new Date();
-    const expectedTrialEnd = new Date(now.getTime() + trialPeriodDays * 24 * 60 * 60 * 1000);
-    console.log('=== CHECKOUT SESSION CONFIGURATION ===');
-    console.log('Current time:', now.toISOString());
-    console.log('trial_period_days:', trialPeriodDays);
-    console.log('billing_cycle_anchor: NOT SET (billing starts after trial)');
-    console.log('Expected trial end:', expectedTrialEnd.toISOString());
-    console.log('Expected first billing:', expectedTrialEnd.toISOString());
-    console.log('=====================================');
-
-    const session = await stripeRequest('/checkout/sessions', STRIPE_SECRET_KEY, 'POST', sessionParams);
-
-    console.log('Checkout session created:', session.id);
-    
-    return new Response(JSON.stringify({ sessionId: session.id, url: session.url }), {
-      status: 200,
+  // Return error indicating subscription checkout is no longer available
+  console.log('DEPRECATED: Subscription checkout attempted');
+  return new Response(
+    JSON.stringify({ 
+      error: 'Subscription checkout is no longer available. ChurnShield uses performance-based pricing - you only pay when we save customers for you.',
+      redirect: '/connect-stripe'
+    }), 
+    {
+      status: 410, // Gone
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
-    console.error('Error:', error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+    }
+  );
 });
