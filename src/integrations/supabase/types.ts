@@ -516,6 +516,7 @@ export type Database = {
           original_mrr: number
           pause_months: number | null
           profile_id: string
+          save_month: string | null
           save_type: string
           stripe_action_id: string | null
           subscription_id: string | null
@@ -531,6 +532,7 @@ export type Database = {
           original_mrr: number
           pause_months?: number | null
           profile_id: string
+          save_month?: string | null
           save_type: string
           stripe_action_id?: string | null
           subscription_id?: string | null
@@ -546,6 +548,7 @@ export type Database = {
           original_mrr?: number
           pause_months?: number | null
           profile_id?: string
+          save_month?: string | null
           save_type?: string
           stripe_action_id?: string | null
           subscription_id?: string | null
@@ -554,7 +557,7 @@ export type Database = {
           {
             foreignKeyName: "saved_customers_cancel_session_id_fkey"
             columns: ["cancel_session_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "cancel_sessions"
             referencedColumns: ["id"]
           },

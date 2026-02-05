@@ -990,10 +990,11 @@ async function handleOfferResponse(
       });
     }
 
-    // Insert saved_customers record with capped fee value
-    const { error: insertError } = await supabase
+    // Use upsert to prevent duplicate saves for the same cancel session
+    // If a record already exists for this cancel_session_id, update it instead of creating a duplicate
+    const { data: upsertData, error: insertError } = await supabase
       .from('saved_customers')
-      .insert({
+      .upsert({
         profile_id: session.profile_id,
         cancel_session_id: session.id,
         customer_id: session.customer_id,
@@ -1005,10 +1006,25 @@ async function handleOfferResponse(
         pause_months: offerResult.pauseMonths || null,
         stripe_action_id: offerResult.stripeActionId || null,
         churnshield_fee_per_month: churnshieldFee,
-      });
+      }, {
+        onConflict: 'cancel_session_id',
+        ignoreDuplicates: false, // Update existing record
+      })
+      .select('id')
+      .single();
 
     if (insertError) {
-      structuredLog('error', 'Failed to insert saved_customers', { error: insertError.message });
+      // Check if it's a duplicate subscription save in the same month
+      if (insertError.code === '23505' && insertError.message?.includes('unique_subscription_save_per_month')) {
+        structuredLog('warn', 'Duplicate subscription save detected in same month - skipping', {
+          sessionId: session.id,
+          subscriptionId: session.subscription_id,
+        });
+      } else {
+        structuredLog('error', 'Failed to insert saved_customers', { error: insertError.message, code: insertError.code });
+      }
+    } else if (upsertData) {
+      structuredLog('info', 'Saved customer record created/updated', { savedCustomerId: upsertData.id });
     }
 
     structuredLog('info', 'Customer saved', { 
