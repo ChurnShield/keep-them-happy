@@ -18,40 +18,14 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { useAtRiskCustomers, getScoreColor } from '@/hooks/useChurnDashboard';
-import { useSubscription } from '@/hooks/useSubscription';
 import { formatDistanceToNow } from 'date-fns';
 import { DashboardLayout } from '@/components/DashboardLayout';
 
 export default function AtRiskCustomers() {
   const navigate = useNavigate();
   const { data: customers, isLoading, error } = useAtRiskCustomers();
-  const { hasActiveSubscription, loading: subLoading } = useSubscription();
 
-  // Show subscription required message
-  if (!subLoading && !hasActiveSubscription) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="max-w-md w-full text-center">
-          <CardHeader>
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-              <AlertTriangle className="h-7 w-7 text-amber-500" />
-            </div>
-            <CardTitle>Subscription Required</CardTitle>
-            <CardDescription>
-              You need an active subscription to view churn insights.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate('/')} className="w-full">
-              View Plans
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (isLoading || subLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

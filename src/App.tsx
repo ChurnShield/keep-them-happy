@@ -41,7 +41,6 @@ const IntegrationGuide = lazy(() => import("./pages/IntegrationGuide"));
 // Lazy load route components
 const AdminRoute = lazy(() => import("./components/AdminRoute").then(m => ({ default: m.AdminRoute })));
 const ProtectedRoute = lazy(() => import("./components/ProtectedRoute").then(m => ({ default: m.ProtectedRoute })));
-const SubscriptionGate = lazy(() => import("./components/SubscriptionGate").then(m => ({ default: m.SubscriptionGate })));
 const StripeConnectionGate = lazy(() => import("./components/StripeConnectionGate").then(m => ({ default: m.StripeConnectionGate })));
 
 const queryClient = new QueryClient();
@@ -79,7 +78,7 @@ const App = () => (
               {/* Public cancel widget - accessible via session token */}
               <Route path="/cancel/:token" element={<CancelWidget />} />
               
-              {/* Connect Stripe - protected, requires auth + verification + subscription */}
+              {/* Connect Stripe - protected, requires auth */}
               <Route path="/connect-stripe" element={
                 <ProtectedRoute>
                   <ConnectStripe />
@@ -117,9 +116,7 @@ const App = () => (
               } />
               <Route path="/cancel-flow" element={
                 <ProtectedRoute>
-                  <SubscriptionGate feature="cancel flow builder">
-                    <CancelFlowBuilder />
-                  </SubscriptionGate>
+                  <CancelFlowBuilder />
                 </ProtectedRoute>
               } />
               <Route path="/dashboard/integration" element={
@@ -128,32 +125,26 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              {/* Churn insights routes - require auth + verification + subscription + Stripe connection */}
+              {/* Churn insights routes - require auth + Stripe connection */}
               <Route path="/churn-risk" element={
                 <ProtectedRoute>
-                  <SubscriptionGate feature="churn insights">
-                    <StripeConnectionGate feature="churn insights">
-                      <ChurnRisk />
-                    </StripeConnectionGate>
-                  </SubscriptionGate>
+                  <StripeConnectionGate feature="churn insights">
+                    <ChurnRisk />
+                  </StripeConnectionGate>
                 </ProtectedRoute>
               } />
               <Route path="/dashboard/at-risk" element={
                 <ProtectedRoute>
-                  <SubscriptionGate feature="at-risk customer insights">
-                    <StripeConnectionGate feature="at-risk customer insights">
-                      <AtRiskCustomers />
-                    </StripeConnectionGate>
-                  </SubscriptionGate>
+                  <StripeConnectionGate feature="at-risk customer insights">
+                    <AtRiskCustomers />
+                  </StripeConnectionGate>
                 </ProtectedRoute>
               } />
               <Route path="/dashboard/customer/:userId" element={
                 <ProtectedRoute>
-                  <SubscriptionGate feature="customer details">
-                    <StripeConnectionGate feature="customer details">
-                      <CustomerDetail />
-                    </StripeConnectionGate>
-                  </SubscriptionGate>
+                  <StripeConnectionGate feature="customer details">
+                    <CustomerDetail />
+                  </StripeConnectionGate>
                 </ProtectedRoute>
               } />
               
