@@ -13,7 +13,7 @@ const Welcome = () => {
 
   useEffect(() => {
     if (isCompleted()) {
-      navigate("/churn-risk", { replace: true });
+      navigate("/dashboard", { replace: true });
     }
   }, [isCompleted, navigate]);
 
