@@ -207,7 +207,7 @@ export default function Signup() {
             <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
               <Shield className="h-6 w-6 text-primary" />
             </div>
-            <CardTitle className="text-2xl">Start Your Risk-Free Trial</CardTitle>
+            <CardTitle className="text-2xl">Get Started Free</CardTitle>
             <CardDescription>
               No credit card required. Only pay when we save you revenue.
             </CardDescription>
@@ -249,7 +249,7 @@ export default function Signup() {
                 className="w-full"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Getting you started..." : "Start Free Trial"}
+                {isSubmitting ? "Getting you started..." : "Get Started"}
               </Button>
             </form>
 

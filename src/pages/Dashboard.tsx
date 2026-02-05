@@ -8,13 +8,14 @@ import {
   CheckCircle,
   DollarSign,
   TrendingUp,
-  BookOpen
+  BookOpen,
+  Link2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useStripeConnection } from '@/hooks/useStripeConnection';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useRecoveredRevenue } from '@/hooks/useRecoveredRevenue';
 import { useRevenueAnalytics } from '@/hooks/useRevenueAnalytics';
@@ -74,7 +75,7 @@ const generateMockCustomers = (userId: string) => [
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { hasActiveSubscription, loading: subLoading } = useSubscription();
+  const { isConnected: hasStripeConnected, loading: stripeLoading } = useStripeConnection();
   const { customers, loading, error, stats, refetch, getAtRiskCustomers } = useCustomers();
   const { summary: recoveredRevenue } = useRecoveredRevenue();
   const { records: analyticsRecords, summary: analyticsSummary, loading: analyticsLoading, error: analyticsError } = useRevenueAnalytics();
@@ -116,23 +117,24 @@ export default function Dashboard() {
     }
   };
 
-  // Show subscription required message
-  if (!subLoading && !hasActiveSubscription) {
+  // Show Stripe Connect prompt if not connected
+  if (!stripeLoading && !hasStripeConnected) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full text-center">
           <CardHeader>
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10">
-              <AlertTriangle className="h-7 w-7 text-amber-500" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Link2 className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle>Subscription Required</CardTitle>
+            <CardTitle>Connect Your Stripe Account</CardTitle>
             <CardDescription>
-              You need an active subscription to view churn insights.
+              Connect your Stripe account to start monitoring customer churn and protecting your revenue.
+              You only pay when we save customers for you.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate('/')} className="w-full">
-              View Plans
+            <Button onClick={() => navigate('/connect-stripe')} className="w-full">
+              Connect Stripe
             </Button>
           </CardContent>
         </Card>
@@ -140,7 +142,7 @@ export default function Dashboard() {
     );
   }
 
-  if (loading || subLoading) {
+  if (loading || stripeLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

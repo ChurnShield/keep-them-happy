@@ -138,7 +138,7 @@ const HowItWorks = () => {
               transition={{ delay: 0.8, duration: 0.5 }}
               className="text-muted-foreground text-lg mb-8"
             >
-              Ready to protect your revenue? Start your free trial today.
+              Ready to protect your revenue? Get started free today.
             </motion.p>
 
             {/* CTAs */}
@@ -154,7 +154,7 @@ const HowItWorks = () => {
                 onClick={() => navigate("/#pricing")}
                 className="group w-full sm:w-auto"
               >
-                Start Risk-Free Trial
+                Get Started Free
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Button>
 
