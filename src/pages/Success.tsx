@@ -121,7 +121,7 @@ const Success = () => {
               <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="text-xs text-primary font-bold">3</span>
               </div>
-              <span>Pay only 20% of saved revenue (capped at $500/month)</span>
+              <span>Pay only 20% of saved revenue (capped at £500/month)</span>
             </li>
           </ul>
         </div>

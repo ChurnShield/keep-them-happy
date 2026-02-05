@@ -79,7 +79,7 @@ export function Hero() {
         >
           <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/30 hover:scale-105 transition-all duration-300 cursor-default">
             <CreditCard className="w-5 h-5 text-primary" />
-            <span className="text-sm text-muted-foreground text-center">No credit card required</span>
+            <span className="text-sm text-muted-foreground text-center">No credit card required to start</span>
           </div>
           <div className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-primary/30 hover:scale-105 transition-all duration-300 cursor-default">
             <Clock className="w-5 h-5 text-primary" />
