@@ -63,14 +63,14 @@ const faqs = [
           "You pay 20% of the revenue ChurnShield helps recover. If a $100/month subscription payment fails and is later recovered, you pay $20. If nothing is recovered, you pay nothing. There are no monthly fees, no setup fees, no hidden costs.",
       },
       {
-        question: "Is there a cap on the 20% fee per recovery?",
+        question: "Is there a cap on the 20% fee?",
         answer:
-          "Currently, there's no cap — you pay 20% of any recovered amount. If you're recovering high-value enterprise subscriptions and a cap would make sense for your situation, reach out and we can discuss custom terms.",
+          "Your total ChurnShield fees are capped at £500 per month, regardless of how much revenue we save. If we save more, you keep the difference.",
       },
       {
         question: "When is the 20% fee charged?",
         answer:
-          "Billing details are still being finalized. We're building toward monthly invoicing for recovered revenue, but the exact billing cycle will be communicated clearly before any charges.",
+          "We calculate your fees automatically based on confirmed saves each month. You'll only ever be charged for customers we successfully retained.",
       },
       {
         question: "Is there a minimum MRR or customer volume to use ChurnShield?",

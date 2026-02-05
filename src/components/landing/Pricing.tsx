@@ -51,7 +51,7 @@ export function Pricing() {
           transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
           className="relative max-w-lg mx-auto bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md p-10 md:p-12 shadow-xl hover:border-primary/30 transition-all duration-300 glow"
         >
-          <h3 className="text-2xl font-semibold mb-2 text-foreground">Performance Plan</h3>
+          <h3 className="text-2xl font-semibold mb-2 text-foreground">Performance Pricing</h3>
           <p className="text-muted-foreground mb-8">
             You're charged only when ChurnShield saves a customer who tried to cancel.
           </p>
@@ -104,7 +104,7 @@ export function Pricing() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="text-sm text-muted-foreground/60 mt-10"
         >
-          No credit card required • Free forever • Pay only for results
+          No credit card required to get started • Connect your Stripe account • Pay only for results
         </motion.p>
       </div>
     </section>
