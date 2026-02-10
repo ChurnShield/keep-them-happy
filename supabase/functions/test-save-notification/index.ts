@@ -162,7 +162,7 @@ async function sendSaveNotification(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'ChurnShield <onboarding@resend.dev>',
+        from: 'ChurnShield <notifications@churnshield.app>',
         to: [profile.email],
         subject: `🎉 [TEST] Customer saved! ${formatCurrency(savedAmount)}/mo retained`,
         html: emailHtml,

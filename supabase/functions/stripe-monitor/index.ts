@@ -88,7 +88,7 @@ async function sendAlertEmail(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Payment Alerts <onboarding@resend.dev>',
+        from: 'ChurnShield <notifications@churnshield.app>',
         to: [to],
         subject: `⚠️ ${failedPayments.length} failed payment(s) detected - ${formatCurrency(totalAmount, currency)} at risk`,
         html: `
