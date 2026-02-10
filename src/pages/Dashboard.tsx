@@ -74,7 +74,7 @@ const generateMockCustomers = (userId: string) => [
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { isConnected: hasStripeConnected, loading: stripeLoading } = useStripeConnection();
   const { customers, loading, error, stats, refetch, getAtRiskCustomers } = useCustomers();
   const { summary: recoveredRevenue } = useRecoveredRevenue();
