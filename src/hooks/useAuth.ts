@@ -109,9 +109,6 @@ export function useAuth() {
   };
 
   const signOutEverywhere = async () => {
-    // Clear all local auth tokens
-    localStorage.removeItem('sb-rdstyfaveeokocztayri-auth-token');
-    
     // Sign out from all sessions (scope: 'global')
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     
