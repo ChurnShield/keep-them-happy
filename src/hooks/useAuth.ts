@@ -39,8 +39,6 @@ export function useAuth() {
         // Handle error (e.g., invalid refresh token)
         if (error) {
           console.warn('Session retrieval error:', error.message);
-          // Clear stale auth tokens from localStorage
-          localStorage.removeItem('sb-rdstyfaveeokocztayri-auth-token');
           setSession(null);
           setUser(null);
           setLoading(false);
