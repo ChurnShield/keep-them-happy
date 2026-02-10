@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
 
     // Exchange the authorization code for access token
     const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: '2025-04-30.basil',
+      apiVersion: '2023-10-16',
     });
 
     let tokenResponse;
