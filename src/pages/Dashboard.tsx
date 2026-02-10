@@ -327,7 +327,7 @@ export default function Dashboard() {
             </TabsTrigger>
           </TabsList>
 
-          {customers.length > 0 && (
+          {customers.length > 0 && (import.meta.env.DEV || isAdmin) && (
             <Button 
               variant="outline" 
               size="sm"
