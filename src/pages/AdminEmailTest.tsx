@@ -369,7 +369,7 @@ export default function AdminEmailTest() {
                 <h4 className="text-sm font-medium mb-2">Setup Requirements</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
                   <li>• RESEND_API_KEY must be set in Lovable Cloud secrets</li>
-                  <li>• Uses onboarding@resend.dev sender (no domain needed)</li>
+                  <li>• Sends from notifications@churnshield.app (verified domain)</li>
                   <li>• Rate limited to 3 emails per hour</li>
                 </ul>
               </div>

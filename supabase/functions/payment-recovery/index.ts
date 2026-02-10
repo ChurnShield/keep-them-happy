@@ -119,7 +119,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<{ s
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Churnshield <onboarding@resend.dev>",
+        from: "ChurnShield <notifications@churnshield.app>",
         to: [to],
         subject,
         html,

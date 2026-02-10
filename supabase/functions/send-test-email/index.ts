@@ -160,7 +160,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Churnshield <onboarding@resend.dev>",
+        from: "ChurnShield <notifications@churnshield.app>",
         to: [to],
         subject: "Churnshield test email",
         html: `
