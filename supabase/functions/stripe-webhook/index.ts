@@ -1006,7 +1006,7 @@ async function createRecoveryCaseFromInvoice(
       invoice_reference: invoiceRef,
       customer_reference: customerRef,
       amount_at_risk: invoice.amount_due / 100, // Convert from cents to currency units
-      currency: invoice.currency?.toUpperCase() || 'USD',
+      currency: invoice.currency?.toUpperCase() || 'GBP',
       status: 'open',
       churn_reason: churnReason,
       opened_at: now.toISOString(),
