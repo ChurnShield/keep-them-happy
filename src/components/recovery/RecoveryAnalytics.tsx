@@ -53,7 +53,7 @@ export function RecoveryAnalytics({ cases }: RecoveryAnalyticsProps) {
   }
 
   const formatCurrency = (amount: number) => 
-    amount.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+    amount.toLocaleString('en-GB', { style: 'currency', currency: 'GBP' });
 
   return (
     <Card className="mb-6">

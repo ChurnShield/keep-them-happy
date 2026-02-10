@@ -66,7 +66,7 @@ async function sendAlertEmail(
   }
 
   const formatCurrency = (cents: number, curr: string) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency: curr.toUpperCase(),
     }).format(cents / 100);

@@ -146,7 +146,7 @@ serve(async (req) => {
         invoice_reference: invoiceReference,
         stripe_invoice_id: null,
         amount_recovered: amountRecovered,
-        currency: recoveryCase.currency || 'USD',
+        currency: recoveryCase.currency || 'GBP',
         source_event_id: simulatedEventId,
         recovered_at: now,
         notes: 'Simulated recovery attribution (manual test)',
@@ -174,7 +174,7 @@ serve(async (req) => {
       message: 'Recovery attribution simulated successfully',
       recovery_case_id: recoveryCase.id,
       amount_recovered: amountRecovered,
-      currency: recoveryCase.currency || 'USD',
+      currency: recoveryCase.currency || 'GBP',
       simulated_event_id: simulatedEventId,
     }), {
       status: 200,
