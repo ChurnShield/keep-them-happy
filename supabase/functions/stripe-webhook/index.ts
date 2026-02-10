@@ -789,7 +789,7 @@ async function resolveRecoveryCaseFromInvoice(
       amountRecovered: invoice.amount_paid 
         ? invoice.amount_paid / 100 
         : Number(openCase.amount_at_risk),
-      currency: invoice.currency?.toUpperCase() || openCase.currency || 'USD',
+      currency: invoice.currency?.toUpperCase() || openCase.currency || 'GBP',
       sourceEventId: eventId,
     },
     eventId,

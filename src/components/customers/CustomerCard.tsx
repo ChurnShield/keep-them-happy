@@ -13,9 +13,9 @@ export function CustomerCard({ customer }: CustomerCardProps) {
   const navigate = useNavigate();
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
       minimumFractionDigits: 0,
     }).format(amount / 100);
   };

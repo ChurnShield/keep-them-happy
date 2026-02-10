@@ -174,7 +174,7 @@ serve(async (req) => {
       message: 'Recovery attribution simulated successfully',
       recovery_case_id: recoveryCase.id,
       amount_recovered: amountRecovered,
-      currency: recoveryCase.currency || 'USD',
+      currency: recoveryCase.currency || 'GBP',
       simulated_event_id: simulatedEventId,
     }), {
       status: 200,

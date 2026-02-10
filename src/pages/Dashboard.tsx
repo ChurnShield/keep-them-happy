@@ -89,7 +89,7 @@ export default function Dashboard() {
   ).length;
 
   const formatCurrency = (amount: number) => 
-    amount.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    amount.toLocaleString('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 });
 
   const handleAddMockData = async () => {
     if (!user) return;

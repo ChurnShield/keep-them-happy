@@ -41,7 +41,7 @@ export function CreateTestCaseDialog({ onCreate }: CreateTestCaseDialogProps) {
       await onCreate({
         customer_reference: customerRef.trim(),
         amount_at_risk: parseFloat(amount),
-        currency: 'USD',
+        currency: 'GBP',
         churn_reason: churnReason,
       });
       toast.success('Test case created');

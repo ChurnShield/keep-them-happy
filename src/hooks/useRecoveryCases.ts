@@ -144,7 +144,7 @@ export function useRecoveryCases() {
         customer_reference: input.customer_reference,
         invoice_reference: input.invoice_reference || null,
         amount_at_risk: input.amount_at_risk,
-        currency: input.currency || 'USD',
+        currency: input.currency || 'GBP',
         churn_reason: input.churn_reason || 'unknown_failure',
       })
       .select()
