@@ -39,8 +39,6 @@ export function useAuth() {
         // Handle error (e.g., invalid refresh token)
         if (error) {
           console.warn('Session retrieval error:', error.message);
-          // Clear stale auth tokens from localStorage
-          localStorage.removeItem('sb-rdstyfaveeokocztayri-auth-token');
           setSession(null);
           setUser(null);
           setLoading(false);
@@ -111,9 +109,6 @@ export function useAuth() {
   };
 
   const signOutEverywhere = async () => {
-    // Clear all local auth tokens
-    localStorage.removeItem('sb-rdstyfaveeokocztayri-auth-token');
-    
     // Sign out from all sessions (scope: 'global')
     const { error } = await supabase.auth.signOut({ scope: 'global' });
     
